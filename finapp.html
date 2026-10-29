@@ -432,6 +432,141 @@ body {
   padding-right: max(24px, env(safe-area-inset-right, 0px));
 }
 
+/* ══ Lançamentos redesign ══════════════════════════════════════════ */
+.lanc-periodo-wrap { margin-bottom: 12px }
+.lanc-mes-scroll {
+  display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px;
+}
+.lanc-anos-row {
+  display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 28px;
+}
+.lanc-kpis {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 14px;
+}
+.lanc-kpi {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 10px 8px; text-align: center;
+}
+.lanc-kpi-label { font-size: 10px; color: var(--fg3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px }
+.lanc-kpi-val { font-size: 13px; font-weight: 700; font-family: 'JetBrains Mono',monospace; }
+
+/* Grupos de lançamentos */
+.lanc-group { margin-bottom: 14px }
+.lanc-group-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px;
+  color: var(--fg3); padding: 0 2px; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.lanc-group-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* Card de cada lançamento */
+.lanc-item {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; display: flex; align-items: center; gap: 10px;
+  margin-bottom: 6px; transition: box-shadow .15s, border-color .15s; cursor: default;
+}
+.lanc-item:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(79,127,255,.08); }
+.lanc-item.is-base { border-left: 3px solid var(--border); }
+.lanc-item.is-manual { border-left: 3px solid var(--accent); }
+
+/* Ícone de categoria */
+.lanc-icon {
+  width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center;
+  justify-content: center; font-size: 14px; flex-shrink: 0;
+  background: var(--surface2);
+}
+/* Texto central */
+.lanc-info { flex: 1; min-width: 0; }
+.lanc-desc { font-size: 13px; font-weight: 600; color: var(--fg1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lanc-meta { font-size: 11px; color: var(--fg3); margin-top: 1px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+/* Chip de tipo */
+.lanc-chip {
+  display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 20px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
+}
+.chip-entrada { background: rgba(52,211,153,.15); color: #059669; }
+.chip-saida   { background: rgba(239,68,68,.12);  color: var(--red); }
+.chip-divida  { background: rgba(245,158,11,.15); color: #d97706; }
+/* Valor lado direito */
+.lanc-val {
+  font-size: 14px; font-weight: 700; font-family: 'JetBrains Mono',monospace;
+  flex-shrink: 0; text-align: right;
+}
+/* Botão ação */
+.lanc-btn {
+  width: 28px; height: 28px; border-radius: 7px; border: none; cursor: pointer;
+  background: transparent; color: var(--fg3); font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s; flex-shrink: 0;
+}
+.lanc-btn:hover { background: var(--surface2); color: var(--fg1); }
+.lanc-btn.del:hover { background: rgba(239,68,68,.1); color: var(--red); }
+
+/* Estado vazio */
+.lanc-empty {
+  text-align: center; padding: 40px 20px; color: var(--fg3); font-size: 13px;
+}
+.lanc-empty-icon { font-size: 32px; margin-bottom: 10px; }
+
+/* Saldo final */
+.lanc-saldo-bar {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;
+  margin-top: 10px;
+}
+
+/* Modal editar lançamento manual */
+#modal-editar-lanc .modal { max-width: 360px }
+
+/* ── Mobile: esconde sidebar, mostra bottom nav ── */
+.bottom-nav { display: none }
+
+@media (max-width: 640px) {
+  :root { --sidebar-w: 0px }
+  .sidebar { display: none !important }
+  .topbar { padding: 0 14px }
+  .content { padding: 14px; padding-bottom: 80px }
+  .lanc-kpis { grid-template-columns: repeat(2,1fr); }
+  .bottom-nav {
+    display: flex;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 58px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+    align-items: stretch;
+  }
+  .bn-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 2px; cursor: pointer;
+    color: var(--fg3); font-size: 9.5px; font-weight: 500;
+    padding-bottom: 2px;
+    transition: color .12s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .bn-item.active { color: var(--accent) }
+  .bn-item .bn-icon { font-size: 20px; line-height: 1 }
+  .bn-more-menu {
+    position: fixed; bottom: 60px; right: 0; left: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 8px 0;
+    z-index: 99;
+    display: none;
+  }
+  .bn-more-menu.open { display: block }
+  .bn-menu-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 20px; cursor: pointer;
+    color: var(--fg2); font-size: 13px; font-weight: 500;
+  }
+  .bn-menu-item.active { color: var(--accent) }
+  .bn-menu-item:active { background: var(--surface2) }
+}
+
 /* ── Views ── */
 .view { display: none }
 .view.active { display: block }
@@ -614,6 +749,77 @@ body {
 .est-title { font-size: 13px; font-weight: 600; margin-bottom: 3px }
 .est-desc { font-size: 12px; color: var(--fg2); line-height: 1.5 }
 
+.div-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:8px }
+.btn-ver-gastos { margin-top:8px;width:100%;padding:5px;font-size:11px;font-weight:600;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--fg3);cursor:pointer;transition:all .2s }
+.btn-ver-gastos:hover { background:var(--accent-bg);color:var(--accent);border-color:var(--accent) }
+.gasto-item { display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px }
+.gasto-item:last-child { border-bottom:none }
+.gasto-cat-pill { font-size:10px;padding:2px 7px;border-radius:8px;background:var(--accent-bg);color:var(--accent);margin-left:6px }
+.badge { font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px }
+.badge-red { background:var(--red-bg);color:var(--red) }
+.badge-orange { background:var(--orange-bg,#fff3e0);color:var(--orange) }
+.badge-yellow { background:var(--yellow-bg);color:var(--yellow) }
+.badge-green { background:var(--green-bg);color:var(--green) }
+.badge-blue { background:var(--accent-bg);color:var(--accent) }
+.sidebar-label-toggle { cursor:pointer;user-select:none }
+.sidebar-label-toggle:hover { color:var(--fg) }
+
+/* ── Semáforo dívidas ── */
+.semaforo-box {
+  border-radius: 10px; padding: 12px 16px;
+  border: 1px solid var(--border); display: flex; align-items: flex-start; gap: 12px;
+}
+.semaforo-box.verde { background: var(--green-bg); border-color: var(--green) }
+.semaforo-box.amarelo { background: var(--yellow-bg); border-color: var(--yellow) }
+.semaforo-box.vermelho { background: var(--red-bg); border-color: var(--red) }
+.semaforo-icon { font-size: 22px; line-height: 1 }
+.semaforo-titulo { font-size: 13px; font-weight: 700; margin-bottom: 3px }
+.semaforo-desc { font-size: 11.5px; color: var(--fg2); line-height: 1.5 }
+
+/* ── Dívida card dinâmico ── */
+.div-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
+  border-left: 3px solid var(--border2);
+}
+.div-card.urgente { border-left-color: var(--red) }
+.div-card.atencao { border-left-color: var(--orange) }
+.div-card.ok      { border-left-color: var(--green) }
+.div-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px }
+.div-card-nome { font-size: 13px; font-weight: 700 }
+.div-card-valor { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 2px }
+.div-card-info { font-size: 11px; color: var(--fg3); display: flex; gap: 12px; flex-wrap: wrap }
+.div-card-recom { margin-top: 8px; padding: 6px 10px; border-radius: 7px; font-size: 11px; font-weight: 600 }
+.div-card-recom.paga-agora { background: var(--red-bg); color: var(--red) }
+.div-card-recom.pode-esperar { background: var(--green-bg); color: var(--green) }
+.div-card-recom.avalie { background: var(--yellow-bg); color: var(--yellow) }
+.div-card-acoes { display: flex; gap: 6px; margin-top: 10px }
+.div-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--fg3); margin: 16px 0 8px }
+
+/* ── Caixinhas investimento ── */
+.caixinha-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin-bottom: 10px;
+}
+.caixinha-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px }
+.caixinha-nome { font-size: 14px; font-weight: 700 }
+.caixinha-tipo { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
+  background: var(--accent-bg); color: var(--accent) }
+.caixinha-valores { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px }
+.caixinha-val-label { font-size: 10px; color: var(--fg3); margin-bottom: 2px; text-transform: uppercase; letter-spacing: .3px }
+.caixinha-val-num { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums }
+.caixinha-val-num.positivo { color: var(--green) }
+.caixinha-val-num.negativo { color: var(--red) }
+.caixinha-progress { margin-bottom: 8px }
+.caixinha-progress-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--fg3); margin-bottom: 4px }
+.caixinha-acoes { display: flex; gap: 6px }
+.est-analise-box {
+  border-radius: 10px; padding: 12px 16px; border: 1px solid var(--accent);
+  background: var(--accent-bg); font-size: 12px; line-height: 1.6;
+}
+.est-analise-box strong { color: var(--accent) }
+
 /* ── Responsive mobile ── */
 @media (max-width: 600px) {
   :root { --sidebar-w: 0px }
@@ -629,6 +835,354 @@ body {
 .text-right { text-align: right }
 .mono { font-family: 'JetBrains Mono', monospace }
 </style>
+
+<!-- MODAL editar lançamento manual -->
+<div class="modal-overlay hidden" id="modal-editar-lanc">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-title" id="mel-titulo">Editar lançamento</div>
+    <input type="hidden" id="mel-id">
+    <div class="field">
+      <label>Descrição</label>
+      <input id="mel-desc" type="text" placeholder="Ex: Supermercado">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Valor (R$)</label>
+        <input id="mel-val" type="number" step="0.01" min="0" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label>Tipo</label>
+        <select id="mel-tipo">
+          <option value="saida">Saída</option>
+          <option value="entrada">Entrada</option>
+          <option value="divida">Dívida</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Categoria</label>
+      <select id="mel-cat">
+        <option>Moradia</option><option>Salário</option><option>Alimentação</option>
+        <option>Saúde</option><option>Educação</option><option>Lazer</option>
+        <option>Telefonia</option><option>Transporte</option><option>Impostos</option>
+        <option>PJ</option><option>Investimento</option><option>Dívida</option><option>Outros</option>
+      </select>
+    </div>
+    <!-- Confirmar exclusão -->
+    <div id="mel-confirmar-excluir" class="hidden" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--fg2)">
+      Remover este lançamento?
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('mel-confirmar-excluir').classList.add('hidden')">Não</button>
+        <button class="btn" style="flex:1;background:var(--red);color:#fff;border-color:var(--red)" onclick="confirmarRemocaoLanc()">Sim, remover</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+      <div id="mel-btn-excluir-wrap">
+        <button class="btn btn-ghost" style="color:var(--red);font-size:12px;padding:4px 10px" onclick="document.getElementById('mel-confirmar-excluir').classList.remove('hidden')">🗑 Excluir</button>
+      </div>
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost" onclick="fecharModalEditarLanc()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarModalEditarLanc()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL editar / adicionar dívida pendente -->
+<div class="modal-overlay hidden" id="modal-editar-div">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title" id="med-titulo">Editar dívida</div>
+    <input type="hidden" id="med-id" value="">
+    <input type="hidden" id="med-grupo" value="">
+    <div class="field">
+      <label>Nome da dívida</label>
+      <input id="med-nome" type="text" placeholder="Ex: Cartão Nubank" style="width:100%;padding:8px;border:1px solid var(--brd);border-radius:8px;background:var(--bg);color:var(--fg1);font-size:14px">
+    </div>
+    <div class="field">
+      <label>Valor total (R$)</label>
+      <input id="med-valor" type="number" min="0" step="100" placeholder="0,00" style="width:100%;padding:8px;border:1px solid var(--brd);border-radius:8px;background:var(--bg);color:var(--fg1);font-size:14px">
+    </div>
+    <div class="field">
+      <label>Observação</label>
+      <input id="med-obs" type="text" placeholder="Ex: Confirmar valor na fatura" style="width:100%;padding:8px;border:1px solid var(--brd);border-radius:8px;background:var(--bg);color:var(--fg1);font-size:14px">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-ghost" style="flex:1" onclick="fecharModalEditarDiv()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:2" onclick="salvarModalEditarDiv()">💾 Salvar</button>
+    </div>
+    <div id="med-confirmar-excluir" class="hidden" style="margin-top:12px;padding:12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;text-align:center">
+      <div style="font-size:13px;color:var(--red);font-weight:600;margin-bottom:8px">⚠️ Remover esta dívida?</div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn btn-ghost" style="font-size:12px" onclick="document.getElementById('med-confirmar-excluir').classList.add('hidden')">Não</button>
+        <button class="btn" style="font-size:12px;background:var(--red);color:#fff" onclick="confirmarRemocaoDiv()">Sim, remover</button>
+      </div>
+    </div>
+    <div id="med-btn-excluir-wrap" class="hidden" style="margin-top:8px;text-align:center">
+      <button onclick="document.getElementById('med-confirmar-excluir').classList.remove('hidden')" style="background:none;border:none;color:var(--red);font-size:12px;cursor:pointer;text-decoration:underline">🗑 Remover esta dívida</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL pagar/parcelar dívida pendente -->
+<div class="modal-overlay hidden" id="modal-pagar-pendente">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title" id="mpp-titulo">Registrar Pagamento</div>
+    <input type="hidden" id="mpp-id">
+    <div style="font-size:12px;color:var(--fg3);margin-bottom:14px">
+      Dívida: <strong id="mpp-nome-label"></strong> — Total: <strong id="mpp-total-label"></strong>
+    </div>
+    <!-- Tipo: Pago / Parcelado -->
+    <div class="field">
+      <label>Como vai pagar?</label>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button id="mpp-btn-avista" onclick="mppSetTipo('avista')"
+          style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-bg);color:var(--accent);font-weight:700;cursor:pointer;font-size:12px">
+          ✅ À Vista
+        </button>
+        <button id="mpp-btn-parcelado" onclick="mppSetTipo('parcelado')"
+          style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:transparent;color:var(--fg2);font-weight:600;cursor:pointer;font-size:12px">
+          📅 Parcelado
+        </button>
+      </div>
+    </div>
+    <input type="hidden" id="mpp-tipo" value="avista">
+    <!-- Valor da parcela -->
+    <div class="field" style="margin-top:12px">
+      <label id="mpp-val-label">Valor pago (R$)</label>
+      <input id="mpp-valor" type="number" min="0" step="0.01" placeholder="0,00">
+    </div>
+    <!-- Nº de parcelas — aparece só no modo parcelado -->
+    <div class="field" id="mpp-parcelas-row" style="display:none">
+      <label>Número de parcelas</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px" id="mpp-parcelas-chips">
+        <script>
+          (function(){
+            const vals=[2,3,4,6,8,10,12,18,24,36,48,60];
+            document.write(vals.map(v=>`<button onclick="mppSetParcelas(${v})" id="mpp-p-${v}"
+              style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--fg3);cursor:pointer;font-size:12px">${v}x</button>`).join(''));
+          })();
+        </script>
+      </div>
+      <input id="mpp-parcelas" type="number" min="1" max="360" placeholder="Ou digite" style="margin-top:8px" oninput="mppDestaque(-1)">
+    </div>
+    <!-- Mês/Ano de início -->
+    <div class="field-row" style="margin-top:12px">
+      <div class="field">
+        <label>Mês início</label>
+        <select id="mpp-mes">
+          <option>Janeiro</option><option>Fevereiro</option><option>Março</option>
+          <option>Abril</option><option>Maio</option><option>Junho</option>
+          <option>Julho</option><option>Agosto</option><option>Setembro</option>
+          <option>Outubro</option><option>Novembro</option><option>Dezembro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Ano início</label>
+        <select id="mpp-ano">
+          <option>2026</option><option>2027</option><option>2028</option><option>2029</option>
+          <option>2030</option><option>2031</option><option>2032</option><option>2033</option>
+          <option>2034</option><option>2035</option><option>2036</option><option>2037</option>
+          <option>2038</option><option>2039</option><option>2040</option>
+        </select>
+      </div>
+    </div>
+    <!-- Resumo -->
+    <div id="mpp-resumo" style="margin-top:12px;padding:10px 14px;background:var(--accent-bg);border-radius:8px;font-size:12px;color:var(--accent);display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModalPagarPendente()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarPagamentoPendente()">✅ Confirmar e Lançar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL dívida -->
+<div class="modal-overlay hidden" id="modal-divida">
+  <div class="modal">
+    <div class="modal-title" id="modal-divida-titulo">+ Nova Dívida</div>
+    <input type="hidden" id="fd-id">
+    <div class="field"><label>Nome da dívida</label><input id="fd-nome" placeholder="Ex: Cartão Nubank"></div>
+    <div class="field-row">
+      <div class="field"><label>Valor total (R$)</label><input id="fd-valor" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="field"><label>Juros % ao mês</label><input id="fd-juros" type="number" min="0" step="0.01" placeholder="0" title="0 = sem juros"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Parcelas restantes</label><input id="fd-parcelas" type="number" min="0" placeholder="0 = à vista"></div>
+      <div class="field"><label>Vencimento (dia)</label><input id="fd-venc" type="number" min="1" max="31" placeholder="Ex: 15"></div>
+    </div>
+    <div class="field">
+      <label>Categoria</label>
+      <select id="fd-cat">
+        <option value="cartao">Cartão de crédito</option>
+        <option value="pessoal">Dívida pessoal/família</option>
+        <option value="imposto">Imposto/tributo</option>
+        <option value="financiamento">Financiamento</option>
+        <option value="pj">PJ / Empresa</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModalDivida()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarDivida()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL investimento -->
+<div class="modal-overlay hidden" id="modal-inv">
+  <div class="modal">
+    <div class="modal-title" id="modal-inv-titulo">+ Nova Caixinha</div>
+    <input type="hidden" id="fi-id">
+    <div class="field"><label>Nome do objetivo</label><input id="fi-nome" placeholder="Ex: Reserva de emergência"></div>
+    <div class="field-row">
+      <div class="field"><label>Valor investido (R$)</label><input id="fi-aplicado" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="field"><label>Valor atual (R$)</label><input id="fi-atual" type="number" min="0" step="0.01" placeholder="0,00"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Meta (R$)</label><input id="fi-meta" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="field"><label>Rentabilidade % a.m.</label><input id="fi-rent" type="number" min="0" step="0.01" placeholder="Ex: 0.8"></div>
+    </div>
+    <div class="field">
+      <label>Tipo</label>
+      <select id="fi-tipo">
+        <option value="poupanca">Poupança</option>
+        <option value="cdb">CDB</option>
+        <option value="tesouro">Tesouro Direto</option>
+        <option value="fii">FII</option>
+        <option value="acoes">Ações</option>
+        <option value="previdencia">Previdência</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModalInv()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarInvestimento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL gastos do cartão -->
+<div class="modal-overlay hidden" id="modal-gastos" style="align-items:flex-start;padding-top:20px">
+  <div class="modal" style="max-width:480px;width:95%">
+    <div class="modal-title" id="modal-gastos-titulo">Gastos do Cartão</div>
+    <div id="gastos-resumo" style="margin-bottom:12px"></div>
+    <!-- Form novo gasto -->
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--fg3);margin-bottom:8px;text-transform:uppercase">+ Novo gasto</div>
+      <div class="field-row">
+        <div class="field"><label>Descrição</label><input id="gg-desc" placeholder="Ex: Supermercado"></div>
+        <div class="field"><label>Valor (R$)</label><input id="gg-valor" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      </div>
+      <div class="field">
+        <label>Categoria</label>
+        <select id="gg-cat">
+          <option value="alimentacao">🛒 Alimentação</option>
+          <option value="restaurante">🍔 Restaurante/Delivery</option>
+          <option value="saude">💊 Saúde/Farmácia</option>
+          <option value="transporte">🚗 Transporte/Combustível</option>
+          <option value="vestuario">👕 Vestuário</option>
+          <option value="lazer">🎬 Lazer/Entretenimento</option>
+          <option value="educacao">📚 Educação</option>
+          <option value="casa">🏠 Casa/Utilidades</option>
+          <option value="assinatura">📱 Assinaturas</option>
+          <option value="outro">📌 Outro</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="adicionarGasto()">Adicionar</button>
+    </div>
+    <!-- Lista de gastos -->
+    <div id="gastos-lista" style="max-height:300px;overflow-y:auto"></div>
+    <div class="modal-actions" style="margin-top:12px">
+      <button class="btn btn-ghost" onclick="fecharGastos()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL cripto -->
+<div class="modal-overlay hidden" id="modal-cripto">
+  <div class="modal">
+    <div class="modal-title" id="modal-cripto-titulo">+ Nova Cripto</div>
+    <input type="hidden" id="fc-id">
+    <div class="field"><label>Nome / Moeda</label><input id="fc-nome" placeholder="Ex: Bitcoin, ETH, Solana"></div>
+    <div class="field-row">
+      <div class="field"><label>Símbolo</label><input id="fc-simbolo" placeholder="BTC, ETH, SOL" style="text-transform:uppercase"></div>
+      <div class="field"><label>Quantidade</label><input id="fc-qtd" type="number" min="0" step="any" placeholder="0.00"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Valor investido (R$)</label><input id="fc-investido" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="field"><label>Valor atual (R$)</label><input id="fc-atual" type="number" min="0" step="0.01" placeholder="0,00"></div>
+    </div>
+    <div class="field"><label>Onde está guardado</label><input id="fc-carteira" placeholder="Ex: Binance, Foxbit, Ledger, MetaMask"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModalCripto()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarCripto()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL objetivo -->
+<div class="modal-overlay hidden" id="modal-objetivo">
+  <div class="modal">
+    <div class="modal-title" id="modal-objetivo-titulo">+ Novo Objetivo</div>
+    <input type="hidden" id="fo-id">
+    <div class="field"><label>Nome do objetivo</label><input id="fo-nome" placeholder="Ex: Carro novo, Casa própria, Viagem"></div>
+    <div class="field">
+      <label>Ícone</label>
+      <select id="fo-icone">
+        <option value="🚗">🚗 Carro</option>
+        <option value="🏠">🏠 Casa</option>
+        <option value="✈️">✈️ Viagem</option>
+        <option value="📱">📱 Eletrônico</option>
+        <option value="🎓">🎓 Educação</option>
+        <option value="💍">💍 Casamento</option>
+        <option value="🏖️">🏖️ Lazer</option>
+        <option value="🎯">🎯 Outro</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Meta (R$)</label><input id="fo-meta" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="field"><label>Já guardei (R$)</label><input id="fo-atual" type="number" min="0" step="0.01" placeholder="0,00"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Prazo (mês/ano)</label><input id="fo-prazo" placeholder="Ex: 12/2026"></div>
+      <div class="field"><label>Aporte mensal (R$)</label><input id="fo-aporte" type="number" min="0" step="0.01" placeholder="0,00"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModalObjetivo()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarObjetivo()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ação -->
+<div class="modal-overlay hidden" id="modal-acao">
+  <div class="modal">
+    <div class="modal-title" id="modal-acao-titulo">+ Nova Ação</div>
+    <input type="hidden" id="fa-id">
+    <div class="field-row">
+      <div class="field"><label>Ticker</label><input id="fa-ticker" placeholder="Ex: PETR4, VALE3" style="text-transform:uppercase"></div>
+      <div class="field"><label>Tipo</label>
+        <select id="fa-tipo">
+          <option value="acao">Ação</option>
+          <option value="fii">FII</option>
+          <option value="etf">ETF</option>
+          <option value="bdr">BDR</option>
+          <option value="stock">Stock (EUA)</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Quantidade de cotas</label><input id="fa-qtd" type="number" min="0" step="1" placeholder="0"></div>
+      <div class="field"><label>Preço médio (R$)</label><input id="fa-preco-medio" type="number" min="0" step="0.01" placeholder="0,00"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Cotação atual (R$)</label><input id="fa-cotacao" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="field"><label>Corretora</label><input id="fa-corretora" placeholder="Ex: XP, Rico, Clear, B3"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModalAcao()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarAcao()">Salvar</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL novo lançamento -->
 <div class="modal-overlay hidden" id="modal">
@@ -650,6 +1204,15 @@ body {
           <option>Abril</option><option>Maio</option><option>Junho</option>
           <option>Julho</option><option>Agosto</option><option>Setembro</option>
           <option selected>Outubro</option><option>Novembro</option><option>Dezembro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Ano</label>
+        <select id="f-ano">
+          <option>2026</option><option>2027</option><option>2028</option><option>2029</option>
+          <option>2030</option><option>2031</option><option>2032</option><option>2033</option>
+          <option>2034</option><option>2035</option><option>2036</option><option>2037</option>
+          <option>2038</option><option>2039</option><option>2040</option>
         </select>
       </div>
     </div>
@@ -709,12 +1272,16 @@ body {
     </div>
 
     <div class="sidebar-section">
-      <div class="sidebar-label">Planejamento</div>
-      <div class="nav-item" onclick="navTo('dividas', this)">
-        <span class="nav-icon">💳</span> Dívidas
+      <div class="sidebar-label sidebar-label-toggle" onclick="togglePlanejamento()" id="label-planejamento">
+        Planejamento <span id="icon-planejamento" style="float:right;transition:transform .25s">▾</span>
       </div>
-      <div class="nav-item" onclick="navTo('estrategia', this)">
-        <span class="nav-icon">🎯</span> Estratégia
+      <div id="submenu-planejamento" style="overflow:hidden;transition:max-height .3s ease;max-height:200px">
+        <div class="nav-item" onclick="navTo('dividas', this)">
+          <span class="nav-icon">💳</span> Dívidas
+        </div>
+        <div class="nav-item" onclick="navTo('estrategia', this)">
+          <span class="nav-icon">🎯</span> Estratégia
+        </div>
       </div>
     </div>
 
@@ -748,7 +1315,7 @@ body {
       </div>
       <div class="topbar-right">
         <div class="sync-label"><span class="sync-dot"></span> Atualizado agora</div>
-        <button class="btn btn-primary" onclick="abrirModal()">+ Lançamento</button>
+        <button class="btn btn-primary" id="btn-novo-lancamento" onclick="abrirModalContexto()">+ Lançamento</button>
       </div>
     </div>
 
@@ -777,12 +1344,21 @@ body {
           </div>
         </div>
 
+        <!-- Entrada de renda do mês -->
+        <div id="dash-renda-mes" style="margin-bottom:14px"></div>
+
+        <!-- Alerta inteligente (semáforo) -->
+        <div id="dash-alerta" style="margin-bottom:16px"></div>
+
         <!-- KPI cards -->
         <div class="kpi-row" id="dash-kpis"></div>
 
         <!-- Comprometimento -->
         <div class="section-title" style="margin-top:20px">Comprometimento da renda</div>
         <div class="table-wrap" style="padding:16px 16px 12px" id="dash-barras"></div>
+
+        <!-- Tendência: Previsto vs Real -->
+        <div id="dash-tendencia" style="margin-top:20px"></div>
 
         <!-- Lançamentos recentes -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:6px">
@@ -831,9 +1407,9 @@ body {
           <canvas id="graf-canvas" style="width:100%;display:block"></canvas>
         </div>
 
-        <!-- Meta de saídas -->
+        <!-- Meta de saídas por período -->
         <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <span style="font-size:13px;color:var(--fg2);white-space:nowrap">🎯 Meta de saídas mensais:</span>
+          <span id="graf-meta-titulo" style="font-size:13px;color:var(--fg2);white-space:nowrap">🎯 Meta de saídas mensais:</span>
           <input id="graf-meta-input" type="number" placeholder="Ex: 5000"
             style="flex:1;min-width:120px;max-width:180px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--fg1);font-size:13px"
             oninput="grafSalvarMeta(this.value)" />
@@ -843,226 +1419,93 @@ body {
 
       <!-- ══ VIEW: LANÇAMENTOS ══ -->
       <div class="view" id="view-lancamentos">
-        <div style="margin-bottom:10px">
-          <div id="lanc-tabs" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"></div>
-          <div id="lanc-anos" style="display:flex;flex-wrap:wrap;gap:4px;margin-left:8px;min-height:28px"></div>
+        <!-- Seletor de período -->
+        <div class="lanc-periodo-wrap">
+          <div id="lanc-tabs" class="lanc-mes-scroll"></div>
+          <div id="lanc-anos" class="lanc-anos-row"></div>
         </div>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-          <button class="btn btn-ghost" style="font-size:12px;white-space:nowrap" onclick="adicionarLinhaManual()">＋ Nova linha</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Descrição</th>
-                <th>Categoria</th>
-                <th>Tipo</th>
-                <th class="text-right">Valor</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="tbody-lancamentos"></tbody>
-          </table>
-        </div>
+        <!-- Mini KPIs do período -->
+        <div id="lanc-kpis" class="lanc-kpis"></div>
+        <!-- Lista de lançamentos -->
+        <div id="lanc-lista" class="lanc-lista"></div>
       </div>
 
       <!-- ══ VIEW: DÍVIDAS ══ -->
       <div class="view" id="view-dividas">
-        <div class="kpi-row">
-          <div class="kpi-card kpi-red">
-            <div class="kpi-label">Total dívidas PF</div>
-            <div class="kpi-value">R$ 48.948</div>
-            <div class="kpi-sub">Cartões + pessoais + impostos</div>
+
+        <!-- KPIs dinâmicos das dívidas pendentes -->
+        <div class="kpi-row" id="div-kpis-pendentes"></div>
+
+        <!-- Cards dinâmicos de dívidas pendentes -->
+        <div id="div-cards-pendentes"></div>
+
+        <!-- Lançamentos de dívida do mês -->
+        <div style="margin:24px 0 0;border-top:1px solid var(--border);padding-top:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:700;color:var(--fg2)">📋 Lançamentos de Dívida — <span id="div-mes-label" style="color:var(--accent)">este mês</span></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn" style="font-size:11px;padding:5px 12px;background:var(--surface);border:1px solid var(--border);color:var(--fg2)" onclick="irParaDividasLanc()">📂 Ver todos em Lançamentos</button>
+              <button class="btn btn-primary" style="font-size:11px;padding:5px 12px" onclick="abrirModal('divida', mesSelecionado)">+ Lançar Dívida</button>
+            </div>
           </div>
-          <div class="kpi-card kpi-orange">
-            <div class="kpi-label">Total dívidas PJ</div>
-            <div class="kpi-value">R$ 9.300</div>
-            <div class="kpi-sub">DAS + INSS parcelados</div>
-          </div>
-          <div class="kpi-card kpi-blue">
-            <div class="kpi-label">Parcela mín./mês</div>
-            <div class="kpi-value">R$ 1.833</div>
-            <div class="kpi-sub">Valores fixos confirmados</div>
-          </div>
-          <div class="kpi-card kpi-green">
-            <div class="kpi-label">Previsão quitação</div>
-            <div class="kpi-value">~24 meses</div>
-            <div class="kpi-sub">Com R$ 3.500/mês extra</div>
-          </div>
+          <div id="div-lancamentos-mes"></div>
         </div>
 
-        <div class="section-title">Cartões de crédito</div>
-        <div class="divida-grid">
-          <div class="divida-card urgente">
-            <div class="dc-top"><span class="dc-nome">C. M Pago Elo</span><span class="chip chip-red"><span class="chip-dot"></span>Urgente</span></div>
-            <div class="dc-total">R$ 8.000</div>
-            <div class="dc-parc">Parcela: a definir</div>
-            <div class="progress-bar" style="margin-top:10px"><div class="progress-fill danger" style="width:100%"></div></div>
+        <!-- Divisor para o novo sistema dinâmico -->
+        <div style="margin:24px 0 12px;border-top:1px solid var(--border);padding-top:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:700;color:var(--fg2)">➕ Minhas Dívidas (cadastro dinâmico)</div>
+            <button class="btn btn-primary" onclick="abrirModalDivida()">+ Nova Dívida</button>
           </div>
-          <div class="divida-card urgente">
-            <div class="dc-top"><span class="dc-nome">C. Bradesco</span><span class="chip chip-orange"><span class="chip-dot"></span>2 anos</span></div>
-            <div class="dc-total">R$ 2.913</div>
-            <div class="dc-parc">Parcelado — confirmar valor</div>
-            <div class="progress-bar" style="margin-top:10px"><div class="progress-fill warn" style="width:75%"></div></div>
-          </div>
-          <div class="divida-card atencao">
-            <div class="dc-top"><span class="dc-nome">C. Nu Cleidy</span><span class="chip chip-orange"><span class="chip-dot"></span>Atenção</span></div>
-            <div class="dc-total">R$ 1.960</div>
-            <div class="dc-parc">Parcela: a definir</div>
-            <div class="progress-bar" style="margin-top:10px"><div class="progress-fill warn" style="width:60%"></div></div>
-          </div>
-          <div class="divida-card atencao">
-            <div class="dc-top"><span class="dc-nome">C. Nu Emp. Cleidy</span><span class="chip chip-orange"><span class="chip-dot"></span>Atenção</span></div>
-            <div class="dc-total">R$ 996</div>
-            <div class="dc-parc">Parcela: a definir</div>
-          </div>
-          <div class="divida-card atencao">
-            <div class="dc-top"><span class="dc-nome">C. Nu Paty</span><span class="chip chip-yellow"><span class="chip-dot"></span>Médio</span></div>
-            <div class="dc-total">R$ 1.247</div>
-            <div class="dc-parc">Parcela: a definir</div>
-          </div>
-          <div class="divida-card atencao">
-            <div class="dc-top"><span class="dc-nome">C. Inter Paty</span><span class="chip chip-yellow"><span class="chip-dot"></span>Médio</span></div>
-            <div class="dc-total">R$ 291</div>
-            <div class="dc-parc">Parcela: R$ 291/mês</div>
-          </div>
-          <div class="divida-card atencao">
-            <div class="dc-top"><span class="dc-nome">C. M Pago Paty</span><span class="chip chip-yellow"><span class="chip-dot"></span>Médio</span></div>
-            <div class="dc-total">R$ 185</div>
-            <div class="dc-parc">Parcela: R$ 185/mês</div>
-          </div>
-          <div class="divida-card atencao">
-            <div class="dc-top"><span class="dc-nome">C. Will Paty</span><span class="chip chip-yellow"><span class="chip-dot"></span>Baixo</span></div>
-            <div class="dc-total">R$ 114</div>
-            <div class="dc-parc">Parcela: R$ 114/mês</div>
-          </div>
+          <div id="div-semaforo" style="margin-bottom:16px"></div>
+          <div id="div-lista"></div>
         </div>
 
-        <div class="section-title">Dívidas pessoais (família)</div>
-        <div class="divida-grid">
-          <div class="divida-card atencao">
-            <div class="dc-top"><span class="dc-nome">Kauã</span><span class="chip chip-orange"><span class="chip-dot"></span>Sem juros</span></div>
-            <div class="dc-total">R$ 9.000</div><div class="dc-parc">Negociar prazo</div>
-          </div>
-          <div class="divida-card atencao">
-            <div class="dc-top"><span class="dc-nome">Pai</span><span class="chip chip-orange"><span class="chip-dot"></span>Sem juros</span></div>
-            <div class="dc-total">R$ 8.000</div><div class="dc-parc">Negociar prazo</div>
-          </div>
-          <div class="divida-card atencao">
-            <div class="dc-top"><span class="dc-nome">Mãe</span><span class="chip chip-orange"><span class="chip-dot"></span>Sem juros</span></div>
-            <div class="dc-total">R$ 7.000</div><div class="dc-parc">Negociar prazo</div>
-          </div>
-        </div>
-
-        <div class="section-title">Impostos atrasados 🔴</div>
-        <div class="divida-grid">
-          <div class="divida-card urgente">
-            <div class="dc-top"><span class="dc-nome">IPVA Carro (2023-25)</span><span class="chip chip-red"><span class="chip-dot"></span>Urgente</span></div>
-            <div class="dc-total">R$ 3.256</div><div class="dc-parc">Risco de bloqueio</div>
-          </div>
-          <div class="divida-card urgente">
-            <div class="dc-top"><span class="dc-nome">IPVA Moto (2023-24)</span><span class="chip chip-red"><span class="chip-dot"></span>Urgente</span></div>
-            <div class="dc-total">R$ 826</div><div class="dc-parc">+ Lic. R$ 1.107</div>
-          </div>
-          <div class="divida-card urgente">
-            <div class="dc-top"><span class="dc-nome">IPVA Carro 2026</span><span class="chip chip-orange"><span class="chip-dot"></span>2026</span></div>
-            <div class="dc-total">R$ 637</div><div class="dc-parc">+ Lic. R$ 95</div>
-          </div>
-          <div class="divida-card urgente">
-            <div class="dc-top"><span class="dc-nome">IPVA Moto 2026</span><span class="chip chip-orange"><span class="chip-dot"></span>2026</span></div>
-            <div class="dc-total">R$ 2.500</div><div class="dc-parc">Ano atual</div>
-          </div>
-        </div>
-
-        <div class="section-title">PJ — Obrigações</div>
-        <div class="divida-grid">
-          <div class="divida-card recorrente">
-            <div class="dc-top"><span class="dc-nome">DAS — Parcelamento ×6</span><span class="chip chip-blue"><span class="chip-dot"></span>Parcelado</span></div>
-            <div class="dc-total">R$ 4.800</div><div class="dc-parc">R$ 800/mês × 6</div>
-          </div>
-          <div class="divida-card recorrente">
-            <div class="dc-top"><span class="dc-nome">INSS — Parcelamento ×6</span><span class="chip chip-blue"><span class="chip-dot"></span>Parcelado</span></div>
-            <div class="dc-total">R$ 4.500</div><div class="dc-parc">R$ 750/mês × 6</div>
-          </div>
-          <div class="divida-card ok">
-            <div class="dc-top"><span class="dc-nome">Contador Michel</span><span class="chip chip-green"><span class="chip-dot"></span>Recorrente</span></div>
-            <div class="dc-total">—</div><div class="dc-parc">R$ 350/mês fixo</div>
-          </div>
-        </div>
       </div>
 
       <!-- ══ VIEW: ESTRATÉGIA ══ -->
       <div class="view" id="view-estrategia">
-        <div class="kpi-row">
-          <div class="kpi-card kpi-green">
-            <div class="kpi-label">Renda livre/mês</div>
-            <div class="kpi-value">R$ 3.798</div>
-            <div class="kpi-sub">Para direcionar às dívidas</div>
-          </div>
-          <div class="kpi-card kpi-red">
-            <div class="kpi-label">Total a quitar</div>
-            <div class="kpi-value">R$ 58.248</div>
-            <div class="kpi-sub">PF + PJ + impostos</div>
-          </div>
-          <div class="kpi-card kpi-blue">
-            <div class="kpi-label">Prazo estimado</div>
-            <div class="kpi-value">24 meses</div>
-            <div class="kpi-sub">Método Avalanche</div>
-          </div>
+
+        <!-- KPIs dinâmicos -->
+        <div class="kpi-row" id="est-kpis"></div>
+
+        <!-- Análise cruzada -->
+        <div id="est-analise" style="margin-bottom:16px"></div>
+
+        <!-- Seção: Criptomoedas -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px">
+          <div class="div-section-title" style="margin:0">🪙 Criptomoedas</div>
+          <button class="btn btn-primary" style="font-size:11px;padding:5px 12px" onclick="abrirModalCripto()">+ Adicionar</button>
+        </div>
+        <div id="est-cripto-lista">
+          <div style="text-align:center;padding:20px 0;color:var(--fg3);font-size:12px">Nenhuma cripto cadastrada ainda.</div>
         </div>
 
-        <div class="section-title">Método Avalanche — Prioridade por urgência e juros</div>
-        <div class="estrategia-list">
-          <div class="est-item">
-            <div class="est-num" style="background:var(--red-bg);color:var(--red)">1</div>
-            <div class="est-body">
-              <div class="est-title">🔴 IPVA atrasados — Carro e Moto (R$ 4.082)</div>
-              <div class="est-desc">Risco de multa crescente e bloqueio do veículo. Quite o IPVA 2023, 2024 e 2025 do carro primeiro (R$ 3.256), depois a moto (R$ 826 + licenciamento R$ 1.107). Prazo: 1–2 meses.</div>
-            </div>
-          </div>
-          <div class="est-item">
-            <div class="est-num" style="background:var(--red-bg);color:var(--red)">2</div>
-            <div class="est-body">
-              <div class="est-title">🔴 C. M Pago Elo (R$ 8.000) — cartão com maiores juros potenciais</div>
-              <div class="est-desc">Maior saldo isolado em cartão. Negocie parcelamento sem juros ou transferência para cheque especial menor. Foque R$ 1.500–2.000/mês aqui. Prazo: 4–6 meses.</div>
-            </div>
-          </div>
-          <div class="est-item">
-            <div class="est-num" style="background:var(--orange-bg);color:var(--orange)">3</div>
-            <div class="est-body">
-              <div class="est-title">⚠️ DAS + INSS PJ — Parcelamento ×6 (R$ 9.300)</div>
-              <div class="est-desc">Parcelamento já em andamento. Manter R$ 800 + R$ 750 = R$ 1.550/mês em dia. Evitar juros de mora. Já incluso nas despesas mensais fixas.</div>
-            </div>
-          </div>
-          <div class="est-item">
-            <div class="est-num" style="background:var(--orange-bg);color:var(--orange)">4</div>
-            <div class="est-body">
-              <div class="est-title">⚠️ Demais cartões (R$ 7.706 total)</div>
-              <div class="est-desc">Bradesco, Nu Cleidy, Nu Paty, Inter Paty, Will Paty, M Pago Paty. Quitar do menor para o maior (bola de neve) após IPVA. Libera parcelas mensais progressivamente.</div>
-            </div>
-          </div>
-          <div class="est-item">
-            <div class="est-num" style="background:var(--yellow-bg);color:var(--yellow)">5</div>
-            <div class="est-body">
-              <div class="est-title">💛 Dívidas familiares — Kauã, Pai, Mãe (R$ 24.000)</div>
-              <div class="est-desc">Sem juros: menor urgência financeira. Negocie prazo mais longo com a família. Pague R$ 500–700/mês após quitar os cartões. Preserve o relacionamento com pagamentos parciais regulares.</div>
-            </div>
-          </div>
-          <div class="est-item">
-            <div class="est-num" style="background:var(--accent-bg);color:var(--accent)">6</div>
-            <div class="est-body">
-              <div class="est-title">🔵 FIES — Manter em dia (R$ 350/mês)</div>
-              <div class="est-desc">Parcela recorrente mensal. Não atrasar — penalidades altas. Já incluso no budget como despesa fixa.</div>
-            </div>
-          </div>
-          <div class="est-item">
-            <div class="est-num" style="background:var(--green-bg);color:var(--green)">7</div>
-            <div class="est-body">
-              <div class="est-title">✅ Após 12 meses: começar a investir</div>
-              <div class="est-desc">Com cartões e IPVA quitados (mês 8–10), redirecione R$ 500–1.000/mês para Tesouro Direto ou CDB. A Previdência de R$ 1.115/mês já é um investimento em andamento — ótima decisão.</div>
-            </div>
-          </div>
+        <!-- Seção: Objetivos -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px">
+          <div class="div-section-title" style="margin:0">🎯 Objetivos</div>
+          <button class="btn btn-primary" style="font-size:11px;padding:5px 12px" onclick="abrirModalObjetivo()">+ Adicionar</button>
         </div>
+        <div id="est-obj-lista">
+          <div style="text-align:center;padding:20px 0;color:var(--fg3);font-size:12px">Nenhum objetivo cadastrado ainda.</div>
+        </div>
+
+        <!-- Seção: Ações -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px">
+          <div class="div-section-title" style="margin:0">📈 Ações, FIIs & ETFs</div>
+          <button class="btn btn-primary" style="font-size:11px;padding:5px 12px" onclick="abrirModalAcao()">+ Adicionar</button>
+        </div>
+        <div id="est-acoes-lista">
+          <div style="text-align:center;padding:20px 0;color:var(--fg3);font-size:12px">Nenhuma ação cadastrada ainda.</div>
+        </div>
+
+        <!-- Seção: Renda Fixa / Caixinhas -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px">
+          <div class="div-section-title" style="margin:0">🏦 Renda Fixa & Caixinhas</div>
+          <button class="btn btn-primary" style="font-size:11px;padding:5px 12px" onclick="abrirModalInvestimento()">+ Adicionar</button>
+        </div>
+        <div id="est-lista"></div>
+
       </div>
 
       <!-- ══ VIEW: CONFIGURAÇÕES ══ -->
@@ -1139,6 +1582,41 @@ body {
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /layout -->
+
+<!-- Bottom nav (só aparece em mobile via CSS) -->
+<div class="bn-more-menu" id="bn-more-menu" onclick="fecharBnMenu()">
+  <div class="bn-menu-item" id="bnm-dividas" onclick="bnNav('dividas');event.stopPropagation()">
+    <span>💳</span> Dívidas
+  </div>
+  <div class="bn-menu-item" id="bnm-estrategia" onclick="bnNav('estrategia');event.stopPropagation()">
+    <span>🎯</span> Estratégia
+  </div>
+  <div class="bn-menu-item" id="bnm-config" onclick="bnNav('config');event.stopPropagation()">
+    <span>⚙️</span> Configurações
+  </div>
+</div>
+<nav class="bottom-nav" id="bottom-nav">
+  <div class="bn-item active" id="bn-dashboard" onclick="bnNav('dashboard')">
+    <span class="bn-icon">📊</span>
+    <span>Dashboard</span>
+  </div>
+  <div class="bn-item" id="bn-mensal" onclick="bnNav('mensal')">
+    <span class="bn-icon">📅</span>
+    <span>Mês a Mês</span>
+  </div>
+  <div class="bn-item" id="bn-lancamentos" onclick="bnNav('lancamentos')">
+    <span class="bn-icon">📋</span>
+    <span>Lançamentos</span>
+  </div>
+  <div class="bn-item" id="bn-grafico" onclick="bnNav('grafico')">
+    <span class="bn-icon">📈</span>
+    <span>Gráficos</span>
+  </div>
+  <div class="bn-item" id="bn-mais" onclick="toggleBnMenu()">
+    <span class="bn-icon">☰</span>
+    <span>Mais</span>
+  </div>
+</nav>
 
 <!-- MODAL NOVA DESPESA FIXA -->
 <div class="modal-overlay hidden" id="modal-nova-fixa">
@@ -1294,6 +1772,8 @@ let appData = loadData();
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const ANO_BASE = 2026;
+const ANO_MAX  = 2030;
 
 const DESPESAS_BASE = [
   {desc:'Salário Marido', cat:'Salário', tipo:'entrada', val:8000, mes:'Todos'},
@@ -1343,11 +1823,101 @@ function navTo(view, el) {
   if (view === 'dashboard') renderDashboard();
   if (view === 'config') renderConfig();
   if (view === 'grafico') renderGrafico();
+  if (view === 'dividas') renderDividas();
+  if (view === 'estrategia') renderEstrategia();
+}
+
+// ── Bottom nav (mobile) ────────────────────────────────────────────
+const BN_MAIN = ['dashboard','mensal','lancamentos','grafico'];
+const BN_MORE = ['dividas','estrategia','config'];
+
+function bnNav(view) {
+  fecharBnMenu();
+  // Mapeamos para o nav-item correto na sidebar (pode não existir mas não quebra)
+  const sidebarItem = document.querySelector(`.nav-item[onclick*="'${view}'"]`);
+  // Ativa a view sem depender do sidebarItem
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const viewEl = document.getElementById('view-' + view);
+  if (!viewEl) return;
+  viewEl.classList.add('active');
+  if (sidebarItem) sidebarItem.classList.add('active');
+
+  const titles = {
+    dashboard:['Controle','Dashboard'], mensal:['Controle','Mês a Mês'],
+    lancamentos:['Controle','Lançamentos'], grafico:['Controle','Gráficos'],
+    dividas:['Planejamento','Dívidas'], estrategia:['Planejamento','Estratégia'],
+    config:['Sistema','Configurações'],
+  };
+  document.getElementById('breadcrumb').textContent = titles[view]?.[0] || '';
+  document.getElementById('page-title').textContent = titles[view]?.[1] || view;
+
+  if (view === 'mensal') renderMensal();
+  if (view === 'lancamentos') renderLancamentos();
+  if (view === 'dashboard') renderDashboard();
+  if (view === 'config') renderConfig();
+  if (view === 'grafico') renderGrafico();
+  if (view === 'dividas') renderDividas();
+  if (view === 'estrategia') renderEstrategia();
+
+  // Atualiza estado visual da bottom nav
+  BN_MAIN.forEach(v => {
+    const el = document.getElementById('bn-' + v);
+    if (el) el.classList.toggle('active', v === view);
+  });
+  const maisEl = document.getElementById('bn-mais');
+  if (maisEl) maisEl.classList.toggle('active', BN_MORE.includes(view));
+  // Atualiza itens do menu "Mais"
+  BN_MORE.forEach(v => {
+    const el = document.getElementById('bnm-' + v);
+    if (el) el.classList.toggle('active', v === view);
+  });
+}
+
+function toggleBnMenu() {
+  const menu = document.getElementById('bn-more-menu');
+  if (!menu) return;
+  menu.classList.toggle('open');
+}
+function fecharBnMenu() {
+  const menu = document.getElementById('bn-more-menu');
+  if (menu) menu.classList.remove('open');
 }
 
 // ── Modal ──────────────────────────────────────────────────────────
-function abrirModal() {
-  document.getElementById('modal').classList.remove('hidden');
+function abrirModal(tipo, mes, ano) {
+  const modal = document.getElementById('modal');
+  modal.classList.remove('hidden');
+  // Pré-selecionar tipo
+  if (tipo) {
+    const sel = document.getElementById('f-tipo');
+    for (let i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === tipo) { sel.selectedIndex = i; break; }
+    }
+  }
+  // Pré-selecionar mês (usa contexto atual se não especificado)
+  const mesPref = mes || mesSelecionado;
+  const selM = document.getElementById('f-mes');
+  for (let i = 0; i < selM.options.length; i++) {
+    if (selM.options[i].text === mesPref || selM.options[i].value === mesPref) { selM.selectedIndex = i; break; }
+  }
+  // Pré-selecionar ano (usa contexto atual se não especificado)
+  const anoPref = String(ano || anoSelecionado);
+  const selA = document.getElementById('f-ano');
+  if (selA) {
+    for (let i = 0; i < selA.options.length; i++) {
+      if (selA.options[i].value === anoPref || selA.options[i].text === anoPref) { selA.selectedIndex = i; break; }
+    }
+  }
+}
+function abrirModalContexto() {
+  // Detecta qual view está ativa
+  const viewAtiva = document.querySelector('.view.active');
+  if (viewAtiva && viewAtiva.id === 'view-dividas') {
+    abrirModal('divida', mesSelecionado);
+  } else {
+    abrirModal();
+  }
 }
 function fecharModal() {
   document.getElementById('modal').classList.add('hidden');
@@ -1362,11 +1932,13 @@ function salvarLancamento() {
   const tipo = document.getElementById('f-tipo').value;
   const mes  = document.getElementById('f-mes').value;
   const cat  = document.getElementById('f-cat').value;
+  const selA = document.getElementById('f-ano');
+  const ano  = selA ? parseInt(selA.value) : anoSelecionado;
   if (!desc || isNaN(val) || val <= 0) {
     alert('Preencha descrição e valor válido.');
     return;
   }
-  appData.lancamentos.push({ desc, val, tipo, mes, cat, id: Date.now() });
+  appData.lancamentos.push({ desc, val, tipo, mes, ano, cat, id: Date.now() });
   saveData(appData);
   fecharModal();
   renderDashboard();
@@ -1402,6 +1974,77 @@ function atualizarFrase() {
   if (ei) ei.textContent = `${fraseIdx+1} / ${FRASES.length}`;
 }
 
+function salvarRendaMes(valor) {
+  const periodoKey = `${anoSelecionado}/${mesSelecionado}`;
+  if (!appCfg.periodos) appCfg.periodos = {};
+  if (!appCfg.periodos[periodoKey]) appCfg.periodos[periodoKey] = {};
+  const v = parseFloat(valor);
+  appCfg.periodos[periodoKey].rendaMes = isNaN(v) || v <= 0 ? '' : String(v);
+  saveCfg(appCfg);
+  // Atualiza só o semáforo e KPIs sem re-renderizar o campo (evita perder foco)
+  renderSemaforoEKpis();
+}
+
+function renderSemaforoEKpis() {
+  // Re-executa a parte de cálculo + semáforo + KPIs + barras sem reescrever o campo de renda
+  const base = despesasEfetivas ? despesasEfetivas() : DESPESAS_BASE;
+  const periodoKey = `${anoSelecionado}/${mesSelecionado}`;
+  if (!appCfg.periodos) appCfg.periodos = {};
+  const rendaMesStr = appCfg.periodos[periodoKey]?.rendaMes;
+  const rendaMesVal = rendaMesStr ? parseFloat(rendaMesStr) : 0;
+
+  const baseVis = base.filter((l,i)=>!(appCfg.ocultas&&appCfg.ocultas[String(l._baseIdx!==undefined?l._baseIdx:i)]));
+  const lanMes = (appData.lancamentos||[]).filter(l=>l.mes===mesSelecionado && String(l.ano||anoSelecionado)===String(anoSelecionado));
+  const rendaBase = baseVis.filter(l=>(appCfg.tipos&&appCfg.tipos[String(l._baseIdx)]||l.tipo)==='entrada').reduce((s,l)=>s+l.val,0);
+  const rendaLan  = lanMes.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
+  const desp  = baseVis.filter(l=>(appCfg.tipos&&appCfg.tipos[String(l._baseIdx)]||l.tipo)==='saida').reduce((s,l)=>s+l.val,0)
+              + lanMes.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0);
+  const divs  = baseVis.filter(l=>(appCfg.tipos&&appCfg.tipos[String(l._baseIdx)]||l.tipo)==='divida').reduce((s,l)=>s+l.val,0)
+              + lanMes.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0);
+  const rendaEfetiva = rendaMesVal > 0 ? rendaMesVal : (rendaBase + rendaLan);
+  const renda = rendaEfetiva;
+  const saldo = renda - desp - divs;
+  const saldoCor = saldo>=0?'var(--green)':'var(--red)';
+  const totalGastos = desp + divs;
+  const pct = renda > 0 ? Math.round((totalGastos / renda) * 100) : null;
+
+  const alertaEl = document.getElementById('dash-alerta');
+  if (alertaEl) {
+    let semaforoHTML = '';
+    if (renda === 0) {
+      semaforoHTML = `<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card);border:1px solid var(--brd);border-radius:10px"><span style="font-size:22px">⚪</span><div><div style="font-size:13px;font-weight:600;color:var(--fg2)">Informe a renda do mês acima para ver o semáforo</div><div style="font-size:11px;color:var(--fg3)">Assim o app calcula se você está no azul ou no vermelho</div></div></div>`;
+    } else if (pct > 100) {
+      const excesso = totalGastos - renda;
+      semaforoHTML = `<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(239,68,68,0.08);border:1.5px solid rgba(239,68,68,0.35);border-radius:10px"><span style="font-size:28px;line-height:1">🔴</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--red)">Atenção! Seus gastos excedem a renda em ${brl(excesso)}</div><div style="font-size:11px;color:var(--fg3);margin-top:2px">Gastos: ${brl(totalGastos)} · Renda: ${brl(renda)} · <strong>${pct}% comprometido</strong></div></div><div style="text-align:right;white-space:nowrap"><div style="font-size:18px;font-weight:700;color:var(--red)">-${brl(Math.abs(saldo))}</div><div style="font-size:10px;color:var(--fg3)">no vermelho</div></div></div>`;
+    } else if (pct >= 80) {
+      semaforoHTML = `<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.35);border-radius:10px"><span style="font-size:28px;line-height:1">🟡</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:#d97706">Cuidado — restam apenas ${brl(saldo)} este mês</div><div style="font-size:11px;color:var(--fg3);margin-top:2px">Gastos: ${brl(totalGastos)} · Renda: ${brl(renda)} · <strong>${pct}% comprometido</strong></div></div><div style="text-align:right;white-space:nowrap"><div style="font-size:18px;font-weight:700;color:#d97706">${brl(saldo)}</div><div style="font-size:10px;color:var(--fg3)">disponível</div></div></div>`;
+    } else {
+      semaforoHTML = `<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(34,197,94,0.08);border:1.5px solid rgba(34,197,94,0.3);border-radius:10px"><span style="font-size:28px;line-height:1">🟢</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--green)">Situação controlada — saldo de ${brl(saldo)}</div><div style="font-size:11px;color:var(--fg3);margin-top:2px">Gastos: ${brl(totalGastos)} · Renda: ${brl(renda)} · <strong>${pct}% comprometido</strong></div></div><div style="text-align:right;white-space:nowrap"><div style="font-size:18px;font-weight:700;color:var(--green)">${brl(saldo)}</div><div style="font-size:10px;color:var(--fg3)">disponível</div></div></div>`;
+    }
+    alertaEl.innerHTML = semaforoHTML;
+  }
+
+  const kpisEl = document.getElementById('dash-kpis');
+  if (kpisEl) kpisEl.innerHTML = `
+    <div class="kpi-card kpi-green"><div class="kpi-label">Renda do mês</div><div class="kpi-value">${brl(renda)}</div><div class="kpi-sub">${rendaMesVal>0?'Renda real informada':'Estimado (base fixa)'}</div></div>
+    <div class="kpi-card kpi-red"><div class="kpi-label">Despesas fixas</div><div class="kpi-value">${brl(desp)}</div><div class="kpi-sub">Mês atual (previsto)</div></div>
+    <div class="kpi-card kpi-orange"><div class="kpi-label">Parcelas dívidas</div><div class="kpi-value">${brl(divs)}</div><div class="kpi-sub">Mínimo mensal</div></div>
+    <div class="kpi-card kpi-blue"><div class="kpi-label">Saldo livre</div><div class="kpi-value" style="color:${saldoCor}">${brl(saldo)}</div><div class="kpi-sub">Para quitar / investir</div></div>
+  `;
+
+  const pDesp  = renda>0 ? Math.min((desp/renda*100),100).toFixed(1) : 0;
+  const pDivs  = renda>0 ? Math.min((divs/renda*100),100).toFixed(1) : 0;
+  const pTotal = renda>0 ? Math.min(((desp+divs)/renda*100),100).toFixed(1) : 0;
+  const pLivre = renda>0 ? Math.max((saldo/renda*100),0).toFixed(1) : 0;
+  const barrasEl = document.getElementById('dash-barras');
+  if (barrasEl) barrasEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">
+    <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--fg2)">Despesas fixas</span><span style="font-size:12px;font-weight:600">${pDesp}% · ${brl(desp)}</span></div><div class="progress-bar"><div class="progress-fill warn" style="width:${pDesp}%"></div></div></div>
+    <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--fg2)">Parcelas mínimas</span><span style="font-size:12px;font-weight:600">${pDivs}% · ${brl(divs)}</span></div><div class="progress-bar"><div class="progress-fill danger" style="width:${pDivs}%"></div></div></div>
+    <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--fg2)">Total comprometido</span><span style="font-size:12px;font-weight:700">${pTotal}% · ${brl(desp+divs)}</span></div><div class="progress-bar"><div class="progress-fill danger" style="width:${pTotal}%"></div></div></div>
+    <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--fg2)">Disponível para quitar / investir</span><span style="font-size:12px;font-weight:700;color:var(--green)">${pLivre}% · ${brl(saldo)}</span></div><div class="progress-bar"><div class="progress-fill ok" style="width:${pLivre}%"></div></div></div>
+  </div>`;
+}
+
 function renderDashboard() {
   const base = despesasEfetivas ? despesasEfetivas() : DESPESAS_BASE;
   const mesAtual = MESES[new Date().getMonth()];
@@ -1424,16 +2067,125 @@ function renderDashboard() {
   if (elSub)  elSub.textContent  = 'Aqui está o resumo financeiro da família. · ' + role;
   atualizarFrase();
 
+  // ── Entrada de renda do mês ───────────────────────────────────
+  const periodoKey = `${anoSelecionado}/${mesSelecionado}`;
+  if (!appCfg.periodos) appCfg.periodos = {};
+  const rendaMesStr = appCfg.periodos[periodoKey]?.rendaMes;
+  const rendaMesVal = rendaMesStr ? parseFloat(rendaMesStr) : 0;
+
+  const rendaEl = document.getElementById('dash-renda-mes');
+  if (rendaEl) rendaEl.innerHTML = `
+    <div class="table-wrap" style="padding:14px 16px;background:linear-gradient(135deg,rgba(34,197,94,0.08),rgba(16,185,129,0.05));border:1px solid rgba(34,197,94,0.25);border-radius:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--fg1);margin-bottom:2px">💰 Quanto entrou esse mês? (${mesSelecionado} ${anoSelecionado})</div>
+          <div style="font-size:11px;color:var(--fg3)">Renda real recebida — o app usa isso no semáforo abaixo</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:12px;color:var(--fg2)">R$</span>
+          <input id="inp-renda-mes" type="number" min="0" step="100"
+            value="${rendaMesVal > 0 ? rendaMesVal : ''}"
+            placeholder="0,00"
+            style="width:130px;padding:8px 10px;border:1.5px solid var(--brd);border-radius:8px;font-size:14px;font-weight:600;background:var(--bg);color:var(--fg1);text-align:right"
+            oninput="salvarRendaMes(this.value)"
+          />
+        </div>
+      </div>
+    </div>
+  `;
+
   // ── KPIs ──────────────────────────────────────────────────────
-  const baseVis = base.filter((l,i)=>!(appCfg.ocultas&&appCfg.ocultas[String(l._baseIdx!==undefined?l._baseIdx:i)]));
-  const renda = baseVis.filter(l=>(appCfg.tipos&&appCfg.tipos[String(l._baseIdx)]||l.tipo)==='entrada').reduce((s,l)=>s+l.val,0);
-  const desp  = baseVis.filter(l=>(appCfg.tipos&&appCfg.tipos[String(l._baseIdx)]||l.tipo)==='saida').reduce((s,l)=>s+l.val,0);
-  const divs  = baseVis.filter(l=>(appCfg.tipos&&appCfg.tipos[String(l._baseIdx)]||l.tipo)==='divida').reduce((s,l)=>s+l.val,0);
+  // helper: tipo efetivo de um item da base
+  function tipoEfetivo(l) {
+    if (l._baseIdx !== undefined && appCfg.tipos && appCfg.tipos[String(l._baseIdx)] !== undefined)
+      return appCfg.tipos[String(l._baseIdx)];
+    return l.tipo;
+  }
+  const baseVis = base.filter(l => !(appCfg.ocultas && appCfg.ocultas[String(l._baseIdx !== undefined ? l._baseIdx : '__')]));
+  // Lançamentos manuais do período selecionado
+  const lanMes = (appData.lancamentos||[]).filter(l => l.mes===mesSelecionado && String(l.ano || anoSelecionado)===String(anoSelecionado));
+
+  // Valores PREVISTOS (base fixa — o que está planejado independente de lançamentos)
+  const rendaPrev = baseVis.filter(l => tipoEfetivo(l)==='entrada').reduce((s,l)=>s+l.val,0);
+  const despPrev  = baseVis.filter(l => tipoEfetivo(l)==='saida').reduce((s,l)=>s+l.val,0);
+  const divsPrev  = baseVis.filter(l => tipoEfetivo(l)==='divida').reduce((s,l)=>s+l.val,0);
+
+  // Valores REAIS (lançamentos manuais do mês)
+  const rendaReal = lanMes.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
+  const despReal  = lanMes.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0);
+  const divsReal  = lanMes.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0);
+
+  // Totais efetivos (previstos + reais lançados)
+  const desp = despPrev + despReal;
+  const divs = divsPrev + divsReal;
+  // Renda: se usuário digitou no campo → usa esse; senão soma previsto + lançado
+  const rendaEfetiva = rendaMesVal > 0 ? rendaMesVal : (rendaPrev + rendaReal);
+  const renda = rendaEfetiva;
   const saldo = renda - desp - divs;
   const saldoCor = saldo>=0?'var(--green)':'var(--red)';
+
+  // ── Alerta inteligente (semáforo) ─────────────────────────────
+  const alertaEl = document.getElementById('dash-alerta');
+  if (alertaEl) {
+    const totalGastos = desp + divs;
+    const pct = renda > 0 ? Math.round((totalGastos / renda) * 100) : null;
+    let semaforoHTML = '';
+    if (renda === 0) {
+      semaforoHTML = `
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card);border:1px solid var(--brd);border-radius:10px">
+          <span style="font-size:22px">⚪</span>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--fg2)">Informe a renda do mês acima para ver o semáforo</div>
+            <div style="font-size:11px;color:var(--fg3)">Assim o app calcula se você está no azul ou no vermelho</div>
+          </div>
+        </div>`;
+    } else if (pct > 100) {
+      const excesso = totalGastos - renda;
+      semaforoHTML = `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(239,68,68,0.08);border:1.5px solid rgba(239,68,68,0.35);border-radius:10px">
+          <span style="font-size:28px;line-height:1">🔴</span>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700;color:var(--red)">Atenção! Seus gastos excedem a renda em ${brl(excesso)}</div>
+            <div style="font-size:11px;color:var(--fg3);margin-top:2px">Gastos: ${brl(totalGastos)} · Renda: ${brl(renda)} · <strong>${pct}% comprometido</strong></div>
+          </div>
+          <div style="text-align:right;white-space:nowrap">
+            <div style="font-size:18px;font-weight:700;color:var(--red)">-${brl(Math.abs(saldo))}</div>
+            <div style="font-size:10px;color:var(--fg3)">no vermelho</div>
+          </div>
+        </div>`;
+    } else if (pct >= 80) {
+      semaforoHTML = `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.35);border-radius:10px">
+          <span style="font-size:28px;line-height:1">🟡</span>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700;color:#d97706">Cuidado — restam apenas ${brl(saldo)} este mês</div>
+            <div style="font-size:11px;color:var(--fg3);margin-top:2px">Gastos: ${brl(totalGastos)} · Renda: ${brl(renda)} · <strong>${pct}% comprometido</strong></div>
+          </div>
+          <div style="text-align:right;white-space:nowrap">
+            <div style="font-size:18px;font-weight:700;color:#d97706">${brl(saldo)}</div>
+            <div style="font-size:10px;color:var(--fg3)">disponível</div>
+          </div>
+        </div>`;
+    } else {
+      semaforoHTML = `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(34,197,94,0.08);border:1.5px solid rgba(34,197,94,0.3);border-radius:10px">
+          <span style="font-size:28px;line-height:1">🟢</span>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700;color:var(--green)">Situação controlada — saldo de ${brl(saldo)}</div>
+            <div style="font-size:11px;color:var(--fg3);margin-top:2px">Gastos: ${brl(totalGastos)} · Renda: ${brl(renda)} · <strong>${pct}% comprometido</strong></div>
+          </div>
+          <div style="text-align:right;white-space:nowrap">
+            <div style="font-size:18px;font-weight:700;color:var(--green)">${brl(saldo)}</div>
+            <div style="font-size:10px;color:var(--fg3)">disponível</div>
+          </div>
+        </div>`;
+    }
+    alertaEl.innerHTML = semaforoHTML;
+  }
+
   const kpisEl = document.getElementById('dash-kpis');
   if (kpisEl) kpisEl.innerHTML = `
-    <div class="kpi-card kpi-green"><div class="kpi-label">Renda mensal</div><div class="kpi-value">${brl(renda)}</div><div class="kpi-sub">Marido + Esposa</div></div>
+    <div class="kpi-card kpi-green"><div class="kpi-label">Renda do mês</div><div class="kpi-value">${brl(renda)}</div><div class="kpi-sub">${rendaMesVal>0?'Renda real informada':'Estimado (base fixa)'}</div></div>
     <div class="kpi-card kpi-red"><div class="kpi-label">Despesas fixas</div><div class="kpi-value">${brl(desp)}</div><div class="kpi-sub">Mês atual (previsto)</div></div>
     <div class="kpi-card kpi-orange"><div class="kpi-label">Parcelas dívidas</div><div class="kpi-value">${brl(divs)}</div><div class="kpi-sub">Mínimo mensal</div></div>
     <div class="kpi-card kpi-blue"><div class="kpi-label">Saldo livre</div><div class="kpi-value" style="color:${saldoCor}">${brl(saldo)}</div><div class="kpi-sub">Para quitar / investir</div></div>
@@ -1451,6 +2203,79 @@ function renderDashboard() {
     <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--fg2)">Total comprometido</span><span style="font-size:12px;font-weight:700">${pTotal}% · ${brl(desp+divs)}</span></div><div class="progress-bar"><div class="progress-fill danger" style="width:${pTotal}%"></div></div></div>
     <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--fg2)">Disponível para quitar / investir</span><span style="font-size:12px;font-weight:700;color:var(--green)">${pLivre}% · ${brl(saldo)}</span></div><div class="progress-bar"><div class="progress-fill ok" style="width:${pLivre}%"></div></div></div>
   </div>`;
+
+  // ── Tendência: Previsto vs Real ───────────────────────────────
+  const tendEl = document.getElementById('dash-tendencia');
+  if (tendEl) {
+    const totalPrev = despPrev + divsPrev;
+    const totalReal = despReal + divsReal;
+    // Diferença real vs previsto (apenas gastos lançados manualmente)
+    const difDesp = despReal - despPrev;
+    const difDivs = divsReal - divsPrev;
+    const difTotal = totalReal - totalPrev;
+
+    // Dias passados no mês (para projetar tendência)
+    const hoje = new Date();
+    const diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).getDate();
+    const diasPassados = mesAtual === mesSelecionado && anoSelecionado === hoje.getFullYear() ? hoje.getDate() : diasNoMes;
+    const proporcaoMes = diasPassados / diasNoMes;
+    const gastoEsperadoAteHoje = totalPrev * proporcaoMes;
+    const tendenciaFim = proporcaoMes > 0 && totalReal > 0 ? (totalReal / proporcaoMes) : null;
+    const tendenciaDif = tendenciaFim !== null ? tendenciaFim - totalPrev : null;
+
+    // Cor e texto da tendência
+    let tendCor = 'var(--green)', tendIcon = '📉', tendTxt = '';
+    if (tendenciaDif === null) {
+      tendIcon = '📊'; tendCor = 'var(--fg2)';
+      tendTxt = 'Lance gastos reais para ver a projeção do mês';
+    } else if (tendenciaDif > totalPrev * 0.1) {
+      tendIcon = '📈'; tendCor = 'var(--red)';
+      tendTxt = `Projeção: você vai gastar ${brl(tendenciaFim)} — ${brl(tendenciaDif)} acima do previsto`;
+    } else if (tendenciaDif > 0) {
+      tendIcon = '⚠️'; tendCor = 'var(--yellow)';
+      tendTxt = `Levemente acima — projetando ${brl(tendenciaFim)} vs previsto de ${brl(totalPrev)}`;
+    } else {
+      tendIcon = '✅'; tendCor = 'var(--green)';
+      tendTxt = `No caminho certo — projetando ${brl(tendenciaFim)} vs previsto de ${brl(totalPrev)}`;
+    }
+
+    function linhaComp(label, prev, real) {
+      const dif = real - prev;
+      const cor = dif > 0 ? 'var(--red)' : dif < 0 ? 'var(--green)' : 'var(--fg3)';
+      const sinalDif = dif > 0 ? '+' : '';
+      const temReal = real > 0;
+      return `
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="flex:2;font-size:12px;color:var(--fg2)">${label}</span>
+          <span style="flex:1;text-align:right;font-size:12px;color:var(--fg3)">${brl(prev)}</span>
+          <span style="flex:1;text-align:right;font-size:12px;font-weight:600;color:${temReal?'var(--fg1)':'var(--fg3)'}">${temReal?brl(real):'—'}</span>
+          <span style="flex:1;text-align:right;font-size:11px;font-weight:700;color:${cor}">${temReal?(sinalDif+brl(Math.abs(dif))):'—'}</span>
+        </div>`;
+    }
+
+    tendEl.innerHTML = `
+      <div class="section-title" style="margin-bottom:8px">Previsto vs Real — ${mesSelecionado}</div>
+      <div class="table-wrap" style="padding:12px 16px">
+        <div style="display:flex;gap:8px;padding-bottom:6px;border-bottom:2px solid var(--border2);margin-bottom:2px">
+          <span style="flex:2;font-size:10px;font-weight:600;letter-spacing:.5px;color:var(--fg3);text-transform:uppercase">Categoria</span>
+          <span style="flex:1;text-align:right;font-size:10px;font-weight:600;letter-spacing:.5px;color:var(--fg3);text-transform:uppercase">Previsto</span>
+          <span style="flex:1;text-align:right;font-size:10px;font-weight:600;letter-spacing:.5px;color:var(--fg3);text-transform:uppercase">Real lançado</span>
+          <span style="flex:1;text-align:right;font-size:10px;font-weight:600;letter-spacing:.5px;color:var(--fg3);text-transform:uppercase">Diferença</span>
+        </div>
+        ${linhaComp('Despesas fixas', despPrev, despReal)}
+        ${linhaComp('Parcelas dívidas', divsPrev, divsReal)}
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 0">
+          <span style="flex:2;font-size:12px;font-weight:700;color:var(--fg1)">Total gastos</span>
+          <span style="flex:1;text-align:right;font-size:12px;font-weight:700">${brl(totalPrev)}</span>
+          <span style="flex:1;text-align:right;font-size:12px;font-weight:700">${totalReal>0?brl(totalReal):'—'}</span>
+          <span style="flex:1;text-align:right;font-size:12px;font-weight:700;color:${totalReal>totalPrev?'var(--red)':totalReal>0?'var(--green)':'var(--fg3)'}">${totalReal>0?(totalReal>totalPrev?'+':'')+brl(Math.abs(difTotal)):'—'}</span>
+        </div>
+        <div style="margin-top:10px;padding:10px 12px;background:var(--surface2);border-radius:8px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">${tendIcon}</span>
+          <span style="font-size:12px;color:${tendCor};font-weight:600">${tendTxt}</span>
+        </div>
+      </div>`;
+  }
 
   // ── Lançamentos recentes ──────────────────────────────────────
   const tbody = document.getElementById('tbody-recentes');
@@ -1522,11 +2347,28 @@ function grafModo(modo, btn) {
   renderGrafico();
 }
 
+// Retorna a meta de saídas para um dado mês+ano (busca no período, depois global)
+function getMetaPeriodo(mes, ano) {
+  const key = ano + '/' + mes;
+  const cfgM = appCfg.periodos && appCfg.periodos[key];
+  if (cfgM && cfgM.metaSaidas > 0) return cfgM.metaSaidas;
+  return appCfg.metaSaidas || 0; // fallback global (retrocompatibilidade)
+}
+
+// Salva meta no período atual exibido no gráfico (modo anual = grafMesAtualMeta/grafAnoA; mês-mes = grafMesA/grafAnoA)
+let grafMesMetaAtual = MESES[new Date().getMonth()]; // mês sendo editado na meta
 function grafSalvarMeta(val) {
-  appCfg.metaSaidas = parseFloat(val) || 0;
+  const v = parseFloat(val) || 0;
+  // Salva na chave do período selecionado
+  const key = grafAnoA + '/' + grafMesMetaAtual;
+  if (!appCfg.periodos) appCfg.periodos = {};
+  if (!appCfg.periodos[key]) appCfg.periodos[key] = { overrides:{} };
+  appCfg.periodos[key].metaSaidas = v;
+  // Mantém também o global para retrocompatibilidade
+  appCfg.metaSaidas = v;
   saveCfg(appCfg);
-  document.getElementById('graf-meta-label').textContent =
-    appCfg.metaSaidas > 0 ? '✓ Meta salva: ' + brl(appCfg.metaSaidas) + '/mês' : '';
+  const label = document.getElementById('graf-meta-label');
+  if (label) label.textContent = v > 0 ? '✓ Salvo para ' + grafMesMetaAtual + ' ' + grafAnoA + ': ' + brl(v) : '';
   renderGrafico();
 }
 
@@ -1552,11 +2394,25 @@ function getDadosPeriodo(mes, ano) {
 }
 
 function renderGrafico() {
-  // Meta input
+  // Meta input — carrega a meta do mês/ano em foco
   const metaInput = document.getElementById('graf-meta-input');
-  if (metaInput && appCfg.metaSaidas) {
-    metaInput.value = appCfg.metaSaidas;
-    document.getElementById('graf-meta-label').textContent = '✓ Meta salva: ' + brl(appCfg.metaSaidas) + '/mês';
+  const metaLabel = document.getElementById('graf-meta-label');
+  const metaTitulo = document.getElementById('graf-meta-titulo');
+  // No modo mês vs mês usa grafMesA; no anual usa o mês seletor de meta
+  if (grafModoAtivo === 'mes-mes') grafMesMetaAtual = grafMesA;
+  const metaAtual = getMetaPeriodo(grafMesMetaAtual, grafAnoA);
+  if (metaInput) metaInput.value = metaAtual > 0 ? metaAtual : '';
+  if (metaLabel) metaLabel.textContent = metaAtual > 0 ? '✓ ' + brl(metaAtual) : '';
+  // Título com seletor de mês (modo anual) ou fixo (outros modos)
+  if (metaTitulo) {
+    if (grafModoAtivo === 'anual') {
+      const opsMes = MESES.map(m =>
+        `<option value="${m}"${m===grafMesMetaAtual?' selected':''}>${m}</option>`
+      ).join('');
+      metaTitulo.innerHTML = `🎯 Meta de saídas — <select onchange="grafMesMetaAtual=this.value;renderGrafico()" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 6px;color:var(--fg1);font-size:12px">${opsMes}</select> ${grafAnoA}:`;
+    } else {
+      metaTitulo.textContent = '🎯 Meta de saídas — ' + grafMesMetaAtual + ' ' + grafAnoA + ':';
+    }
   }
 
   const ctrl = document.getElementById('graf-controles');
@@ -1575,28 +2431,26 @@ function renderGrafico() {
   // ── MODO ANUAL ────────────────────────────────────────────────────
   if (grafModoAtivo === 'anual') {
     // Controles: seletor de ano
-    const anoBase = 2026; const anoMax = new Date().getFullYear() + 2;
     let anosOpts = '';
-    for (let a = anoBase; a <= anoMax; a++)
+    for (let a = ANO_BASE; a <= ANO_MAX; a++)
       anosOpts += `<button class="graf-ctrl-btn${grafAnoA===a?' active':''}" onclick="grafAnoA=${a};renderGrafico()">${a}</button>`;
     ctrl.innerHTML = `<span style="font-size:12px;color:var(--fg3)">Ano:</span>${anosOpts}`;
 
-    const dados = MESES.map(m => ({ mes: m, ...getDadosPeriodo(m, grafAnoA) }));
-    const meta = appCfg.metaSaidas || 0;
+    const dados = MESES.map(m => ({ mes: m, ...getDadosPeriodo(m, grafAnoA), meta: getMetaPeriodo(m, grafAnoA) }));
+    const temMeta = dados.some(d => d.meta > 0);
 
     legDiv.innerHTML = `
       <span style="font-weight:600;color:var(--fg1);font-size:13px">Comparativo ${grafAnoA}</span>
       <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:${cGreen};border-radius:2px;display:inline-block"></span>Entradas</span>
       <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:${cRed};border-radius:2px;display:inline-block"></span>Saídas</span>
       <span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:2px;background:${cAccent};display:inline-block;border-radius:2px"></span>Saldo</span>
-      ${meta > 0 ? `<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:2px;background:${cOrange};display:inline-block;border-radius:2px;border-top:2px dashed ${cOrange}"></span>Meta R$ ${(meta/1000).toFixed(0)}k</span>` : ''}`;
+      ${temMeta ? `<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:2px;background:${cOrange};display:inline-block;border-radius:2px;border-top:2px dashed ${cOrange}"></span>Meta/mês</span>` : ''}`;
 
-    desenharGraficoAnual(canvas, dados, meta, { cGreen, cRed, cAccent, cOrange, cFg3, cBorder });
+    desenharGraficoAnual(canvas, dados, 0, { cGreen, cRed, cAccent, cOrange, cFg3, cBorder });
 
   // ── MODO MÊS VS MÊS ──────────────────────────────────────────────
   } else if (grafModoAtivo === 'mes-mes') {
-    const anoBase = 2026; const anoMax = new Date().getFullYear() + 2;
-    const anos = []; for (let a = anoBase; a <= anoMax; a++) anos.push(a);
+    const anos = []; for (let a = ANO_BASE; a <= ANO_MAX; a++) anos.push(a);
 
     ctrl.innerHTML = `
       <span style="font-size:12px;color:var(--fg3)">Mês A:</span>
@@ -1628,8 +2482,7 @@ function renderGrafico() {
 
   // ── MODO ANO VS ANO ───────────────────────────────────────────────
   } else if (grafModoAtivo === 'ano-ano') {
-    const anoBase = 2026; const anoMax = new Date().getFullYear() + 2;
-    const anos = []; for (let a = anoBase; a <= anoMax; a++) anos.push(a);
+    const anos = []; for (let a = ANO_BASE; a <= ANO_MAX; a++) anos.push(a);
 
     ctrl.innerHTML = `
       <span style="font-size:12px;color:var(--fg3)">Ano A:</span>
@@ -1653,221 +2506,373 @@ function renderGrafico() {
   }
 }
 
-// ── Desenha gráfico Anual (barras + linha saldo + linha meta) ─────
-function desenharGraficoAnual(canvas, dados, meta, c) {
+// ── TOOLTIP HTML flutuante (compartilhado) ────────────────────────
+function getGrafTooltip() {
+  let t = document.getElementById('graf-tooltip-html');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'graf-tooltip-html';
+    t.style.cssText = 'position:fixed;pointer-events:none;z-index:9999;display:none;background:rgba(18,18,28,0.97);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 14px;font-size:12px;color:#fff;line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,0.45);backdrop-filter:blur(8px);min-width:160px';
+    document.body.appendChild(t);
+  }
+  return t;
+}
+function showGrafTooltip(e, html) {
+  const t = getGrafTooltip();
+  t.innerHTML = html;
+  t.style.display = 'block';
+  const x = e.clientX + 14, y = e.clientY - 10;
+  const tw = t.offsetWidth, th = t.offsetHeight;
+  t.style.left = (x + tw > window.innerWidth ? x - tw - 28 : x) + 'px';
+  t.style.top  = (y + th > window.innerHeight ? y - th : y) + 'px';
+}
+function hideGrafTooltip() { getGrafTooltip().style.display = 'none'; }
+
+// ── Helper: barra com gradiente e cantos arredondados ─────────────
+function drawBar(ctx, x, y, w, h, colorTop, colorBot, radius) {
+  if (h <= 0) return;
+  const r = Math.min(radius, w/2, h);
+  const grad = ctx.createLinearGradient(0, y, 0, y + h);
+  grad.addColorStop(0, colorTop);
+  grad.addColorStop(1, colorBot);
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(x, y, w, h, [r, r, 0, 0]);
+  } else {
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x, y + h);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+  ctx.fill();
+}
+
+// ── Desenha gráfico Anual premium ─────────────────────────────────
+function desenharGraficoAnual(canvas, dados, _metaIgnored, c) {
   const dpr = window.devicePixelRatio || 1;
-  const W = canvas.parentElement.clientWidth - 32;
-  const H = 220;
+  const W = canvas.parentElement.clientWidth - 24;
+  const H = 240;
   canvas.width = W * dpr; canvas.height = H * dpr;
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  const ml = 56, mr = 16, mt = 12, mb = 28;
+  const ml = 52, mr = 12, mt = 16, mb = 30;
   const cW = W - ml - mr, cH = H - mt - mb;
 
-  const vals = dados.flatMap(d => [d.ent, d.sai, Math.abs(d.saldo)]).concat(meta > 0 ? [meta] : []);
-  const maxVal = vals.length ? Math.max(...vals) * 1.18 : 1;
+  const vals = dados.flatMap(d => [d.ent, d.sai, Math.abs(d.saldo), d.meta||0]);
+  const maxVal = Math.max(...vals, 1) * 1.15;
   const minSaldo = Math.min(...dados.map(d => d.saldo), 0);
-  const minVal = minSaldo < 0 ? minSaldo * 1.15 : 0;
+  const minVal = minSaldo < 0 ? minSaldo * 1.2 : 0;
   const range = maxVal - minVal || 1;
   function yP(v) { return mt + cH - ((v - minVal) / range) * cH; }
 
   ctx.clearRect(0, 0, W, H);
 
-  // Grade
-  ctx.strokeStyle = c.cBorder; ctx.lineWidth = 0.5; ctx.setLineDash([3,4]);
+  // Fundo do gráfico levemente diferenciado
+  ctx.fillStyle = 'rgba(255,255,255,0.02)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(ml, mt, cW, cH, 6); else ctx.rect(ml, mt, cW, cH);
+  ctx.fill();
+
+  // Grade suave
+  ctx.setLineDash([2, 6]);
   for (let i = 0; i <= 4; i++) {
     const v = minVal + (range / 4) * i;
     const y = yP(v);
-    ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(ml+cW, y); ctx.stroke();
-    ctx.fillStyle = c.cFg3; ctx.font = '9px system-ui'; ctx.textAlign = 'right';
-    ctx.fillText(Math.abs(v) >= 1000 ? (v/1000).toFixed(0)+'k' : v.toFixed(0), ml-4, y+3);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(ml + cW, y); ctx.stroke();
+    const label = Math.abs(v) >= 1000 ? (v >= 0 ? '' : '-') + (Math.abs(v)/1000).toFixed(0) + 'k' : v.toFixed(0);
+    ctx.fillStyle = c.cFg3; ctx.font = '10px system-ui'; ctx.textAlign = 'right';
+    ctx.fillText(label, ml - 6, y + 3.5);
   }
   ctx.setLineDash([]);
 
-  // Linha zero
+  // Linha zero destacada
   if (minVal < 0) {
-    ctx.strokeStyle = c.cFg3; ctx.lineWidth = 0.8;
-    ctx.beginPath(); ctx.moveTo(ml, yP(0)); ctx.lineTo(ml+cW, yP(0)); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(ml, yP(0)); ctx.lineTo(ml + cW, yP(0)); ctx.stroke();
   }
 
-  const slotW = cW / 12, barW = (slotW - 6) / 2, y0 = yP(0);
+  const slotW = cW / 12;
+  const barW = Math.max((slotW - 10) / 2, 4);
+  const y0 = yP(0);
 
+  // Barras com gradiente
   dados.forEach((d, i) => {
     const xC = ml + slotW * i + slotW / 2;
-    // Entrada
+    // Entrada — verde
     if (d.ent > 0) {
-      const yT = yP(d.ent), bh = Math.max(y0 - yT, 1);
-      ctx.fillStyle = c.cGreen + 'bb';
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(xC - barW - 1, yT, barW, bh, [2,2,0,0]) : ctx.rect(xC - barW - 1, yT, barW, bh);
-      ctx.fill();
+      const yT = yP(d.ent), bh = Math.max(y0 - yT, 2);
+      drawBar(ctx, xC - barW - 1.5, yT, barW, bh, '#4ade80', '#16a34a88', 4);
     }
-    // Saída
+    // Saída — vermelho
     if (d.sai > 0) {
-      const yT = yP(d.sai), bh = Math.max(y0 - yT, 1);
-      ctx.fillStyle = c.cRed + 'bb';
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(xC + 1, yT, barW, bh, [2,2,0,0]) : ctx.rect(xC + 1, yT, barW, bh);
-      ctx.fill();
+      const yT = yP(d.sai), bh = Math.max(y0 - yT, 2);
+      drawBar(ctx, xC + 1.5, yT, barW, bh, '#f87171', '#dc262688', 4);
     }
     // Label mês
-    ctx.fillStyle = c.cFg3; ctx.font = '9px system-ui'; ctx.textAlign = 'center';
-    ctx.fillText(d.mes.slice(0,3), xC, H - mb + 12);
+    ctx.fillStyle = c.cFg3; ctx.font = '10px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText(d.mes.slice(0, 3), xC, H - mb + 14);
   });
 
-  // Linha saldo
-  ctx.strokeStyle = c.cAccent; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.setLineDash([]);
+  // Área sob a linha de saldo
+  const saldoPath = new Path2D();
+  dados.forEach((d, i) => {
+    const x = ml + (i + 0.5) * slotW, y = yP(d.saldo);
+    i === 0 ? saldoPath.moveTo(x, y) : saldoPath.lineTo(x, y);
+  });
+  // Fecha a área até a linha zero
+  const lastX = ml + 11.5 * slotW, firstX = ml + 0.5 * slotW;
+  saldoPath.lineTo(lastX, yP(0)); saldoPath.lineTo(firstX, yP(0)); saldoPath.closePath();
+  const areaGrad = ctx.createLinearGradient(0, mt, 0, yP(0));
+  areaGrad.addColorStop(0, 'rgba(99,179,237,0.18)');
+  areaGrad.addColorStop(1, 'rgba(99,179,237,0)');
+  ctx.fillStyle = areaGrad;
+  ctx.fill(saldoPath);
+
+  // Linha de saldo suavizada
+  ctx.strokeStyle = '#63b3ed'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+  ctx.setLineDash([]);
   ctx.beginPath();
   dados.forEach((d, i) => {
     const x = ml + (i + 0.5) * slotW, y = yP(d.saldo);
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   });
   ctx.stroke();
-  // Pontos saldo
+
+  // Pontos de saldo
   dados.forEach((d, i) => {
     const x = ml + (i + 0.5) * slotW, y = yP(d.saldo);
-    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI*2);
-    ctx.fillStyle = d.saldo >= 0 ? c.cGreen : c.cRed;
-    ctx.fill(); ctx.strokeStyle = c.cAccent; ctx.lineWidth = 1.5; ctx.stroke();
+    // Glow
+    ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = d.saldo >= 0 ? 'rgba(74,222,128,0.18)' : 'rgba(248,113,113,0.18)';
+    ctx.fill();
+    // Ponto
+    ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = d.saldo >= 0 ? '#4ade80' : '#f87171';
+    ctx.fill();
+    ctx.strokeStyle = '#63b3ed'; ctx.lineWidth = 1.5; ctx.stroke();
   });
 
-  // Linha meta
-  if (meta > 0) {
-    const yM = yP(meta);
-    ctx.strokeStyle = c.cOrange; ctx.lineWidth = 1.5; ctx.setLineDash([6,4]);
-    ctx.beginPath(); ctx.moveTo(ml, yM); ctx.lineTo(ml+cW, yM); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = c.cOrange; ctx.font = 'bold 9px system-ui'; ctx.textAlign = 'left';
-    ctx.fillText('META', ml+3, yM - 4);
-  }
+  // Meta por mês (segmentada, laranja brilhante)
+  dados.forEach((d, i) => {
+    if (d.meta > 0) {
+      const xL = ml + slotW * i + 2, xR = xL + slotW - 4;
+      const yM = yP(d.meta);
+      ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(xL, yM); ctx.lineTo(xR, yM); ctx.stroke();
+    }
+  });
+  ctx.setLineDash([]);
 
-  // Tooltip
+  // Tooltip HTML
+  canvas.title = '';
+  canvas.onmouseleave = hideGrafTooltip;
   canvas.onmousemove = function(e) {
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (W / rect.width);
     const idx = Math.floor((x - ml) / slotW);
     if (idx >= 0 && idx < 12) {
-      canvas.title = `${dados[idx].mes}: Ent ${brl(dados[idx].ent)} | Saí ${brl(dados[idx].sai)} | Saldo ${brl(dados[idx].saldo)}`;
-    } else canvas.title = '';
+      const d = dados[idx];
+      const saldoCor = d.saldo >= 0 ? '#4ade80' : '#f87171';
+      const metaRow = d.meta > 0
+        ? `<div style="color:#fb923c">🎯 Meta: <b>${brl(d.meta)}</b>${d.sai > d.meta ? ' <span style="color:#f87171">▲acima</span>' : ' <span style="color:#4ade80">✓ok</span>'}</div>`
+        : '';
+      showGrafTooltip(e,
+        `<div style="font-weight:700;margin-bottom:6px;color:#e2e8f0">${d.mes}</div>
+         <div style="color:#4ade80">↑ Entradas: <b>${brl(d.ent)}</b></div>
+         <div style="color:#f87171">↓ Saídas: <b>${brl(d.sai)}</b></div>
+         <div style="color:${saldoCor};border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;padding-top:5px">Saldo: <b>${d.saldo >= 0 ? '+' : ''}${brl(d.saldo)}</b></div>
+         ${metaRow}`
+      );
+      canvas.style.cursor = 'crosshair';
+    } else { hideGrafTooltip(); canvas.style.cursor = 'default'; }
   };
-  canvas.onclick = null; canvas.style.cursor = 'default';
+  canvas.onclick = null;
 }
 
-// ── Desenha gráfico Mês vs Mês (barras agrupadas lado a lado) ────
+// ── Desenha gráfico Mês vs Mês premium ───────────────────────────
 function desenharGraficoComparativo(canvas, dados, labels, cores, c) {
   const dpr = window.devicePixelRatio || 1;
-  const W = canvas.parentElement.clientWidth - 32;
-  const H = 220;
+  const W = canvas.parentElement.clientWidth - 24;
+  const H = 240;
   canvas.width = W * dpr; canvas.height = H * dpr;
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, W, H);
 
-  const cats = ['Entradas','Saídas','Saldo'];
+  const cats = ['Entradas', 'Saídas', 'Saldo'];
   const vals = dados.flatMap(d => [d.ent, d.sai, Math.abs(d.saldo)]);
-  const maxV = vals.length ? Math.max(...vals) * 1.2 : 1;
+  const maxV = Math.max(...vals, 1) * 1.2;
   const minS = Math.min(...dados.map(d => d.saldo), 0);
   const minV = minS < 0 ? minS * 1.2 : 0;
   const range = maxV - minV || 1;
 
-  const ml = 56, mr = 16, mt = 12, mb = 50;
+  const ml = 52, mr = 12, mt = 16, mb = 52;
   const cW = W - ml - mr, cH = H - mt - mb;
   function yP(v) { return mt + cH - ((v - minV) / range) * cH; }
+  const y0 = yP(0);
+
+  // Fundo
+  ctx.fillStyle = 'rgba(255,255,255,0.02)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(ml, mt, cW, cH, 6); else ctx.rect(ml, mt, cW, cH);
+  ctx.fill();
 
   // Grade
-  ctx.strokeStyle = c.cBorder; ctx.lineWidth = 0.5; ctx.setLineDash([3,4]);
+  ctx.setLineDash([2, 6]);
   for (let i = 0; i <= 4; i++) {
-    const v = minV + (range/4)*i, y = yP(v);
-    ctx.beginPath(); ctx.moveTo(ml,y); ctx.lineTo(ml+cW,y); ctx.stroke();
-    ctx.fillStyle = c.cFg3; ctx.font = '9px system-ui'; ctx.textAlign = 'right';
-    ctx.fillText(Math.abs(v)>=1000?(v/1000).toFixed(0)+'k':v.toFixed(0), ml-4, y+3);
+    const v = minV + (range / 4) * i, y = yP(v);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(ml + cW, y); ctx.stroke();
+    const label = Math.abs(v) >= 1000 ? (v < 0 ? '-' : '') + (Math.abs(v)/1000).toFixed(0) + 'k' : v.toFixed(0);
+    ctx.fillStyle = c.cFg3; ctx.font = '10px system-ui'; ctx.textAlign = 'right';
+    ctx.fillText(label, ml - 6, y + 3.5);
   }
   ctx.setLineDash([]);
 
   const n = dados.length, slotW = cW / cats.length;
-  const barW = (slotW - 8) / n, y0 = yP(0);
+  const barW = Math.max((slotW - 16) / n, 8);
+
+  // Paletas premium por série
+  const paletas = [
+    { top: '#60a5fa', bot: '#1d4ed888' }, // azul A
+    { top: '#f472b6', bot: '#be185d88' }, // rosa B
+  ];
 
   cats.forEach((cat, ci) => {
     const xC = ml + slotW * ci + slotW / 2;
+    const totalBarsW = n * barW + (n - 1) * 4;
     dados.forEach((d, di) => {
-      const val = cat==='Entradas'?d.ent : cat==='Saídas'?d.sai : d.saldo;
-      const x = xC - (slotW/2 - 4) + di * (barW + 2);
-      const yT = yP(Math.max(val, 0));
-      const yB = yP(Math.min(val, 0));
-      const bh = Math.max(Math.abs(yT - (val<0?yT:y0)), 1);
-      let cor = cores[di];
-      if (cat==='Entradas') cor = di===0 ? c.cGreen : c.cGreen+'99';
-      if (cat==='Saídas')   cor = di===0 ? c.cRed   : c.cRed+'99';
-      if (cat==='Saldo')    cor = val>=0 ? cores[di] : cores[di]+'88';
-      ctx.fillStyle = cor;
-      ctx.beginPath();
-      const yDraw = val >= 0 ? yT : y0;
-      ctx.roundRect ? ctx.roundRect(x, yDraw, barW, bh, [2,2,0,0]) : ctx.rect(x, yDraw, barW, bh);
-      ctx.fill();
+      const val = cat === 'Entradas' ? d.ent : cat === 'Saídas' ? d.sai : d.saldo;
+      const x = xC - totalBarsW / 2 + di * (barW + 4);
+      const bh = Math.max(Math.abs(y0 - yP(Math.abs(val))), 2);
+      const yDraw = val >= 0 ? yP(Math.abs(val)) : y0;
+      const pal = paletas[di] || paletas[0];
+      // Cores semânticas: entradas verde, saídas vermelho, saldo dinâmico
+      let top = pal.top, bot = pal.bot;
+      if (cat === 'Entradas') { top = '#4ade80'; bot = '#16a34a88'; }
+      else if (cat === 'Saídas') { top = '#f87171'; bot = '#dc262688'; }
+      else { top = val >= 0 ? '#4ade80' : '#f87171'; bot = val >= 0 ? '#16a34a55' : '#dc262655'; }
+      // Opacidade menor para segundo período
+      if (di === 1) { top = top + 'cc'; bot = bot.replace('88','55').replace('cc','88'); }
+      drawBar(ctx, x, yDraw, barW, bh, top, bot, 4);
+
+      // Valor em cima
+      const labelVal = Math.abs(val) >= 1000 ? (val < 0 ? '-' : '') + (Math.abs(val)/1000).toFixed(0) + 'k' : String(Math.round(val));
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = 'bold 9px system-ui'; ctx.textAlign = 'center';
+      ctx.fillText(labelVal, x + barW / 2, yDraw - 5);
     });
-    // Label categoria
-    ctx.fillStyle = c.cFg3; ctx.font = '10px system-ui'; ctx.textAlign = 'center';
-    ctx.fillText(cat, xC, H - mb + 14);
-    // Valores em cima das barras
-    dados.forEach((d, di) => {
-      const val = cat==='Entradas'?d.ent : cat==='Saídas'?d.sai : d.saldo;
-      const x = xC - (slotW/2 - 4) + di * (barW + 2) + barW/2;
-      const y = yP(Math.max(val, 0)) - 4;
-      ctx.fillStyle = c.cFg3; ctx.font = '8px system-ui'; ctx.textAlign = 'center';
-      ctx.fillText(Math.abs(val)>=1000?(val/1000).toFixed(0)+'k':val.toFixed(0), x, y);
-    });
+
+    // Label categoria com fundo pill
+    const legY = H - mb + 14;
+    ctx.fillStyle = c.cFg3; ctx.font = '11px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText(cat, xC, legY);
   });
 
-  // Legenda com cores
-  const legY = H - mb + 30;
+  // Legenda séries embaixo
   dados.forEach((d, di) => {
-    const lx = W/2 - (dados.length*90)/2 + di*90;
-    ctx.fillStyle = cores[di]; ctx.fillRect(lx, legY, 12, 10);
-    ctx.fillStyle = c.cFg3; ctx.font = '9px system-ui'; ctx.textAlign = 'left';
-    ctx.fillText(labels[di], lx + 16, legY + 9);
+    const dotColor = ['#60a5fa', '#f472b6'][di] || '#aaa';
+    const lx = W / 2 - (n * 100) / 2 + di * 100;
+    const legY = H - mb + 32;
+    ctx.beginPath(); ctx.arc(lx + 6, legY - 3, 5, 0, Math.PI * 2);
+    ctx.fillStyle = dotColor; ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = '10px system-ui'; ctx.textAlign = 'left';
+    ctx.fillText(labels[di], lx + 14, legY);
   });
-  canvas.onmousemove = null; canvas.onclick = null; canvas.style.cursor = 'default';
+
+  canvas.title = '';
+  canvas.onmouseleave = hideGrafTooltip;
+  canvas.onmousemove = function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (W / rect.width);
+    const ci = Math.floor((x - ml) / slotW);
+    if (ci >= 0 && ci < cats.length) {
+      const cat = cats[ci];
+      const rows = dados.map((d, di) => {
+        const val = cat === 'Entradas' ? d.ent : cat === 'Saídas' ? d.sai : d.saldo;
+        const cor = ['#60a5fa','#f472b6'][di];
+        return `<div style="color:${cor}">${labels[di]}: <b>${brl(val)}</b></div>`;
+      }).join('');
+      showGrafTooltip(e, `<div style="font-weight:700;margin-bottom:6px;color:#e2e8f0">${cat}</div>${rows}`);
+      canvas.style.cursor = 'crosshair';
+    } else { hideGrafTooltip(); canvas.style.cursor = 'default'; }
+  };
+  canvas.onclick = null;
 }
 
-// ── Desenha gráfico Ano vs Ano (duas linhas de saldo) ─────────────
+// ── Desenha gráfico Ano vs Ano premium (duas áreas + linhas) ──────
 function desenharGraficoAnoAno(canvas, dadosA, dadosB, anoA, anoB, c) {
   const dpr = window.devicePixelRatio || 1;
-  const W = canvas.parentElement.clientWidth - 32;
-  const H = 220;
+  const W = canvas.parentElement.clientWidth - 24;
+  const H = 240;
   canvas.width = W * dpr; canvas.height = H * dpr;
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, W, H);
 
-  const ml = 56, mr = 16, mt = 12, mb = 28;
+  const ml = 52, mr = 12, mt = 16, mb = 30;
   const cW = W - ml - mr, cH = H - mt - mb;
 
-  const allSaldos = [...dadosA.map(d=>d.saldo), ...dadosB.map(d=>d.saldo)];
+  const allSaldos = [...dadosA.map(d => d.saldo), ...dadosB.map(d => d.saldo)];
   const maxV = Math.max(...allSaldos.map(Math.abs), 1) * 1.2;
   const minV = Math.min(...allSaldos, 0) < 0 ? Math.min(...allSaldos) * 1.2 : 0;
   const range = maxV - minV || 1;
   function yP(v) { return mt + cH - ((v - minV) / range) * cH; }
 
+  // Fundo
+  ctx.fillStyle = 'rgba(255,255,255,0.02)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(ml, mt, cW, cH, 6); else ctx.rect(ml, mt, cW, cH);
+  ctx.fill();
+
   // Grade
-  ctx.strokeStyle = c.cBorder; ctx.lineWidth = 0.5; ctx.setLineDash([3,4]);
+  ctx.setLineDash([2, 6]);
   for (let i = 0; i <= 4; i++) {
-    const v = minV + (range/4)*i, y = yP(v);
-    ctx.beginPath(); ctx.moveTo(ml,y); ctx.lineTo(ml+cW,y); ctx.stroke();
-    ctx.fillStyle = c.cFg3; ctx.font = '9px system-ui'; ctx.textAlign = 'right';
-    ctx.fillText(Math.abs(v)>=1000?(v/1000).toFixed(0)+'k':v.toFixed(0), ml-4, y+3);
+    const v = minV + (range / 4) * i, y = yP(v);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(ml + cW, y); ctx.stroke();
+    const label = Math.abs(v) >= 1000 ? (v < 0 ? '-' : '') + (Math.abs(v)/1000).toFixed(0) + 'k' : v.toFixed(0);
+    ctx.fillStyle = c.cFg3; ctx.font = '10px system-ui'; ctx.textAlign = 'right';
+    ctx.fillText(label, ml - 6, y + 3.5);
   }
   ctx.setLineDash([]);
+
   if (minV < 0) {
-    ctx.strokeStyle = c.cFg3; ctx.lineWidth = 0.7;
-    ctx.beginPath(); ctx.moveTo(ml, yP(0)); ctx.lineTo(ml+cW, yP(0)); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(ml, yP(0)); ctx.lineTo(ml + cW, yP(0)); ctx.stroke();
   }
 
   const slotW = cW / 12;
-  [[dadosA, c.cAccent, anoA], [dadosB, c.cOrange, anoB]].forEach(([dados, cor, ano]) => {
+  const series = [
+    { dados: dadosA, cor: '#60a5fa', areaCor: 'rgba(96,165,250,0.12)', label: String(anoA) },
+    { dados: dadosB, cor: '#f472b6', areaCor: 'rgba(244,114,182,0.12)', label: String(anoB) },
+  ];
+
+  // Área preenchida primeiro (abaixo das linhas)
+  series.forEach(({ dados, areaCor }) => {
+    ctx.beginPath();
+    dados.forEach((d, i) => {
+      const x = ml + (i + 0.5) * slotW, y = yP(d.saldo);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.lineTo(ml + 11.5 * slotW, yP(0));
+    ctx.lineTo(ml + 0.5 * slotW, yP(0));
+    ctx.closePath();
+    ctx.fillStyle = areaCor;
+    ctx.fill();
+  });
+
+  // Linhas e pontos
+  series.forEach(({ dados, cor }) => {
     ctx.strokeStyle = cor; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.setLineDash([]);
     ctx.beginPath();
     dados.forEach((d, i) => {
@@ -1877,28 +2882,44 @@ function desenharGraficoAnoAno(canvas, dadosA, dadosB, anoA, anoB, c) {
     ctx.stroke();
     dados.forEach((d, i) => {
       const x = ml + (i + 0.5) * slotW, y = yP(d.saldo);
-      ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI*2);
-      ctx.fillStyle = d.saldo >= 0 ? c.cGreen : c.cRed;
-      ctx.fill(); ctx.strokeStyle = cor; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = d.saldo >= 0 ? 'rgba(74,222,128,0.2)' : 'rgba(248,113,113,0.2)';
+      ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = d.saldo >= 0 ? '#4ade80' : '#f87171';
+      ctx.fill();
+      ctx.strokeStyle = cor; ctx.lineWidth = 1.5; ctx.stroke();
     });
   });
 
   // Labels mês
   MESES.forEach((m, i) => {
-    ctx.fillStyle = c.cFg3; ctx.font = '9px system-ui'; ctx.textAlign = 'center';
-    ctx.fillText(m.slice(0,3), ml + (i+0.5)*slotW, H - mb + 12);
+    ctx.fillStyle = c.cFg3; ctx.font = '10px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText(m.slice(0, 3), ml + (i + 0.5) * slotW, H - mb + 14);
   });
 
   // Tooltip
+  canvas.title = '';
+  canvas.onmouseleave = hideGrafTooltip;
   canvas.onmousemove = function(e) {
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (W / rect.width);
     const idx = Math.floor((x - ml) / slotW);
     if (idx >= 0 && idx < 12) {
-      canvas.title = `${MESES[idx]} — ${anoA}: ${brl(dadosA[idx].saldo)} | ${anoB}: ${brl(dadosB[idx].saldo)}`;
-    } else canvas.title = '';
+      const sA = dadosA[idx].saldo, sB = dadosB[idx].saldo;
+      const diff = sA - sB;
+      const diffStr = (diff >= 0 ? '+' : '') + brl(diff);
+      const diffCor = diff >= 0 ? '#4ade80' : '#f87171';
+      showGrafTooltip(e,
+        `<div style="font-weight:700;margin-bottom:6px;color:#e2e8f0">${MESES[idx]}</div>
+         <div style="color:#60a5fa">${anoA}: <b>${brl(sA)}</b></div>
+         <div style="color:#f472b6">${anoB}: <b>${brl(sB)}</b></div>
+         <div style="color:${diffCor};border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;padding-top:5px">Δ ${diffStr}</div>`
+      );
+      canvas.style.cursor = 'crosshair';
+    } else { hideGrafTooltip(); canvas.style.cursor = 'default'; }
   };
-  canvas.onclick = null; canvas.style.cursor = 'default';
+  canvas.onclick = null;
 }
 
 // ── Gráfico Mês a Mês ────────────────────────────────────────────
@@ -2083,10 +3104,8 @@ function renderMensalChart() {
 function renderMensal() {
   // ── Seletor de ano ───────────────────────────────────────────────
   const seletor = document.getElementById('mensal-ano-seletor');
-  const anoBase = 2026;
-  const anoMax = new Date().getFullYear() + 2;
   const anos = [];
-  for (let a = anoBase; a <= anoMax; a++) anos.push(a);
+  for (let a = ANO_BASE; a <= ANO_MAX; a++) anos.push(a);
   seletor.innerHTML = anos.map(a => {
     const ativo = a === anoSelecionado;
     return `<button onclick="selecionarAnoMensal(${a})" style="
@@ -2145,7 +3164,7 @@ function selecionarAnoMensal(ano) {
 }
 
 function irParaMesAno(mes, ano) {
-  anoSelecionado = ano;
+  anoSelecionado = (ano >= ANO_BASE && ano <= ANO_MAX) ? ano : ANO_BASE;
   mesSelecionado = mes;
   document.querySelectorAll('.nav-item')[2].click();
   setTimeout(() => renderLancamentos(), 80);
@@ -2157,8 +3176,10 @@ function irParaMes(mes) {
 }
 
 // ── Render Lançamentos ────────────────────────────────────────────
+// Lançamentos: todos os 12 meses, anos 2026–2030
+const MESES_LANCAMENTOS = MESES; // todos os meses
 let mesSelecionado = MESES[new Date().getMonth()];
-let anoSelecionado = new Date().getFullYear();
+let anoSelecionado = 2026;
 
 function periodoKey() { return anoSelecionado + '/' + mesSelecionado; }
 
@@ -2169,163 +3190,228 @@ function cfgPeriodo() {
   return appCfg.periodos[periodoKey()];
 }
 
-// ── Registry de handlers para edição inline ───────────────────────
-// Evita funções inline complexas em atributos HTML
-const _handlers = {};
-let _hid = 0;
-function regH(fn) { const id = 'h'+(++_hid); _handlers[id] = fn; return id; }
-function callH(id, val) { if (_handlers[id]) _handlers[id](val); }
+const CATEGORIAS = ['Moradia','Salário','Alimentação','Saúde','Educação','Lazer','Telefonia','Transporte','Impostos','PJ','Investimento','Dívida','Outros'];
 
-// Torna uma célula <td> editável
-function tdEdit(conteudo, onSaveFn, opts={}) {
-  const tipo = opts.tipo || 'text';
-  const cls = opts.classe || '';
-  const sty = opts.style || '';
-  const hid = regH(onSaveFn);
-  if (tipo === 'select') {
-    const ops = (opts.opcoes||[]).map(o=>`<option value="${o.v}"${o.v===conteudo?' selected':''}>${o.l}</option>`).join('');
-    return `<td style="${sty}"><select class="${cls}" data-hid="${hid}" style="background:var(--surface2);color:var(--fg1);border:1px solid var(--accent);border-radius:4px;padding:2px 4px;font-size:12px;width:100%" onchange="callH(this.dataset.hid,this.value)">${ops}</select></td>`;
-  }
-  const inputType = tipo==='number'?'number':'text';
-  const step = tipo==='number'?' step="0.01"':'';
-  const val = String(conteudo).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-  return `<td style="${sty}"><input type="${inputType}"${step} value="${val}" data-hid="${hid}" class="${cls}" style="background:transparent;color:var(--fg1);border:none;border-bottom:1px solid var(--accent);width:100%;font-size:12px;font-family:inherit;padding:1px 2px;outline:none" onkeydown="if(event.key==='Enter'){event.preventDefault();callH(this.dataset.hid,this.value)}" onblur="callH(this.dataset.hid,this.value)"></td>`;
+// Ícones por categoria
+const CAT_ICON = {
+  'Moradia':'🏠','Salário':'💼','Alimentação':'🛒','Saúde':'❤️','Educação':'📚',
+  'Lazer':'🎬','Telefonia':'📱','Transporte':'🚗','Impostos':'🏛','PJ':'💼',
+  'Investimento':'📈','Dívida':'💳','Outros':'📌'
+};
+
+function lancChip(tipo) {
+  if (tipo==='entrada') return '<span class="lanc-chip chip-entrada">Entrada</span>';
+  if (tipo==='divida')  return '<span class="lanc-chip chip-divida">Dívida</span>';
+  return '<span class="lanc-chip chip-saida">Saída</span>';
 }
 
-const CATEGORIAS = ['Moradia','Salário','Alimentação','Saúde','Educação','Lazer','Telefonia','Transporte','Impostos','PJ','Investimento','Dívida','Outros'];
-const TIPOS_OPCOES = [{v:'saida',l:'Saída'},{v:'entrada',l:'Entrada'},{v:'divida',l:'Dívida'}];
-const CAT_OPCOES = CATEGORIAS.map(c=>({v:c,l:c}));
+function lancItemHtml(l, opts={}) {
+  const tipo = opts.tipo || l.tipo;
+  const val  = opts.val  !== undefined ? opts.val : l.val;
+  const desc = opts.desc || l.desc;
+  const cat  = opts.cat  || l.cat || 'Outros';
+  const icon = CAT_ICON[cat] || '📌';
+  const valColor = tipo==='entrada' ? 'var(--green)' : tipo==='divida' ? 'var(--orange)' : 'var(--red)';
+  const sinal = tipo==='entrada' ? '+' : '−';
+  const isManual = !!opts.isManual;
+  const actions = opts.actions || '';
+  return `<div class="lanc-item${isManual?' is-manual':' is-base'}">
+    <div class="lanc-icon">${icon}</div>
+    <div class="lanc-info">
+      <div class="lanc-desc">${desc}</div>
+      <div class="lanc-meta">${lancChip(tipo)}<span>${cat}</span>${opts.badge||''}</div>
+    </div>
+    <div class="lanc-val" style="color:${valColor}">${sinal} ${brl(val)}</div>
+    ${actions}
+  </div>`;
+}
 
 function renderLancamentos() {
   // ── Tabs de mês ──────────────────────────────────────────────────
-  const tabsCont = document.getElementById('lanc-tabs');
-  tabsCont.innerHTML = MESES.map(m =>
+  document.getElementById('lanc-tabs').innerHTML = MESES_LANCAMENTOS.map(m =>
     `<button class="mes-tab${m===mesSelecionado?' active':''}" onclick="selecionarMes('${m}')">${m}</button>`
   ).join('');
 
-  // ── Ramificação de anos (aparece abaixo do mês ativo) ─────────────
-  const anosEl = document.getElementById('lanc-anos');
-  const anoBase = 2026;
-  const anoMax = new Date().getFullYear() + 2;
-  const anos = [];
-  for (let a = anoBase; a <= anoMax; a++) anos.push(a);
-  anosEl.innerHTML = `<span style="font-size:11px;color:var(--fg3);align-self:center;margin-right:4px">↳ ${mesSelecionado}:</span>`
-    + anos.map(a =>
+  // ── Seletor de anos ──────────────────────────────────────────────
+  const anosDisp = []; for (let a = ANO_BASE; a <= ANO_MAX; a++) anosDisp.push(a);
+  document.getElementById('lanc-anos').innerHTML =
+    `<span style="font-size:11px;color:var(--fg3);align-self:center;margin-right:4px">↳ ${mesSelecionado}:</span>`
+    + anosDisp.map(a =>
       `<button onclick="selecionarAno(${a})" style="padding:3px 10px;border-radius:6px;border:1px solid ${a===anoSelecionado?'var(--accent)':'var(--border)'};background:${a===anoSelecionado?'var(--accent)':'transparent'};color:${a===anoSelecionado?'#fff':'var(--fg2)'};font-size:12px;font-weight:${a===anoSelecionado?700:400};cursor:pointer;transition:all .15s">${a}</button>`
     ).join('');
 
-  const tbody = document.getElementById('tbody-lancamentos');
   const base = despesasEfetivas ? despesasEfetivas() : DESPESAS_BASE;
-  // filtra lançamentos manuais por mês E ano
   const extras = appData.lancamentos.filter(l => {
     const mesOk = l.mes === mesSelecionado || l.mes === 'Todos';
-    const anoOk = !l.ano || l.ano === anoSelecionado; // retrocompatível: sem ano = aceita
+    const anoOk = !l.ano || l.ano === anoSelecionado;
     return mesOk && anoOk;
   });
   const cfg = cfgPeriodo();
 
-  // ── Linhas base (fixas) ──────────────────────────────────────────
-  const linhasBase = base.map((l, renderIdx) => {
-    if (l._extra) {
-      const eIdx = (appCfg.extras||[]).findIndex(e=>e.desc===l.desc&&e.val===l.val&&e.tipo===l.tipo);
-      const ei = eIdx; // capture
-      const valClass = l.tipo==='entrada'?'entrada':l.tipo==='divida'?'divida':'saida';
-      return `<tr style="opacity:.9">
-        ${tdEdit(l.desc, v=>{ if(!appCfg.extras[ei])return; appCfg.extras[ei].desc=v.trim()||appCfg.extras[ei].desc; saveCfg(appCfg); renderLancamentos(); })}
-        ${tdEdit(l.cat, v=>{ if(!appCfg.extras[ei])return; appCfg.extras[ei].cat=v; saveCfg(appCfg); renderLancamentos(); }, {tipo:'select', opcoes:CAT_OPCOES})}
-        ${tdEdit(l.tipo, v=>{ if(!appCfg.extras[ei])return; appCfg.extras[ei].tipo=v; saveCfg(appCfg); renderLancamentos(); }, {tipo:'select', opcoes:TIPOS_OPCOES})}
-        ${tdEdit(String(l.val), v=>{ const n=parseFloat(v); if(!isNaN(n)&&n>=0){ if(n===0){removerExtraFixa(ei);}else{appCfg.extras[ei].val=n;saveCfg(appCfg);renderLancamentos();} } }, {tipo:'number', classe:'td-valor '+valClass+' text-right mono', style:'text-align:right'})}
-        <td style="text-align:right">
-          <button class="btn btn-ghost" style="padding:2px 7px;font-size:11px;color:var(--red)" onclick="removerExtraFixa(${ei})">✕</button>
-        </td>
-      </tr>`;
-    }
-
-    const idx = l._baseIdx !== undefined ? l._baseIdx : renderIdx;
-    const isOculta = (cfg.ocultas && cfg.ocultas[String(idx)]) || (appCfg.ocultas && appCfg.ocultas[String(idx)]);
-    if (isOculta) return '';
-
-    const ii = idx; // capture
-    const tipoEfetivo = (cfg.tipos&&cfg.tipos[String(ii)]) || (appCfg.tipos&&appCfg.tipos[String(ii)]) || l.tipo;
-    const catEfetiva  = (cfg.cats&&cfg.cats[String(ii)])  || (appCfg.cats&&appCfg.cats[String(ii)])  || l.cat;
-    const valClass = tipoEfetivo==='entrada'?'entrada':tipoEfetivo==='divida'?'divida':'saida';
-
-    return `<tr data-base-idx="${ii}">
-      ${tdEdit(l.desc, v=>{ if(!v.trim())return; const c=cfgPeriodo(); if(!c.descs)c.descs={}; c.descs[String(ii)]=v.trim(); saveCfg(appCfg); renderLancamentos(); })}
-      ${tdEdit(catEfetiva, v=>{ const c=cfgPeriodo(); if(!c.cats)c.cats={}; c.cats[String(ii)]=v; saveCfg(appCfg); renderLancamentos(); }, {tipo:'select', opcoes:CAT_OPCOES})}
-      ${tdEdit(tipoEfetivo, v=>{ const c=cfgPeriodo(); if(!c.tipos)c.tipos={}; c.tipos[String(ii)]=v; saveCfg(appCfg); renderLancamentos(); }, {tipo:'select', opcoes:TIPOS_OPCOES})}
-      ${tdEdit(String(l.val), v=>{ const n=parseFloat(v); if(!isNaN(n)&&n>=0){ if(n===0){ocultarBasePeriodo(ii);}else{const c=cfgPeriodo(); c.overrides[String(ii)]=n; saveCfg(appCfg); renderLancamentos();} } }, {tipo:'number', classe:'td-valor '+valClass+' text-right mono', style:'text-align:right'})}
-      <td style="text-align:right">
-        <button class="btn btn-ghost" style="padding:2px 7px;font-size:11px;color:var(--red);opacity:.7" onclick="ocultarBasePeriodo(${ii})">✕</button>
-      </td>
-    </tr>`;
-  }).join('');
-
-  // ── Linhas manuais — também editáveis ───────────────────────────
-  const linhasManuais = extras.map(l => {
-    const lid = String(l.id);
-    const valClass = l.tipo==='entrada'?'entrada':l.tipo==='divida'?'divida':'saida';
-    return `<tr>
-      ${tdEdit(l.desc, v=>{ const it=appData.lancamentos.find(x=>String(x.id)===lid); if(it&&v.trim()){it.desc=v.trim();saveData(appData);renderLancamentos();} })}
-      ${tdEdit(l.cat||'Outros', v=>{ const it=appData.lancamentos.find(x=>String(x.id)===lid); if(it){it.cat=v;saveData(appData);renderLancamentos();} }, {tipo:'select', opcoes:CAT_OPCOES})}
-      ${tdEdit(l.tipo, v=>{ const it=appData.lancamentos.find(x=>String(x.id)===lid); if(it){it.tipo=v;saveData(appData);renderLancamentos();} }, {tipo:'select', opcoes:TIPOS_OPCOES})}
-      ${tdEdit(String(l.val), v=>{ const n=parseFloat(v); const it=appData.lancamentos.find(x=>String(x.id)===lid); if(it&&!isNaN(n)&&n>=0){ if(n===0){removerManual(lid);}else{it.val=n;saveData(appData);renderLancamentos();} } }, {tipo:'number', classe:'td-valor '+valClass+' text-right mono', style:'text-align:right'})}
-      <td style="text-align:right">
-        <button class="btn btn-ghost" style="padding:2px 7px;font-size:11px;color:var(--red)" onclick="removerManual('${lid}')">✕</button>
-      </td>
-    </tr>`;
-  }).join('');
-
-  // ── Linha de total ───────────────────────────────────────────────
-  const baseVisiveis = base.filter((l,i)=>{
+  // ── Calcular totais ──────────────────────────────────────────────
+  const baseVis = base.filter((l,i)=>{
     const idx = l._baseIdx !== undefined ? l._baseIdx : i;
     return !(cfg.ocultas && cfg.ocultas[String(idx)]) && !(appCfg.ocultas && appCfg.ocultas[String(idx)]);
   });
-  const totalEnt = baseVisiveis.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0)
+  const tipoEf = l => {
+    if (l._baseIdx !== undefined) {
+      const ii = l._baseIdx;
+      return (cfg.tipos&&cfg.tipos[String(ii)]) || (appCfg.tipos&&appCfg.tipos[String(ii)]) || l.tipo;
+    }
+    return l.tipo;
+  };
+  const totalEnt = baseVis.filter(l=>tipoEf(l)==='entrada').reduce((s,l)=>s+l.val,0)
     + extras.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
-  const totalSai = baseVisiveis.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0)
+  const totalSai = baseVis.filter(l=>tipoEf(l)==='saida').reduce((s,l)=>s+l.val,0)
     + extras.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0);
-  const totalDiv = baseVisiveis.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0)
+  const totalDiv = baseVis.filter(l=>tipoEf(l)==='divida').reduce((s,l)=>s+l.val,0)
     + extras.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0);
   const saldo = totalEnt - totalSai - totalDiv;
+
+  // ── Mini KPIs ────────────────────────────────────────────────────
   const saldoCor = saldo >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('lanc-kpis').innerHTML = `
+    <div class="lanc-kpi">
+      <div class="lanc-kpi-label">Entradas</div>
+      <div class="lanc-kpi-val" style="color:var(--green)">${brl(totalEnt)}</div>
+    </div>
+    <div class="lanc-kpi">
+      <div class="lanc-kpi-label">Saídas</div>
+      <div class="lanc-kpi-val" style="color:var(--red)">${brl(totalSai)}</div>
+    </div>
+    <div class="lanc-kpi">
+      <div class="lanc-kpi-label">Dívidas</div>
+      <div class="lanc-kpi-val" style="color:var(--orange)">${brl(totalDiv)}</div>
+    </div>
+    <div class="lanc-kpi">
+      <div class="lanc-kpi-label">Saldo</div>
+      <div class="lanc-kpi-val" style="color:${saldoCor}">${saldo>=0?'+':''}${brl(saldo)}</div>
+    </div>`;
 
-  const linhaAdicionar = `<tr>
-    <td colspan="5" style="padding:6px 8px">
-      <button onclick="adicionarLinhaManual()" style="width:100%;background:rgba(79,127,255,0.08);border:1px dashed rgba(79,127,255,0.4);border-radius:6px;color:#4f7fff;font-size:12px;padding:7px;cursor:pointer;transition:background .2s" onmouseover="this.style.background='rgba(79,127,255,0.18)'" onmouseout="this.style.background='rgba(79,127,255,0.08)'">＋ Adicionar linha</button>
-    </td>
-  </tr>`;
+  // ── Montar cards ─────────────────────────────────────────────────
+  let html = '';
 
-  const linhaTotais = `<tr style="background:var(--surface2);font-weight:700">
-    <td colspan="3" style="font-size:11px;color:var(--fg3);text-transform:uppercase;letter-spacing:.4px">Saldo do mês</td>
-    <td class="text-right mono" style="color:${saldoCor};font-size:14px">${saldo>=0?'+':''} ${brl(saldo)}</td>
-    <td></td>
-  </tr>`;
+  // Fixas
+  const baseFiltrada = base.filter((l, renderIdx) => {
+    const idx = l._baseIdx !== undefined ? l._baseIdx : renderIdx;
+    const isOculta = (cfg.ocultas && cfg.ocultas[String(idx)]) || (appCfg.ocultas && appCfg.ocultas[String(idx)]);
+    return !isOculta;
+  });
 
-  tbody.innerHTML = linhasBase + linhasManuais + linhaAdicionar + linhaTotais;
+  if (baseFiltrada.length > 0) {
+    html += `<div class="lanc-group"><div class="lanc-group-label">Despesas fixas <span style="color:var(--fg3);font-weight:400;font-size:10px">${baseFiltrada.length} itens</span></div>`;
+    baseFiltrada.forEach((l, renderIdx) => {
+      const idx = l._baseIdx !== undefined ? l._baseIdx : renderIdx;
+      const tipo = tipoEf(l);
+      const cat = (cfg.cats&&cfg.cats[String(idx)]) || (appCfg.cats&&appCfg.cats[String(idx)]) || l.cat || 'Outros';
+      const desc = (cfg.descs&&cfg.descs[String(idx)]) || (appCfg.descs&&appCfg.descs[String(idx)]) || l.desc;
+      const editBtn = l._extra
+        ? `<button class="lanc-btn del" onclick="removerExtraFixa(${(appCfg.extras||[]).findIndex(e=>e.desc===l.desc&&e.val===l.val&&e.tipo===l.tipo)})" title="Remover">✕</button>`
+        : `<button class="lanc-btn" onclick="abrirEditarBase(${idx})" title="Editar valor">✏️</button>
+           <button class="lanc-btn del" onclick="ocultarBasePeriodo(${idx})" title="Ocultar neste mês">✕</button>`;
+      html += lancItemHtml(l, { tipo, cat, desc, val: l.val, actions: editBtn, badge: l._extra ? '<span style="font-size:9px;color:var(--accent)">+ extra</span>' : '' });
+    });
+    html += '</div>';
+  }
+
+  // Manuais
+  if (extras.length > 0) {
+    html += `<div class="lanc-group"><div class="lanc-group-label">Lançamentos manuais <span style="color:var(--accent);font-weight:400;font-size:10px">${extras.length} itens</span></div>`;
+    extras.forEach(l => {
+      const lid = String(l.id);
+      const editBtn = `<button class="lanc-btn" onclick="abrirModalEditarLanc('${lid}')" title="Editar">✏️</button>`;
+      html += lancItemHtml(l, { isManual: true, actions: editBtn });
+    });
+    html += '</div>';
+  }
+
+  // Vazio
+  if (baseFiltrada.length === 0 && extras.length === 0) {
+    html = `<div class="lanc-empty">
+      <div class="lanc-empty-icon">📋</div>
+      <div style="font-weight:600;margin-bottom:4px">Nenhum lançamento em ${mesSelecionado}</div>
+      <div style="font-size:12px">Adicione um lançamento pelo botão <strong>＋ Lançamento</strong> acima</div>
+    </div>`;
+  }
+
+  // Botão adicionar + saldo
+  html += `<button onclick="abrirModal()" style="width:100%;background:rgba(79,127,255,0.07);border:1.5px dashed rgba(79,127,255,0.35);border-radius:10px;color:var(--accent);font-size:13px;padding:10px;cursor:pointer;margin-top:4px;transition:background .2s" onmouseover="this.style.background='rgba(79,127,255,0.14)'" onmouseout="this.style.background='rgba(79,127,255,0.07)'">＋ Adicionar lançamento</button>`;
+
+  html += `<div class="lanc-saldo-bar" style="margin-top:12px">
+    <span style="font-size:12px;font-weight:600;color:var(--fg2)">Saldo de ${mesSelecionado} ${anoSelecionado}</span>
+    <span class="mono" style="font-size:16px;font-weight:800;color:${saldoCor}">${saldo>=0?'+':''}${brl(saldo)}</span>
+  </div>`;
+
+  document.getElementById('lanc-lista').innerHTML = html;
 }
 
-// ── Adicionar nova linha em branco na tabela ──────────────────────
-function adicionarLinhaManual() {
-  const id = Date.now();
-  const novo = { id, desc: 'Nova despesa', cat: 'Outros', tipo: 'saida', val: 0, mes: mesSelecionado, ano: anoSelecionado };
-  appData.lancamentos.push(novo);
-  if (dbRef) {
-    dbRef.collection('lancamentos').doc(String(id)).set(novo).catch(()=>{});
+// ── Modal editar lançamento manual ────────────────────────────────
+function abrirModalEditarLanc(id) {
+  const it = appData.lancamentos.find(l => String(l.id) === String(id));
+  if (!it) return;
+  document.getElementById('mel-id').value = String(id);
+  document.getElementById('mel-titulo').textContent = 'Editar lançamento';
+  document.getElementById('mel-desc').value = it.desc || '';
+  document.getElementById('mel-val').value = it.val || '';
+  // Tipo
+  const selTipo = document.getElementById('mel-tipo');
+  for (let i = 0; i < selTipo.options.length; i++) {
+    if (selTipo.options[i].value === it.tipo) { selTipo.selectedIndex = i; break; }
   }
+  // Categoria
+  const selCat = document.getElementById('mel-cat');
+  const catVal = it.cat || 'Outros';
+  for (let i = 0; i < selCat.options.length; i++) {
+    if (selCat.options[i].value === catVal) { selCat.selectedIndex = i; break; }
+  }
+  document.getElementById('mel-confirmar-excluir').classList.add('hidden');
+  document.getElementById('modal-editar-lanc').classList.remove('hidden');
+  setTimeout(() => document.getElementById('mel-desc').focus(), 80);
+}
+
+function fecharModalEditarLanc() {
+  document.getElementById('modal-editar-lanc').classList.add('hidden');
+}
+
+function salvarModalEditarLanc() {
+  const id = document.getElementById('mel-id').value;
+  const it = appData.lancamentos.find(l => String(l.id) === String(id));
+  if (!it) return;
+  const desc = document.getElementById('mel-desc').value.trim();
+  const val  = parseFloat(document.getElementById('mel-val').value);
+  if (!desc || isNaN(val) || val < 0) return;
+  it.desc = desc;
+  it.val  = val;
+  it.tipo = document.getElementById('mel-tipo').value;
+  it.cat  = document.getElementById('mel-cat').value;
+  if (dbRef) { dbRef.collection('lancamentos').doc(String(id)).set(it).catch(()=>{}); }
   saveData(appData);
+  fecharModalEditarLanc();
   renderLancamentos();
-  // Foca na célula de descrição da nova linha
-  setTimeout(()=>{
-    const tbody = document.getElementById('tbody-lancamentos');
-    const rows = tbody.querySelectorAll('tr');
-    // A linha da nova entrada é a penúltima (antes do total)
-    const novaLinha = rows[rows.length - 2];
-    if (novaLinha) {
-      const input = novaLinha.querySelector('input');
-      if (input) { input.select(); input.focus(); }
-    }
-  }, 50);
+  renderDashboard && renderDashboard();
+}
+
+function confirmarRemocaoLanc() {
+  const id = document.getElementById('mel-id').value;
+  removerManual(id);
+  fecharModalEditarLanc();
+}
+
+document.addEventListener('click', function(e) {
+  if (e.target === document.getElementById('modal-editar-lanc')) fecharModalEditarLanc();
+});
+
+// ── Abrir modal de edição de valor de despesa base ────────────────
+function abrirEditarBase(idx) {
+  editIdx = idx;
+  const item = DESPESAS_BASE[idx] || {};
+  document.getElementById('edit-modal-title').textContent = 'Editar: ' + (item.desc || '');
+  document.getElementById('edit-modal-label').textContent =
+    item.tipo === 'entrada' ? 'Renda (R$)' :
+    item.tipo === 'divida'  ? 'Parcela (R$)' : 'Valor (R$)';
+  document.getElementById('edit-val').value = valBase(idx);
+  document.getElementById('modal-edit').classList.remove('hidden');
+  setTimeout(() => document.getElementById('edit-val').select(), 80);
 }
 
 function selecionarMes(mes) {
@@ -2360,11 +3446,9 @@ function removerManual(id) {
 // Mantém compatibilidade
 function remover(id) { removerManual(id); }
 
-// Remove despesa fixa adicionada pelo usuário
+// Remove despesa fixa adicionada pelo usuário (sem confirm — já confirmado via UI)
 function removerExtraFixa(eIdx) {
-  if (!appCfg.extras || eIdx < 0) return;
-  const nome = appCfg.extras[eIdx]?.desc || 'item';
-  if (!confirm(`Remover "${nome}" das despesas fixas?`)) return;
+  if (!appCfg.extras || eIdx < 0 || eIdx >= appCfg.extras.length) return;
   appCfg.extras.splice(eIdx, 1);
   saveCfg(appCfg);
   renderLancamentos();
@@ -2398,16 +3482,9 @@ function editarValBase(idx) {
   setTimeout(()=>document.getElementById('edit-val').select(),80);
 }
 
-// Edita descrição de despesa base inline
+// Edita descrição de despesa base — agora via modal de edição de valor
 function editarDescBase(idx) {
-  const item = DESPESAS_BASE[idx];
-  const novo = prompt('Editar nome:', item.desc);
-  if (!novo || novo.trim() === item.desc) return;
-  if (!appCfg.descs) appCfg.descs = {};
-  appCfg.descs[String(idx)] = novo.trim();
-  saveCfg(appCfg);
-  renderLancamentos();
-  renderConfig && renderConfig();
+  abrirEditarBase(idx);
 }
 
 // ── Configurações / Edição de valores ────────────────────────────
@@ -2499,6 +3576,8 @@ function salvarEdicao() {
     if (v.id==='view-lancamentos') { renderConfig(); renderLancamentos(); }
     if (v.id==='view-mensal') renderMensal();
     if (v.id==='view-grafico') renderGrafico();
+    if (v.id==='view-dividas') renderDividas();
+    if (v.id==='view-estrategia') renderEstrategia();
   }
 }
 
@@ -2674,6 +3753,1060 @@ window.salvarLancamentoSynced = function() {
   document.getElementById('f-desc').value = '';
   document.getElementById('f-val').value = '';
 };
+
+// ══════════════════════════════════════════════════════════════════
+// ── DÍVIDAS & INVESTIMENTOS ───────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+
+// Chaves de storage
+const DIV_KEY = 'ftav_dividas';
+const INV_KEY = 'ftav_investimentos';
+
+function loadDividas() {
+  try { return JSON.parse(localStorage.getItem(DIV_KEY)||'[]'); } catch(e) { return []; }
+}
+function saveDividas(arr) {
+  try { localStorage.setItem(DIV_KEY, JSON.stringify(arr)); } catch(e) {}
+  if (dbRef) { try { dbRef.collection('dividas').doc('lista').set({itens: arr}); } catch(e) {} }
+}
+function loadInvestimentos() {
+  try { return JSON.parse(localStorage.getItem(INV_KEY)||'[]'); } catch(e) { return []; }
+}
+function saveInvestimentos(arr) {
+  try { localStorage.setItem(INV_KEY, JSON.stringify(arr)); } catch(e) {}
+  if (dbRef) { try { dbRef.collection('investimentos').doc('lista').set({itens: arr}); } catch(e) {} }
+}
+
+// ── Semáforo inteligente ──────────────────────────────────────────
+function calcSemaforo(dividas, investimentos) {
+  // Juros médio ponderado das dívidas com juros
+  const divComJuros = dividas.filter(d => d.juros > 0);
+  const totalComJuros = divComJuros.reduce((s,d) => s + d.valor, 0);
+  const jurosMedio = totalComJuros > 0
+    ? divComJuros.reduce((s,d) => s + d.juros * d.valor, 0) / totalComJuros
+    : 0;
+
+  // Rentabilidade média ponderada dos investimentos
+  const totalInv = investimentos.reduce((s,i) => s + i.atual, 0);
+  const rentMedia = totalInv > 0
+    ? investimentos.reduce((s,i) => s + (i.rent||0) * i.atual, 0) / totalInv
+    : 0;
+
+  if (divComJuros.length === 0) {
+    return { cor: 'verde', icone: '✅', titulo: 'Nenhuma dívida com juros', desc: 'Suas dívidas são sem juros. Foque em manter os investimentos rendendo.' };
+  }
+  if (jurosMedio > rentMedia * 1.5) {
+    return { cor: 'vermelho', icone: '🔴', titulo: 'Pague as dívidas primeiro!',
+      desc: `Seus juros médios (${jurosMedio.toFixed(2)}%/mês) estão muito acima da rentabilidade dos investimentos (${rentMedia.toFixed(2)}%/mês). Priorize quitar as dívidas com juros altos antes de investir mais.` };
+  }
+  if (jurosMedio > rentMedia) {
+    return { cor: 'amarelo', icone: '⚠️', titulo: 'Avalie caso a caso',
+      desc: `Juros das dívidas (${jurosMedio.toFixed(2)}%/mês) ligeiramente acima do retorno dos investimentos (${rentMedia.toFixed(2)}%/mês). Quite as dívidas mais caras e mantenha a reserva de emergência.` };
+  }
+  return { cor: 'verde', icone: '💚', titulo: 'Seus investimentos compensam',
+    desc: `Rentabilidade dos investimentos (${rentMedia.toFixed(2)}%/mês) é maior que os juros das dívidas (${jurosMedio.toFixed(2)}%/mês). Mantenha os pagamentos em dia e continue investindo.` };
+}
+
+function recomDivida(d, rentMedia) {
+  if (d.juros === 0) return { cls: 'pode-esperar', txt: '🟢 Sem juros — pague quando puder' };
+  if (d.juros > rentMedia * 1.5) return { cls: 'paga-agora', txt: '🔴 Pague logo — juros muito altos' };
+  if (d.juros > rentMedia) return { cls: 'avalie', txt: '🟡 Avalie — juros acima do investimento' };
+  return { cls: 'pode-esperar', txt: '🟢 Pode esperar — investimento compensa mais' };
+}
+
+// ── Dívidas Pendentes (sistema de cards com pagamento) ───────────
+const DIV_PEND_KEY = 'ftav_div_pendentes';
+
+function loadDivPendentes() {
+  try { return JSON.parse(localStorage.getItem(DIV_PEND_KEY) || 'null'); } catch(e) {}
+  return null;
+}
+
+function getDefaultPendentes() {
+  return [
+    { id:'dp1', grupo:'💳 Cartões de Crédito', nome:'C. Meu Pago Elo',   total:0, urgencia:'urgente', obs:'Confirmar valor real' },
+    { id:'dp2', grupo:'💳 Cartões de Crédito', nome:'C. Bradesco',        total:0, urgencia:'atencao', obs:'Confirmar valor real' },
+    { id:'dp3', grupo:'💳 Cartões de Crédito', nome:'C. Nu Cleidy',       total:0, urgencia:'atencao', obs:'Confirmar valor real' },
+    { id:'dp4', grupo:'💳 Cartões de Crédito', nome:'C. Nu Emp. Cleidy',  total:0, urgencia:'atencao', obs:'Confirmar valor real' },
+    { id:'dp5', grupo:'💳 Cartões de Crédito', nome:'C. Nu Paty',         total:0, urgencia:'ok',      obs:'Confirmar valor real' },
+    { id:'dp6', grupo:'💳 Cartões de Crédito', nome:'C. Inter Paty',      total:0, urgencia:'ok',      obs:'Confirmar valor real' },
+    { id:'dp7', grupo:'💳 Cartões de Crédito', nome:'C. M Pago Paty',     total:0, urgencia:'ok',      obs:'Confirmar valor real' },
+    { id:'dp8', grupo:'💳 Cartões de Crédito', nome:'C. Will Paty',       total:0, urgencia:'ok',      obs:'Confirmar valor real' },
+    { id:'dp9', grupo:'👥 Dívidas Pessoais',   nome:'Kauã',               total:0, urgencia:'ok',      obs:'Negociar prazo' },
+    { id:'dp10',grupo:'👥 Dívidas Pessoais',   nome:'Pai',                total:0, urgencia:'ok',      obs:'Negociar prazo' },
+    { id:'dp11',grupo:'👥 Dívidas Pessoais',   nome:'Mãe',                total:0, urgencia:'ok',      obs:'Negociar prazo' },
+    { id:'dp12',grupo:'📋 Impostos',           nome:'IPVA Carro 2023-25', total:0, urgencia:'urgente', obs:'Regularizar DETRAN' },
+    { id:'dp13',grupo:'📋 Impostos',           nome:'IPVA Moto 2023-24',  total:0, urgencia:'urgente', obs:'Regularizar DETRAN' },
+    { id:'dp14',grupo:'📋 Impostos',           nome:'IPVA Carro 2026',    total:0, urgencia:'atencao', obs:'Vence em 2026' },
+  ];
+}
+
+function saveDivPendentes(arr) {
+  try { localStorage.setItem(DIV_PEND_KEY, JSON.stringify(arr)); } catch(e) {}
+  if (dbRef) { try { dbRef.collection('divpendentes').doc('lista').set({itens:arr}); } catch(e){} }
+}
+
+function renderDivPendentes() {
+  let pend = loadDivPendentes();
+  // Primeira vez: carregar defaults mas com valores zerados (usuário vai preencher)
+  if (!pend) { pend = getDefaultPendentes(); saveDivPendentes(pend); }
+
+  const total = pend.reduce((s,d) => s + (d.total||0), 0);
+  const count = pend.length;
+  const pendSemValor = pend.filter(d => !d.total || d.total === 0).length;
+
+  const kpisEl = document.getElementById('div-kpis-pendentes');
+  if (kpisEl) kpisEl.innerHTML = `
+    <div class="kpi-card kpi-red"><div class="kpi-label">Total em Dívidas</div>
+      <div class="kpi-value">${total > 0 ? brl(total) : '⚠️ A preencher'}</div>
+      <div class="kpi-sub">${count} dívida(s) cadastrada(s)</div></div>
+    <div class="kpi-card kpi-orange"><div class="kpi-label">Sem valor definido</div>
+      <div class="kpi-value">${pendSemValor}</div>
+      <div class="kpi-sub">Clique em ✏️ para atualizar</div></div>
+    <div class="kpi-card kpi-blue"><div class="kpi-label">Com valor definido</div>
+      <div class="kpi-value">${count - pendSemValor}</div>
+      <div class="kpi-sub">Prontas para lançar</div></div>`;
+
+  // Agrupar por grupo
+  const grupos = {};
+  pend.forEach(d => {
+    if (!grupos[d.grupo]) grupos[d.grupo] = [];
+    grupos[d.grupo].push(d);
+  });
+
+  let html = '';
+  Object.entries(grupos).forEach(([grp, itens]) => {
+    html += `<div class="div-section-title">${grp}
+      <button onclick="addDivPendente('${grp}')" style="margin-left:8px;padding:2px 10px;font-size:10px;border:1px solid var(--border);border-radius:12px;background:transparent;color:var(--fg3);cursor:pointer">+ Adicionar</button>
+    </div><div class="div-grid">`;
+    itens.forEach(d => {
+      const semVal = !d.total || d.total === 0;
+      html += `<div class="div-card ${d.urgencia}" id="dpc-${d.id}">
+        <div class="div-card-top">
+          <span class="div-card-nome">${d.nome}</span>
+          <div style="display:flex;gap:4px">
+            <button title="Editar" onclick="editarDivPendente('${d.id}')"
+              style="padding:3px 8px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--fg3);cursor:pointer">✏️</button>
+            <button title="Remover" onclick="removerDivPendente('${d.id}')"
+              style="padding:3px 8px;font-size:11px;border:1px solid var(--red);border-radius:6px;background:transparent;color:var(--red);cursor:pointer">✕</button>
+          </div>
+        </div>
+        <div class="div-card-valor" style="${semVal ? 'color:var(--fg3);font-size:13px' : ''}">${semVal ? '⚠️ Valor a definir' : brl(d.total)}</div>
+        ${d.obs ? `<div class="div-card-info"><span>${d.obs}</span></div>` : ''}
+        <div style="display:flex;gap:6px;margin-top:10px">
+          <button onclick="abrirPagarPendente('${d.id}')" ${semVal?'disabled title="Defina o valor primeiro"':''}"
+            style="flex:1;padding:6px;font-size:11px;font-weight:700;border-radius:7px;cursor:${semVal?'not-allowed':'pointer'};
+            background:${semVal?'var(--surface)':'var(--accent-bg)'};color:${semVal?'var(--fg3)':'var(--accent)'};
+            border:1px solid ${semVal?'var(--border)':'var(--accent)'}">
+            💳 Pagar / Parcelar
+          </button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+
+  const el = document.getElementById('div-cards-pendentes');
+  if (el) el.innerHTML = html;
+}
+
+// ── Modal editar/adicionar card pendente ──────────────────────────
+function abrirModalEditarDiv(id, grupo) {
+  const modal = document.getElementById('modal-editar-div');
+  document.getElementById('med-confirmar-excluir').classList.add('hidden');
+  if (id) {
+    // Editar existente
+    const pend = loadDivPendentes() || [];
+    const d = pend.find(x => x.id === id);
+    if (!d) return;
+    document.getElementById('med-titulo').textContent = 'Editar dívida';
+    document.getElementById('med-id').value = id;
+    document.getElementById('med-grupo').value = '';
+    document.getElementById('med-nome').value = d.nome;
+    document.getElementById('med-valor').value = d.total || '';
+    document.getElementById('med-obs').value = d.obs || '';
+    document.getElementById('med-btn-excluir-wrap').classList.remove('hidden');
+  } else {
+    // Adicionar nova
+    document.getElementById('med-titulo').textContent = 'Adicionar dívida';
+    document.getElementById('med-id').value = '';
+    document.getElementById('med-grupo').value = grupo || '';
+    document.getElementById('med-nome').value = '';
+    document.getElementById('med-valor').value = '';
+    document.getElementById('med-obs').value = '';
+    document.getElementById('med-btn-excluir-wrap').classList.add('hidden');
+  }
+  modal.classList.remove('hidden');
+  setTimeout(() => document.getElementById('med-nome').focus(), 100);
+}
+
+function fecharModalEditarDiv() {
+  document.getElementById('modal-editar-div').classList.add('hidden');
+}
+
+function salvarModalEditarDiv() {
+  const nome = document.getElementById('med-nome').value.trim();
+  if (!nome) { document.getElementById('med-nome').focus(); return; }
+  const total = parseFloat(document.getElementById('med-valor').value) || 0;
+  const obs = document.getElementById('med-obs').value.trim();
+  const id = document.getElementById('med-id').value;
+  const grupo = document.getElementById('med-grupo').value;
+  const pend = loadDivPendentes() || [];
+  if (id) {
+    const d = pend.find(x => x.id === id);
+    if (d) { d.nome = nome; d.total = total; d.obs = obs; d.urgencia = total > 5000 ? 'urgente' : total > 1000 ? 'atencao' : 'ok'; }
+  } else {
+    pend.push({ id: 'dp' + Date.now(), grupo, nome, total, urgencia: total > 5000 ? 'urgente' : total > 1000 ? 'atencao' : 'ok', obs });
+  }
+  saveDivPendentes(pend);
+  fecharModalEditarDiv();
+  renderDividas();
+}
+
+function confirmarRemocaoDiv() {
+  const id = document.getElementById('med-id').value;
+  let pend = loadDivPendentes() || [];
+  pend = pend.filter(x => x.id !== id);
+  saveDivPendentes(pend);
+  fecharModalEditarDiv();
+  renderDividas();
+}
+
+function addDivPendente(grupo) { abrirModalEditarDiv(null, grupo); }
+function editarDivPendente(id) { abrirModalEditarDiv(id, null); }
+function removerDivPendente(id) { abrirModalEditarDiv(id, null); document.getElementById('med-confirmar-excluir').classList.remove('hidden'); }
+
+// ── Modal Pagar / Parcelar ────────────────────────────────────────
+let mppIdAtual = null;
+
+function abrirPagarPendente(id) {
+  const pend = loadDivPendentes() || [];
+  const d = pend.find(x => x.id === id);
+  if (!d) return;
+  mppIdAtual = id;
+  document.getElementById('mpp-titulo').textContent = 'Registrar Pagamento';
+  document.getElementById('mpp-nome-label').textContent = d.nome;
+  document.getElementById('mpp-total-label').textContent = brl(d.total);
+  document.getElementById('mpp-valor').value = d.total || '';
+  document.getElementById('mpp-tipo').value = 'avista';
+  // pré-selecionar mês/ano atual
+  const selM = document.getElementById('mpp-mes');
+  const selA = document.getElementById('mpp-ano');
+  for (let i = 0; i < selM.options.length; i++) {
+    if (selM.options[i].text === mesSelecionado) { selM.selectedIndex = i; break; }
+  }
+  for (let i = 0; i < selA.options.length; i++) {
+    if (selA.options[i].text === String(anoSelecionado)) { selA.selectedIndex = i; break; }
+  }
+  mppSetTipo('avista');
+  document.getElementById('modal-pagar-pendente').classList.remove('hidden');
+}
+
+function fecharModalPagarPendente() {
+  document.getElementById('modal-pagar-pendente').classList.add('hidden');
+  mppIdAtual = null;
+}
+
+function mppSetTipo(tipo) {
+  document.getElementById('mpp-tipo').value = tipo;
+  const btnAv = document.getElementById('mpp-btn-avista');
+  const btnPa = document.getElementById('mpp-btn-parcelado');
+  const rowParc = document.getElementById('mpp-parcelas-row');
+  const valLabel = document.getElementById('mpp-val-label');
+  if (tipo === 'avista') {
+    btnAv.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-bg);color:var(--accent);font-weight:700;cursor:pointer;font-size:12px';
+    btnPa.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:transparent;color:var(--fg2);font-weight:600;cursor:pointer;font-size:12px';
+    rowParc.style.display = 'none';
+    valLabel.textContent = 'Valor pago (R$)';
+  } else {
+    btnPa.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-bg);color:var(--accent);font-weight:700;cursor:pointer;font-size:12px';
+    btnAv.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:transparent;color:var(--fg2);font-weight:600;cursor:pointer;font-size:12px';
+    rowParc.style.display = '';
+    valLabel.textContent = 'Valor da parcela (R$)';
+  }
+  mppAtualizarResumo();
+}
+
+function mppSetParcelas(n) {
+  document.getElementById('mpp-parcelas').value = n;
+  mppDestaque(n);
+  mppAtualizarResumo();
+}
+
+function mppDestaque(n) {
+  [2,3,4,6,8,10,12,18,24,36,48,60].forEach(v => {
+    const btn = document.getElementById('mpp-p-'+v);
+    if (!btn) return;
+    if (v === n) {
+      btn.style.cssText = 'padding:5px 12px;border-radius:20px;border:2px solid var(--accent);background:var(--accent-bg);color:var(--accent);cursor:pointer;font-size:12px;font-weight:700';
+    } else {
+      btn.style.cssText = 'padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--fg3);cursor:pointer;font-size:12px';
+    }
+  });
+}
+
+function mppAtualizarResumo() {
+  const tipo = document.getElementById('mpp-tipo').value;
+  const val = parseFloat(document.getElementById('mpp-valor').value) || 0;
+  const parc = parseInt(document.getElementById('mpp-parcelas').value) || 1;
+  const mes = document.getElementById('mpp-mes').value;
+  const ano = document.getElementById('mpp-ano').value;
+  const el = document.getElementById('mpp-resumo');
+  if (!el) return;
+  if (!val) { el.style.display='none'; return; }
+  if (tipo === 'avista') {
+    el.style.display = '';
+    el.innerHTML = `✅ 1 lançamento de <strong>${brl(val)}</strong> em <strong>${mes}/${ano}</strong>`;
+  } else {
+    el.style.display = '';
+    const total = val * parc;
+    el.innerHTML = `📅 <strong>${parc}x de ${brl(val)}</strong> = ${brl(total)} total<br>
+      De <strong>${mes}/${ano}</strong> por ${parc} meses`;
+  }
+}
+
+function confirmarPagamentoPendente() {
+  const tipo = document.getElementById('mpp-tipo').value;
+  const val = parseFloat(document.getElementById('mpp-valor').value);
+  const mes = document.getElementById('mpp-mes').value;
+  const ano = parseInt(document.getElementById('mpp-ano').value);
+  if (!val || val <= 0) { alert('Informe o valor.'); return; }
+
+  const pend = loadDivPendentes() || [];
+  const d = pend.find(x => x.id === mppIdAtual);
+  if (!d) return;
+
+  if (!appData.lancamentos) appData.lancamentos = [];
+
+  if (tipo === 'avista') {
+    appData.lancamentos.push({ desc: d.nome + ' (pago)', val, tipo:'divida', mes, ano, cat:'Dívida', id: Date.now() });
+  } else {
+    const parc = parseInt(document.getElementById('mpp-parcelas').value) || 1;
+    const MESES_LIST = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    let mIdx = MESES_LIST.indexOf(mes);
+    let aAtual = ano;
+    for (let i = 1; i <= parc; i++) {
+      const mesNome = MESES_LIST[mIdx % 12];
+      appData.lancamentos.push({
+        desc: `${d.nome} (${i}/${parc})`,
+        val, tipo:'divida', mes: mesNome, ano: aAtual, cat:'Dívida', id: Date.now() + i
+      });
+      mIdx++;
+      if (mIdx % 12 === 0) aAtual++;
+    }
+  }
+
+  saveData(appData);
+  fecharModalPagarPendente();
+  renderDividas();
+  alert(`✅ Lançamento(s) criado(s) com sucesso! Veja em Lançamentos.`);
+}
+
+document.getElementById('modal-pagar-pendente').addEventListener('click', function(e){ if(e.target===this) fecharModalPagarPendente(); });
+document.getElementById('modal-editar-div').addEventListener('click', function(e){ if(e.target===this) fecharModalEditarDiv(); });
+document.getElementById('mpp-valor').addEventListener('input', mppAtualizarResumo);
+document.getElementById('mpp-mes').addEventListener('change', mppAtualizarResumo);
+document.getElementById('mpp-ano').addEventListener('change', mppAtualizarResumo);
+document.getElementById('mpp-parcelas').addEventListener('input', mppAtualizarResumo);
+
+// ── Renderiza dívidas ─────────────────────────────────────────────
+function renderDividas() {
+  // Renderiza cards pendentes (seção superior)
+  renderDivPendentes();
+
+  const dividas = loadDividas();
+  const invs = loadInvestimentos();
+
+  // KPIs
+  const totalDiv = dividas.reduce((s,d) => s + d.valor, 0);
+  const divComJuros = dividas.filter(d=>d.juros>0).reduce((s,d)=>s+d.valor,0);
+  const parcelaMes = dividas.reduce((s,d) => s + (d.parcelas > 0 ? d.valor/d.parcelas : 0), 0);
+  document.getElementById('div-kpis').innerHTML = `
+    <div class="kpi-card kpi-red"><div class="kpi-label">Total em dívidas</div>
+      <div class="kpi-value">${brl(totalDiv)}</div><div class="kpi-sub">${dividas.length} dívida(s) cadastrada(s)</div></div>
+    <div class="kpi-card kpi-orange"><div class="kpi-label">Com juros</div>
+      <div class="kpi-value">${brl(divComJuros)}</div><div class="kpi-sub">Prioridade de pagamento</div></div>
+    <div class="kpi-card kpi-blue"><div class="kpi-label">Parcela estimada/mês</div>
+      <div class="kpi-value">${brl(parcelaMes)}</div><div class="kpi-sub">Soma das parcelas mensais</div></div>`;
+
+  // Semáforo
+  const sem = calcSemaforo(dividas, invs);
+  document.getElementById('div-semaforo').innerHTML = dividas.length === 0 ? '' :
+    `<div class="semaforo-box ${sem.cor}">
+      <div class="semaforo-icon">${sem.icone}</div>
+      <div><div class="semaforo-titulo">${sem.titulo}</div>
+      <div class="semaforo-desc">${sem.desc}</div></div></div>`;
+
+  // Rentabilidade média dos investimentos
+  const totalInv = invs.reduce((s,i) => s+i.atual, 0);
+  const rentMedia = totalInv > 0 ? invs.reduce((s,i) => s+(i.rent||0)*i.atual,0)/totalInv : 0;
+
+  // Categorias
+  const cats = {
+    cartao: '💳 Cartões de crédito',
+    pessoal: '👥 Dívidas pessoais / família',
+    imposto: '📋 Impostos / tributos',
+    financiamento: '🏠 Financiamentos',
+    pj: '🏢 PJ / Empresa',
+    outro: '📌 Outras',
+  };
+  const grupos = {};
+  dividas.forEach(d => {
+    const g = d.cat || 'outro';
+    if (!grupos[g]) grupos[g] = [];
+    grupos[g].push(d);
+  });
+
+  let html = '';
+  if (dividas.length === 0) {
+    html = '<div style="text-align:center;padding:40px 0;color:var(--fg3);font-size:13px">Nenhuma dívida cadastrada ainda.<br>Clique em <strong>+ Nova Dívida</strong> para começar.</div>';
+  } else {
+    Object.keys(cats).forEach(catKey => {
+      const itens = grupos[catKey] || [];
+      if (!itens.length) return;
+      html += `<div class="div-section-title">${cats[catKey]}</div>`;
+      itens.forEach(d => {
+        const urgencia = d.juros > 3 ? 'urgente' : d.juros > 0 ? 'atencao' : 'ok';
+        const recom = recomDivida(d, rentMedia);
+        const parcelaInfo = d.parcelas > 0
+          ? `${d.parcelas}x de ${brl(d.valor/d.parcelas)}` : 'À vista';
+        const vencInfo = d.venc ? `Vence dia ${d.venc}` : '';
+        const jurosInfo = d.juros > 0 ? `${d.juros}%/mês` : 'Sem juros';
+        html += `<div class="div-card ${urgencia}">
+          <div class="div-card-top">
+            <span class="div-card-nome">${d.nome}</span>
+            <div style="display:flex;gap:6px;align-items:center">
+              <button class="btn btn-ghost" style="padding:3px 10px;font-size:11px" onclick="editarDivida('${d.id}')">✏️</button>
+              <button class="btn" style="padding:3px 10px;font-size:11px;background:var(--red-bg);color:var(--red)" onclick="excluirDivida('${d.id}')">🗑️</button>
+            </div>
+          </div>
+          <div class="div-card-valor">${brl(d.valor)}</div>
+          <div class="div-card-info">
+            <span>${parcelaInfo}</span>${vencInfo?`<span>${vencInfo}</span>`:''}
+            <span>${jurosInfo}</span>
+          </div>
+          <div class="div-card-recom ${recom.cls}">${recom.txt}</div>
+        </div>`;
+      });
+    });
+  }
+  document.getElementById('div-lista').innerHTML = html;
+
+  // ── Lançamentos de dívida do mês atual ───────────────────────────
+  const mesLabel = document.getElementById('div-mes-label');
+  if (mesLabel) mesLabel.textContent = mesSelecionado + ' ' + anoSelecionado;
+
+  const anoStr = String(anoSelecionado);
+  const todosLanc = [
+    ...(appData.lancamentos || []),
+    ...(appData.fixos || []).map(f => ({...f, _fixo:true}))
+  ];
+  const divLanc = todosLanc.filter(l => {
+    const tipoEfetivo = (appCfg.tipos && appCfg.tipos[String(l._baseIdx)]) || l.tipo;
+    const isTipoDivida = tipoEfetivo === 'divida';
+    const mes = l.mes || '';
+    const isMes = mes === mesSelecionado || mes === 'Todos' || mes === anoStr;
+    return isTipoDivida && isMes;
+  });
+
+  const elLanc = document.getElementById('div-lancamentos-mes');
+  if (elLanc) {
+    if (divLanc.length === 0) {
+      elLanc.innerHTML = `<div style="text-align:center;padding:24px 0;color:var(--fg3);font-size:12px">
+        Nenhum lançamento de dívida em <strong>${mesSelecionado}</strong>.<br>
+        Clique em <strong>+ Lançar Dívida</strong> para registrar um pagamento.
+      </div>`;
+    } else {
+      const totalDivLanc = divLanc.reduce((s,l) => s + l.val, 0);
+      elLanc.innerHTML = `
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+          ${divLanc.map(l => `
+            <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:8px;padding:10px 14px;min-width:180px;flex:1;cursor:pointer" onclick="irParaMesAno('${mesSelecionado}',${anoSelecionado})">
+              <div style="font-size:12px;color:var(--fg3);margin-bottom:2px">${l.cat||'Dívida'}</div>
+              <div style="font-size:13px;font-weight:600;color:var(--fg1)">${l.desc}</div>
+              <div style="font-size:14px;font-weight:700;color:var(--orange);margin-top:4px">${brl(l.val)}</div>
+              ${l._fixo ? '<div style="font-size:10px;color:var(--fg3);margin-top:2px">📌 Lançamento fixo</div>' : ''}
+            </div>
+          `).join('')}
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--red-bg);border-radius:8px">
+          <span style="font-size:12px;color:var(--fg3)">${divLanc.length} lançamento(s) de dívida em ${mesSelecionado}</span>
+          <span style="font-size:14px;font-weight:700;color:var(--orange)">${brl(totalDivLanc)}</span>
+        </div>`;
+    }
+  }
+}
+
+// ── Navega para Lançamentos do mês atual (para ver dívidas) ────────
+function irParaDividasLanc() {
+  irParaMesAno(mesSelecionado, anoSelecionado);
+}
+
+// ── CRUD dívidas ──────────────────────────────────────────────────
+function abrirModalDivida(id) {
+  const m = document.getElementById('modal-divida');
+  document.getElementById('modal-divida-titulo').textContent = id ? 'Editar Dívida' : '+ Nova Dívida';
+  if (id) {
+    const d = loadDividas().find(x=>x.id===id);
+    if (!d) return;
+    document.getElementById('fd-id').value = d.id;
+    document.getElementById('fd-nome').value = d.nome;
+    document.getElementById('fd-valor').value = d.valor;
+    document.getElementById('fd-juros').value = d.juros;
+    document.getElementById('fd-parcelas').value = d.parcelas;
+    document.getElementById('fd-venc').value = d.venc||'';
+    document.getElementById('fd-cat').value = d.cat||'outro';
+  } else {
+    document.getElementById('fd-id').value = '';
+    ['fd-nome','fd-valor','fd-juros','fd-parcelas','fd-venc'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('fd-cat').value = 'cartao';
+  }
+  m.classList.remove('hidden');
+}
+function fecharModalDivida() { document.getElementById('modal-divida').classList.add('hidden'); }
+function editarDivida(id) { abrirModalDivida(id); }
+function salvarDivida() {
+  const nome = document.getElementById('fd-nome').value.trim();
+  const valor = parseFloat(document.getElementById('fd-valor').value)||0;
+  if (!nome || valor <= 0) { alert('Preencha nome e valor.'); return; }
+  const id = document.getElementById('fd-id').value || Date.now().toString();
+  const d = {
+    id, nome, valor,
+    juros: parseFloat(document.getElementById('fd-juros').value)||0,
+    parcelas: parseInt(document.getElementById('fd-parcelas').value)||0,
+    venc: document.getElementById('fd-venc').value,
+    cat: document.getElementById('fd-cat').value,
+  };
+  const arr = loadDividas().filter(x=>x.id!==id);
+  arr.push(d);
+  saveDividas(arr);
+  fecharModalDivida();
+  renderDividas();
+}
+function excluirDivida(id) {
+  if (!confirm('Excluir esta dívida?')) return;
+  saveDividas(loadDividas().filter(x=>x.id!==id));
+  renderDividas();
+}
+
+// ── Renderiza estratégia ──────────────────────────────────────────
+function renderEstrategia() {
+  const invs = loadInvestimentos();
+  const dividas = loadDividas();
+  const criptos = loadCriptos();
+  const objs = loadObjetivos();
+
+  const acoes = loadAcoes();
+  const totalAplicado = invs.reduce((s,i) => s+i.aplicado, 0);
+  const totalAtual = invs.reduce((s,i) => s+i.atual, 0);
+  const totalCriptoInv = criptos.reduce((s,c) => s+c.investido, 0);
+  const totalCriptoAtual = criptos.reduce((s,c) => s+c.atual, 0);
+  const totalAcoesInv = acoes.reduce((s,a) => s+(a.qtd*a.precoMedio), 0);
+  const totalAcoesAtual = acoes.reduce((s,a) => s+(a.qtd*a.cotacao), 0);
+  const totalObjs = objs.reduce((s,o) => s+o.atual, 0);
+  const patrimonioTotal = totalAtual + totalCriptoAtual + totalAcoesAtual + totalObjs;
+  const rendimento = (totalAtual - totalAplicado) + (totalCriptoAtual - totalCriptoInv) + (totalAcoesAtual - totalAcoesInv);
+
+  document.getElementById('est-kpis').innerHTML = `
+    <div class="kpi-card kpi-blue"><div class="kpi-label">Patrimônio total</div>
+      <div class="kpi-value">${brl(patrimonioTotal)}</div><div class="kpi-sub">Renda fixa + cripto + objetivos</div></div>
+    <div class="kpi-card ${rendimento>=0?'kpi-green':'kpi-red'}"><div class="kpi-label">Rendimento</div>
+      <div class="kpi-value">${rendimento>=0?'+':''}${brl(rendimento)}</div>
+      <div class="kpi-sub">${rendimento>=0?'▲ Lucro':'▼ Prejuízo'} acumulado</div></div>
+    <div class="kpi-card kpi-orange"><div class="kpi-label">Criptomoedas</div>
+      <div class="kpi-value">${brl(totalCriptoAtual)}</div><div class="kpi-sub">${criptos.length} moeda(s) cadastrada(s)</div></div>`;
+
+  // Análise inteligente
+  const divComJuros = dividas.filter(d=>d.juros>0);
+  let analiseHtml = '';
+  if (divComJuros.length > 0 && invs.length > 0) {
+    const jurosMedio = divComJuros.reduce((s,d)=>s+d.juros*d.valor,0) / divComJuros.reduce((s,d)=>s+d.valor,0);
+    const rentMedia = totalAtual > 0 ? invs.reduce((s,i)=>s+(i.rent||0)*i.atual,0)/totalAtual : 0;
+    const difPerc = (jurosMedio - rentMedia).toFixed(2);
+    const recomAcao = jurosMedio > rentMedia
+      ? `💡 Recomendação: priorize quitar dívidas com juros acima de <strong>${rentMedia.toFixed(2)}%/mês</strong> antes de investir mais.`
+      : `💡 Seus investimentos (${rentMedia.toFixed(2)}%/mês) rendem mais que os juros das dívidas (${jurosMedio.toFixed(2)}%/mês). Continue investindo!`;
+    analiseHtml = `<div class="est-analise-box">${recomAcao}</div>`;
+  }
+  document.getElementById('est-analise').innerHTML = analiseHtml;
+
+  // Lista de caixinhas
+  let html = '';
+  if (invs.length === 0) {
+    html = '<div style="text-align:center;padding:40px 0;color:var(--fg3);font-size:13px">Nenhuma caixinha cadastrada ainda.<br>Clique em <strong>+ Nova Caixinha</strong> para começar.</div>';
+  } else {
+    const tipoLabel = {poupanca:'Poupança',cdb:'CDB',tesouro:'Tesouro Direto',fii:'FII',acoes:'Ações',previdencia:'Previdência',outro:'Outro'};
+    invs.forEach(inv => {
+      const rend = inv.atual - inv.aplicado;
+      const pct = inv.meta > 0 ? Math.min(100, (inv.atual/inv.meta)*100) : 0;
+      html += `<div class="caixinha-card">
+        <div class="caixinha-top">
+          <span class="caixinha-nome">${inv.nome}</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="caixinha-tipo">${tipoLabel[inv.tipo]||'Outro'}</span>
+            <button class="btn btn-ghost" style="padding:3px 10px;font-size:11px" onclick="editarInvestimento('${inv.id}')">✏️</button>
+            <button class="btn" style="padding:3px 10px;font-size:11px;background:var(--red-bg);color:var(--red)" onclick="excluirInvestimento('${inv.id}')">🗑️</button>
+          </div>
+        </div>
+        <div class="caixinha-valores">
+          <div><div class="caixinha-val-label">Aplicado</div><div class="caixinha-val-num">${brl(inv.aplicado)}</div></div>
+          <div><div class="caixinha-val-label">Atual</div><div class="caixinha-val-num ${rend>=0?'positivo':'negativo'}">${brl(inv.atual)}</div></div>
+          <div><div class="caixinha-val-label">Rendimento</div><div class="caixinha-val-num ${rend>=0?'positivo':'negativo'}">${rend>=0?'+':''}${brl(rend)}</div></div>
+        </div>
+        ${inv.meta > 0 ? `<div class="caixinha-progress">
+          <div class="caixinha-progress-label"><span>Meta: ${brl(inv.meta)}</span><span>${pct.toFixed(0)}%</span></div>
+          <div class="progress-bar"><div class="progress-fill ${pct>=100?'':pct>50?'':'danger'}" style="width:${pct}%;background:${pct>=100?'var(--green)':pct>50?'var(--accent)':'var(--orange)'}"></div></div>
+        </div>` : ''}
+        ${inv.rent > 0 ? `<div style="font-size:11px;color:var(--fg3)">Rentabilidade: ${inv.rent}%/mês</div>` : ''}
+      </div>`;
+    });
+  }
+  document.getElementById('est-lista').innerHTML = html;
+
+  // Renderiza todas as seções
+  renderCriptos();
+  renderObjetivos();
+  renderAcoes();
+}
+
+// ── CRUD investimentos ────────────────────────────────────────────
+function abrirModalInvestimento(id) {
+  const m = document.getElementById('modal-inv');
+  document.getElementById('modal-inv-titulo').textContent = id ? 'Editar Caixinha' : '+ Nova Caixinha';
+  if (id) {
+    const inv = loadInvestimentos().find(x=>x.id===id);
+    if (!inv) return;
+    document.getElementById('fi-id').value = inv.id;
+    document.getElementById('fi-nome').value = inv.nome;
+    document.getElementById('fi-aplicado').value = inv.aplicado;
+    document.getElementById('fi-atual').value = inv.atual;
+    document.getElementById('fi-meta').value = inv.meta||'';
+    document.getElementById('fi-rent').value = inv.rent||'';
+    document.getElementById('fi-tipo').value = inv.tipo||'outro';
+  } else {
+    document.getElementById('fi-id').value = '';
+    ['fi-nome','fi-aplicado','fi-atual','fi-meta','fi-rent'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('fi-tipo').value = 'cdb';
+  }
+  m.classList.remove('hidden');
+}
+function fecharModalInv() { document.getElementById('modal-inv').classList.add('hidden'); }
+function editarInvestimento(id) { abrirModalInvestimento(id); }
+function salvarInvestimento() {
+  const nome = document.getElementById('fi-nome').value.trim();
+  const aplicado = parseFloat(document.getElementById('fi-aplicado').value)||0;
+  const atual = parseFloat(document.getElementById('fi-atual').value)||aplicado;
+  if (!nome || aplicado <= 0) { alert('Preencha nome e valor investido.'); return; }
+  const id = document.getElementById('fi-id').value || Date.now().toString();
+  const inv = {
+    id, nome, aplicado, atual,
+    meta: parseFloat(document.getElementById('fi-meta').value)||0,
+    rent: parseFloat(document.getElementById('fi-rent').value)||0,
+    tipo: document.getElementById('fi-tipo').value,
+  };
+  const arr = loadInvestimentos().filter(x=>x.id!==id);
+  arr.push(inv);
+  saveInvestimentos(arr);
+  fecharModalInv();
+  renderEstrategia();
+}
+function excluirInvestimento(id) {
+  if (!confirm('Excluir esta caixinha?')) return;
+  saveInvestimentos(loadInvestimentos().filter(x=>x.id!==id));
+  renderEstrategia();
+}
+
+// Fechar modais ao clicar fora
+document.getElementById('modal-divida').addEventListener('click', function(e){ if(e.target===this) fecharModalDivida(); });
+document.getElementById('modal-inv').addEventListener('click', function(e){ if(e.target===this) fecharModalInv(); });
+
+// ══════════════════════════════════════════════════════════════════
+// ── GASTOS DO CARTÃO ─────────────────────────────────────────────
+let _gastosCartaoId = '';
+const GASTOS_KEY = 'ftav_gastos_cartao';
+
+function loadGastosCartao(cartaoId) {
+  try { const all = JSON.parse(localStorage.getItem(GASTOS_KEY)||'{}'); return all[cartaoId]||[]; } catch(e) { return []; }
+}
+function saveGastosCartao(cartaoId, arr) {
+  try {
+    const all = JSON.parse(localStorage.getItem(GASTOS_KEY)||'{}');
+    all[cartaoId] = arr;
+    localStorage.setItem(GASTOS_KEY, JSON.stringify(all));
+  } catch(e) {}
+}
+
+const catGastosLabel = {
+  alimentacao:'🛒 Alimentação', restaurante:'🍔 Restaurante', saude:'💊 Saúde',
+  transporte:'🚗 Transporte', vestuario:'👕 Vestuário', lazer:'🎬 Lazer',
+  educacao:'📚 Educação', casa:'🏠 Casa', assinatura:'📱 Assinaturas', outro:'📌 Outro'
+};
+
+function abrirGastos(cartaoId, cartaoNome) {
+  _gastaoCartaoId = cartaoId;
+  document.getElementById('modal-gastos-titulo').textContent = '💳 ' + cartaoNome;
+  document.getElementById('gg-desc').value = '';
+  document.getElementById('gg-valor').value = '';
+  document.getElementById('gg-cat').value = 'alimentacao';
+  renderGastosList(cartaoId);
+  document.getElementById('modal-gastos').classList.remove('hidden');
+}
+function fecharGastos() { document.getElementById('modal-gastos').classList.add('hidden'); }
+
+function adicionarGasto() {
+  const desc = document.getElementById('gg-desc').value.trim();
+  const valor = parseFloat(document.getElementById('gg-valor').value)||0;
+  if (!desc || valor <= 0) { alert('Preencha descrição e valor.'); return; }
+  const cat = document.getElementById('gg-cat').value;
+  const arr = loadGastosCartao(_gastaoCartaoId);
+  arr.push({ id: Date.now().toString(), desc, valor, cat });
+  saveGastosCartao(_gastaoCartaoId, arr);
+  document.getElementById('gg-desc').value = '';
+  document.getElementById('gg-valor').value = '';
+  renderGastosList(_gastaoCartaoId);
+}
+
+function excluirGasto(id) {
+  const arr = loadGastosCartao(_gastaoCartaoId).filter(x=>x.id!==id);
+  saveGastosCartao(_gastaoCartaoId, arr);
+  renderGastosList(_gastaoCartaoId);
+}
+
+function renderGastosList(cartaoId) {
+  const arr = loadGastosCartao(cartaoId);
+  const total = arr.reduce((s,g)=>s+g.valor,0);
+
+  // Resumo por categoria
+  const porCat = {};
+  arr.forEach(g => { porCat[g.cat] = (porCat[g.cat]||0) + g.valor; });
+  let resumoHtml = '';
+  if (arr.length > 0) {
+    resumoHtml = `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">`;
+    Object.entries(porCat).sort((a,b)=>b[1]-a[1]).forEach(([cat,val]) => {
+      const pct = (val/total*100).toFixed(0);
+      resumoHtml += `<div style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--surface);border:1px solid var(--border)">${catGastosLabel[cat]||cat} <strong>${brl(val)}</strong> <span style="color:var(--fg3)">${pct}%</span></div>`;
+    });
+    resumoHtml += `</div><div style="font-size:13px;font-weight:700;margin-bottom:4px">Total lançado: <span style="color:var(--accent)">${brl(total)}</span></div>`;
+  }
+  document.getElementById('gastos-resumo').innerHTML = resumoHtml;
+
+  // Lista
+  if (arr.length === 0) {
+    document.getElementById('gastos-lista').innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--fg3);font-size:12px">Nenhum gasto lançado ainda. É opcional!</div>';
+    return;
+  }
+  let html = '';
+  [...arr].reverse().forEach(g => {
+    html += `<div class="gasto-item">
+      <div>
+        <span>${g.desc}</span>
+        <span class="gasto-cat-pill">${catGastosLabel[g.cat]||g.cat}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-weight:700">${brl(g.valor)}</span>
+        <button onclick="excluirGasto('${g.id}')" style="background:none;border:none;cursor:pointer;color:var(--fg3);font-size:14px">✕</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById('gastos-lista').innerHTML = html;
+}
+
+document.getElementById('modal-gastos').addEventListener('click', function(e){ if(e.target===this) fecharGastos(); });
+
+// ══════════════════════════════════════════════════════════════════
+// ── CRIPTOMOEDAS ─────────────────────────────────────────────────
+const CRIPTO_KEY = 'ftav_criptos';
+const OBJ_KEY = 'ftav_objetivos';
+
+function loadCriptos() { try { return JSON.parse(localStorage.getItem(CRIPTO_KEY)||'[]'); } catch(e) { return []; } }
+function saveCriptos(arr) {
+  try { localStorage.setItem(CRIPTO_KEY, JSON.stringify(arr)); } catch(e) {}
+  if (dbRef) { try { dbRef.collection('criptos').doc('lista').set({itens: arr}); } catch(e) {} }
+}
+function loadObjetivos() { try { return JSON.parse(localStorage.getItem(OBJ_KEY)||'[]'); } catch(e) { return []; } }
+function saveObjetivos(arr) {
+  try { localStorage.setItem(OBJ_KEY, JSON.stringify(arr)); } catch(e) {}
+  if (dbRef) { try { dbRef.collection('objetivos').doc('lista').set({itens: arr}); } catch(e) {} }
+}
+
+function renderCriptos() {
+  const criptos = loadCriptos();
+  if (!document.getElementById('est-cripto-lista')) return;
+  if (criptos.length === 0) {
+    document.getElementById('est-cripto-lista').innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--fg3);font-size:12px">Nenhuma cripto cadastrada ainda.</div>';
+    return;
+  }
+  let html = '<div class="div-grid">';
+  criptos.forEach(c => {
+    const rend = c.atual - c.investido;
+    const pct = c.investido > 0 ? ((rend / c.investido) * 100) : 0;
+    const cor = rend >= 0 ? 'positivo' : 'negativo';
+    const sinal = rend >= 0 ? '+' : '';
+    html += `<div class="caixinha-card">
+      <div class="caixinha-top">
+        <div>
+          <div class="caixinha-nome">🪙 ${c.nome}</div>
+          <div style="font-size:10px;color:var(--fg3);margin-top:2px">${c.simbolo?.toUpperCase()||''} ${c.qtd ? '· ' + c.qtd + ' unid.' : ''}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost" style="padding:3px 8px;font-size:11px" onclick="editarCripto('${c.id}')">✏️</button>
+          <button class="btn" style="padding:3px 8px;font-size:11px;background:var(--red-bg);color:var(--red)" onclick="excluirCripto('${c.id}')">🗑️</button>
+        </div>
+      </div>
+      <div class="caixinha-valores">
+        <div><div class="caixinha-val-label">Investido</div><div class="caixinha-val-num">${brl(c.investido)}</div></div>
+        <div><div class="caixinha-val-label">Atual</div><div class="caixinha-val-num ${cor}">${brl(c.atual)}</div></div>
+        <div><div class="caixinha-val-label">Resultado</div><div class="caixinha-val-num ${cor}">${sinal}${brl(rend)} (${sinal}${pct.toFixed(1)}%)</div></div>
+      </div>
+      ${c.carteira ? `<div style="font-size:11px;color:var(--fg3)">📍 ${c.carteira}</div>` : ''}
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('est-cripto-lista').innerHTML = html;
+}
+
+function abrirModalCripto(id) {
+  document.getElementById('modal-cripto-titulo').textContent = id ? 'Editar Cripto' : '+ Nova Cripto';
+  if (id) {
+    const c = loadCriptos().find(x=>x.id===id);
+    if (!c) return;
+    document.getElementById('fc-id').value = c.id;
+    document.getElementById('fc-nome').value = c.nome;
+    document.getElementById('fc-simbolo').value = c.simbolo||'';
+    document.getElementById('fc-qtd').value = c.qtd||'';
+    document.getElementById('fc-investido').value = c.investido;
+    document.getElementById('fc-atual').value = c.atual;
+    document.getElementById('fc-carteira').value = c.carteira||'';
+  } else {
+    document.getElementById('fc-id').value = '';
+    ['fc-nome','fc-simbolo','fc-qtd','fc-investido','fc-atual','fc-carteira'].forEach(i=>document.getElementById(i).value='');
+  }
+  document.getElementById('modal-cripto').classList.remove('hidden');
+}
+function fecharModalCripto() { document.getElementById('modal-cripto').classList.add('hidden'); }
+function editarCripto(id) { abrirModalCripto(id); }
+function salvarCripto() {
+  const nome = document.getElementById('fc-nome').value.trim();
+  const investido = parseFloat(document.getElementById('fc-investido').value)||0;
+  if (!nome) { alert('Informe o nome da moeda.'); return; }
+  const id = document.getElementById('fc-id').value || Date.now().toString();
+  const c = {
+    id, nome,
+    simbolo: document.getElementById('fc-simbolo').value.trim().toUpperCase(),
+    qtd: parseFloat(document.getElementById('fc-qtd').value)||0,
+    investido,
+    atual: parseFloat(document.getElementById('fc-atual').value)||investido,
+    carteira: document.getElementById('fc-carteira').value.trim(),
+  };
+  const arr = loadCriptos().filter(x=>x.id!==id);
+  arr.push(c);
+  saveCriptos(arr);
+  fecharModalCripto();
+  renderEstrategia();
+}
+function excluirCripto(id) {
+  if (!confirm('Excluir esta cripto?')) return;
+  saveCriptos(loadCriptos().filter(x=>x.id!==id));
+  renderEstrategia();
+}
+
+// ── OBJETIVOS ─────────────────────────────────────────────────────
+function renderObjetivos() {
+  const objs = loadObjetivos();
+  if (!document.getElementById('est-obj-lista')) return;
+  if (objs.length === 0) {
+    document.getElementById('est-obj-lista').innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--fg3);font-size:12px">Nenhum objetivo cadastrado ainda.</div>';
+    return;
+  }
+  let html = '';
+  objs.forEach(o => {
+    const pct = o.meta > 0 ? Math.min(100, (o.atual/o.meta)*100) : 0;
+    const falta = Math.max(0, o.meta - o.atual);
+    const mesesFaltam = o.aporte > 0 ? Math.ceil(falta / o.aporte) : null;
+    html += `<div class="caixinha-card" style="margin-bottom:10px">
+      <div class="caixinha-top">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:24px">${o.icone||'🎯'}</span>
+          <div>
+            <div class="caixinha-nome">${o.nome}</div>
+            ${o.prazo ? `<div style="font-size:10px;color:var(--fg3)">Prazo: ${o.prazo}</div>` : ''}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost" style="padding:3px 8px;font-size:11px" onclick="editarObjetivo('${o.id}')">✏️</button>
+          <button class="btn" style="padding:3px 8px;font-size:11px;background:var(--red-bg);color:var(--red)" onclick="excluirObjetivo('${o.id}')">🗑️</button>
+        </div>
+      </div>
+      <div class="caixinha-progress">
+        <div class="caixinha-progress-label">
+          <span>Guardado: ${brl(o.atual)}</span>
+          <span>Meta: ${brl(o.meta)} · ${pct.toFixed(0)}%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':pct>50?'var(--accent)':'var(--orange)'}"></div></div>
+      </div>
+      <div style="display:flex;gap:16px;font-size:11px;color:var(--fg3);margin-top:6px">
+        <span>Falta: <strong style="color:var(--fg)">${brl(falta)}</strong></span>
+        ${o.aporte > 0 ? `<span>Aporte/mês: <strong style="color:var(--fg)">${brl(o.aporte)}</strong></span>` : ''}
+        ${mesesFaltam ? `<span>≈ <strong style="color:var(--accent)">${mesesFaltam} meses</strong></span>` : ''}
+      </div>
+    </div>`;
+  });
+  document.getElementById('est-obj-lista').innerHTML = html;
+}
+
+function abrirModalObjetivo(id) {
+  document.getElementById('modal-objetivo-titulo').textContent = id ? 'Editar Objetivo' : '+ Novo Objetivo';
+  if (id) {
+    const o = loadObjetivos().find(x=>x.id===id);
+    if (!o) return;
+    document.getElementById('fo-id').value = o.id;
+    document.getElementById('fo-nome').value = o.nome;
+    document.getElementById('fo-icone').value = o.icone||'🎯';
+    document.getElementById('fo-meta').value = o.meta;
+    document.getElementById('fo-atual').value = o.atual;
+    document.getElementById('fo-prazo').value = o.prazo||'';
+    document.getElementById('fo-aporte').value = o.aporte||'';
+  } else {
+    document.getElementById('fo-id').value = '';
+    ['fo-nome','fo-meta','fo-atual','fo-prazo','fo-aporte'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('fo-icone').value = '🚗';
+  }
+  document.getElementById('modal-objetivo').classList.remove('hidden');
+}
+function fecharModalObjetivo() { document.getElementById('modal-objetivo').classList.add('hidden'); }
+function editarObjetivo(id) { abrirModalObjetivo(id); }
+function salvarObjetivo() {
+  const nome = document.getElementById('fo-nome').value.trim();
+  const meta = parseFloat(document.getElementById('fo-meta').value)||0;
+  if (!nome || meta <= 0) { alert('Preencha nome e meta.'); return; }
+  const id = document.getElementById('fo-id').value || Date.now().toString();
+  const o = {
+    id, nome,
+    icone: document.getElementById('fo-icone').value,
+    meta,
+    atual: parseFloat(document.getElementById('fo-atual').value)||0,
+    prazo: document.getElementById('fo-prazo').value.trim(),
+    aporte: parseFloat(document.getElementById('fo-aporte').value)||0,
+  };
+  const arr = loadObjetivos().filter(x=>x.id!==id);
+  arr.push(o);
+  saveObjetivos(arr);
+  fecharModalObjetivo();
+  renderEstrategia();
+}
+function excluirObjetivo(id) {
+  if (!confirm('Excluir este objetivo?')) return;
+  saveObjetivos(loadObjetivos().filter(x=>x.id!==id));
+  renderEstrategia();
+}
+
+// ── AÇÕES ─────────────────────────────────────────────────────────
+const ACOES_KEY = 'ftav_acoes';
+function loadAcoes() { try { return JSON.parse(localStorage.getItem(ACOES_KEY)||'[]'); } catch(e) { return []; } }
+function saveAcoes(arr) {
+  try { localStorage.setItem(ACOES_KEY, JSON.stringify(arr)); } catch(e) {}
+  if (dbRef) { try { dbRef.collection('acoes').doc('lista').set({itens: arr}); } catch(e) {} }
+}
+
+function renderAcoes() {
+  const acoes = loadAcoes();
+  if (!document.getElementById('est-acoes-lista')) return;
+  if (acoes.length === 0) {
+    document.getElementById('est-acoes-lista').innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--fg3);font-size:12px">Nenhuma ação cadastrada ainda.</div>';
+    return;
+  }
+  const tipoLabel = {acao:'Ação',fii:'FII',etf:'ETF',bdr:'BDR',stock:'Stock'};
+  const tipoIcon = {acao:'📊',fii:'🏢',etf:'📦',bdr:'🌎',stock:'🇺🇸'};
+  let html = '<div class="div-grid">';
+  acoes.forEach(a => {
+    const totalInvestido = a.qtd * a.precoMedio;
+    const totalAtual = a.qtd * a.cotacao;
+    const rend = totalAtual - totalInvestido;
+    const pct = totalInvestido > 0 ? (rend / totalInvestido * 100) : 0;
+    const cor = rend >= 0 ? 'positivo' : 'negativo';
+    const sinal = rend >= 0 ? '+' : '';
+    html += `<div class="caixinha-card">
+      <div class="caixinha-top">
+        <div>
+          <div class="caixinha-nome">${tipoIcon[a.tipo]||'📊'} ${a.ticker}</div>
+          <div style="font-size:10px;color:var(--fg3);margin-top:2px">${tipoLabel[a.tipo]||'Ação'} · ${a.qtd} cotas${a.corretora?' · '+a.corretora:''}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost" style="padding:3px 8px;font-size:11px" onclick="editarAcao('${a.id}')">✏️</button>
+          <button class="btn" style="padding:3px 8px;font-size:11px;background:var(--red-bg);color:var(--red)" onclick="excluirAcao('${a.id}')">🗑️</button>
+        </div>
+      </div>
+      <div class="caixinha-valores">
+        <div><div class="caixinha-val-label">Investido</div><div class="caixinha-val-num">${brl(totalInvestido)}</div></div>
+        <div><div class="caixinha-val-label">Atual</div><div class="caixinha-val-num ${cor}">${brl(totalAtual)}</div></div>
+        <div><div class="caixinha-val-label">Resultado</div><div class="caixinha-val-num ${cor}">${sinal}${brl(rend)}<br><span style="font-size:10px">${sinal}${pct.toFixed(1)}%</span></div></div>
+      </div>
+      <div style="font-size:11px;color:var(--fg3);margin-top:4px">Preço médio: ${brl(a.precoMedio)} · Cotação: ${brl(a.cotacao)}</div>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('est-acoes-lista').innerHTML = html;
+}
+
+function abrirModalAcao(id) {
+  document.getElementById('modal-acao-titulo').textContent = id ? 'Editar Ação' : '+ Nova Ação';
+  if (id) {
+    const a = loadAcoes().find(x=>x.id===id);
+    if (!a) return;
+    document.getElementById('fa-id').value = a.id;
+    document.getElementById('fa-ticker').value = a.ticker;
+    document.getElementById('fa-tipo').value = a.tipo||'acao';
+    document.getElementById('fa-qtd').value = a.qtd;
+    document.getElementById('fa-preco-medio').value = a.precoMedio;
+    document.getElementById('fa-cotacao').value = a.cotacao;
+    document.getElementById('fa-corretora').value = a.corretora||'';
+  } else {
+    document.getElementById('fa-id').value = '';
+    ['fa-ticker','fa-qtd','fa-preco-medio','fa-cotacao','fa-corretora'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('fa-tipo').value = 'acao';
+  }
+  document.getElementById('modal-acao').classList.remove('hidden');
+}
+function fecharModalAcao() { document.getElementById('modal-acao').classList.add('hidden'); }
+function editarAcao(id) { abrirModalAcao(id); }
+function salvarAcao() {
+  const ticker = document.getElementById('fa-ticker').value.trim().toUpperCase();
+  const qtd = parseFloat(document.getElementById('fa-qtd').value)||0;
+  const precoMedio = parseFloat(document.getElementById('fa-preco-medio').value)||0;
+  if (!ticker || qtd <= 0 || precoMedio <= 0) { alert('Preencha ticker, quantidade e preço médio.'); return; }
+  const id = document.getElementById('fa-id').value || Date.now().toString();
+  const a = {
+    id, ticker,
+    tipo: document.getElementById('fa-tipo').value,
+    qtd, precoMedio,
+    cotacao: parseFloat(document.getElementById('fa-cotacao').value)||precoMedio,
+    corretora: document.getElementById('fa-corretora').value.trim(),
+  };
+  const arr = loadAcoes().filter(x=>x.id!==id);
+  arr.push(a);
+  saveAcoes(arr);
+  fecharModalAcao();
+  renderEstrategia();
+}
+function excluirAcao(id) {
+  if (!confirm('Excluir esta ação?')) return;
+  saveAcoes(loadAcoes().filter(x=>x.id!==id));
+  renderEstrategia();
+}
+document.getElementById('modal-acao').addEventListener('click', function(e){ if(e.target===this) fecharModalAcao(); });
+
+document.getElementById('modal-cripto').addEventListener('click', function(e){ if(e.target===this) fecharModalCripto(); });
+document.getElementById('modal-objetivo').addEventListener('click', function(e){ if(e.target===this) fecharModalObjetivo(); });
+
+// ── Menu Planejamento colapsável ─────────────────────────────────
+let planejamentoAberto = true;
+function togglePlanejamento() {
+  planejamentoAberto = !planejamentoAberto;
+  const sub = document.getElementById('submenu-planejamento');
+  const icon = document.getElementById('icon-planejamento');
+  sub.style.maxHeight = planejamentoAberto ? '200px' : '0px';
+  icon.style.transform = planejamentoAberto ? 'rotate(0deg)' : 'rotate(-90deg)';
+}
 
 // ── Init ──────────────────────────────────────────────────────────
 // Não renderiza nada até o login — tela de login já está visível
