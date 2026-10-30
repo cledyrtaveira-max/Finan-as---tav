@@ -8800,9 +8800,16 @@ const PLANOS = {
 // Ordem hierárquica de planos
 const ORDEM_PLANOS = ['gratuito', 'pro', 'familia', 'premium'];
 
+// ── Admins/donos com acesso vitalício ilimitado ──────────────────
+const ADMINS_VITALICIOS = [
+  'cledyrtaveira@gmail.com'
+];
+
 // ── Obter plano atual do usuário ─────────────────────────────────
 window.getPlanoAtual = function() {
   try {
+    // Dono/admin vitalício sempre tem premium ilimitado
+    if (usuarioAtivo && ADMINS_VITALICIOS.includes(usuarioAtivo)) return 'premium';
     // Primeiro tenta Firestore (definido pelo webhook Hotmart)
     if (appCfg && appCfg.plano && PLANOS[appCfg.plano]) return appCfg.plano;
   } catch(e) {}
