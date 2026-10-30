@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f7fff"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#e0e7ff" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+  <!-- Fundo arredondado -->
+  <rect width="200" height="200" rx="44" fill="url(#g1)"/>
+  <!-- Moeda / círculo externo -->
+  <circle cx="100" cy="92" r="52" fill="none" stroke="url(#g2)" stroke-width="7" opacity="0.35"/>
+  <!-- Seta para cima (crescimento) -->
+  <polyline points="70,112 100,72 130,112" fill="none" stroke="url(#g2)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Linha base -->
+  <line x1="68" y1="120" x2="132" y2="120" stroke="url(#g2)" stroke-width="7" stroke-linecap="round" opacity="0.6"/>
+  <!-- Símbolo R$ estilizado -->
+  <text x="100" y="158" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="800" text-anchor="middle" fill="white" opacity="0.9" letter-spacing="1">Fvô</text>
+</svg>
