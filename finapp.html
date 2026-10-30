@@ -2330,6 +2330,10 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
           </div>
           <div id="cfg-estrategia-resumo"></div>
 
+          <!-- PLANO ATUAL -->
+          <div class="section-title" style="margin-top:32px">💎 Seu plano</div>
+          <div id="cfg-plano-section" style="max-width:560px"></div>
+
           <!-- MODO FAMÍLIA -->
           <div class="section-title" style="margin-top:32px">👨‍👩‍👧 Modo casal / família</div>
           <div id="cfg-familia-section" style="max-width:560px"></div>
@@ -8688,3 +8692,377 @@ window.renderBadgeFamilia = renderBadgeFamilia;
 })();
 </script>
 <!-- ── Fim Modo Família ──────────────────────────────────────────────────── -->
+
+<!-- ══════════════════════════════════════════════════════════════
+     SISTEMA DE PLANOS — controle de acesso por funcionalidade
+     ══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+'use strict';
+
+// ── Definição de planos e limites ────────────────────────────────
+const PLANOS = {
+  gratuito: {
+    nome: 'Gratuito',
+    cor: '#6b7280',
+    emoji: '🆓',
+    limites: {
+      despesasFixas: 5,
+      lancamentosMes: 10,
+      historicoMeses: 1,
+      categorias: null // sem limite no gratuito para não quebrar onboarding
+    },
+    features: {
+      graficosAnual: false,
+      radarMetas: false,
+      statusPagamento: false,
+      exportarPDF: false,
+      contaCasal: false,
+      alertasVencimento: false,
+      projecoes: false,
+      relatorioEmail: false
+    }
+  },
+  pro: {
+    nome: 'Pro',
+    cor: '#3b82f6',
+    emoji: '⚡',
+    preco: 'R$ 9,90/mês',
+    hotmartUrl: 'https://hotmart.com/product/financas-taveira-pro',
+    limites: {
+      despesasFixas: null,   // ilimitado
+      lancamentosMes: null,
+      historicoMeses: 12,
+      categorias: null
+    },
+    features: {
+      graficosAnual: true,
+      radarMetas: true,
+      statusPagamento: true,
+      exportarPDF: true,
+      contaCasal: false,
+      alertasVencimento: false,
+      projecoes: false,
+      relatorioEmail: false
+    }
+  },
+  familia: {
+    nome: 'Família',
+    cor: '#8b5cf6',
+    emoji: '👨‍👩‍👧',
+    preco: 'R$ 19,90/mês',
+    hotmartUrl: 'https://hotmart.com/product/financas-taveira-familia',
+    limites: {
+      despesasFixas: null,
+      lancamentosMes: null,
+      historicoMeses: null,
+      categorias: null,
+      membrosFamilia: 2
+    },
+    features: {
+      graficosAnual: true,
+      radarMetas: true,
+      statusPagamento: true,
+      exportarPDF: true,
+      contaCasal: true,
+      alertasVencimento: true,
+      projecoes: false,
+      relatorioEmail: false
+    }
+  },
+  premium: {
+    nome: 'Premium',
+    cor: '#f59e0b',
+    emoji: '👑',
+    preco: 'R$ 29,90/mês',
+    hotmartUrl: 'https://hotmart.com/product/financas-taveira-premium',
+    limites: {
+      despesasFixas: null,
+      lancamentosMes: null,
+      historicoMeses: null,
+      categorias: null,
+      membrosFamilia: 5
+    },
+    features: {
+      graficosAnual: true,
+      radarMetas: true,
+      statusPagamento: true,
+      exportarPDF: true,
+      contaCasal: true,
+      alertasVencimento: true,
+      projecoes: true,
+      relatorioEmail: true
+    }
+  }
+};
+
+// Ordem hierárquica de planos
+const ORDEM_PLANOS = ['gratuito', 'pro', 'familia', 'premium'];
+
+// ── Obter plano atual do usuário ─────────────────────────────────
+window.getPlanoAtual = function() {
+  try {
+    // Primeiro tenta Firestore (definido pelo webhook Hotmart)
+    if (appCfg && appCfg.plano && PLANOS[appCfg.plano]) return appCfg.plano;
+  } catch(e) {}
+  return 'gratuito';
+};
+
+// ── Verificar se tem acesso a uma feature ───────────────────────
+window.temPlano = function(planoMinimo) {
+  const atual = getPlanoAtual();
+  const idxAtual = ORDEM_PLANOS.indexOf(atual);
+  const idxMin   = ORDEM_PLANOS.indexOf(planoMinimo);
+  return idxAtual >= idxMin;
+};
+
+// ── Verificar feature específica ────────────────────────────────
+window.temFeature = function(feature) {
+  const plano = getPlanoAtual();
+  return !!(PLANOS[plano] && PLANOS[plano].features[feature]);
+};
+
+// ── Verificar limite numérico ────────────────────────────────────
+window.getLimit = function(campo) {
+  const plano = getPlanoAtual();
+  return PLANOS[plano] ? PLANOS[plano].limites[campo] : 0;
+};
+
+// ── Modal de upgrade ─────────────────────────────────────────────
+window.mostrarModalUpgrade = function(feature, planoNecessario) {
+  const plano = PLANOS[planoNecessario] || PLANOS['pro'];
+  const nomeFeature = {
+    graficosAnual: 'Gráfico Anual',
+    radarMetas: 'Radar de Metas',
+    statusPagamento: 'Status de Pagamento',
+    exportarPDF: 'Exportar PDF/CSV',
+    contaCasal: 'Modo Casal/Família',
+    alertasVencimento: 'Alertas de Vencimento',
+    projecoes: 'Projeções Inteligentes',
+    relatorioEmail: 'Relatório por E-mail',
+    despesasFixas: 'mais despesas fixas',
+    lancamentos: 'mais lançamentos'
+  }[feature] || feature;
+
+  // Remove modal anterior se existir
+  const ant = document.getElementById('modal-upgrade');
+  if (ant) ant.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'modal-upgrade';
+  modal.className = 'modal-overlay';
+  modal.style.zIndex = '9999';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = `
+    <div class="modal" style="max-width:400px;text-align:center">
+      <div style="font-size:48px;margin-bottom:8px">${plano.emoji}</div>
+      <div class="modal-title" style="font-size:18px">Recurso exclusivo</div>
+      <p style="font-size:13px;color:var(--fg2);margin:8px 0 20px">
+        <strong>${nomeFeature}</strong> está disponível no plano
+        <span style="color:${plano.cor};font-weight:800">${plano.nome}</span>
+        (${plano.preco}).
+      </p>
+      <div style="background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:20px;text-align:left">
+        ${Object.entries(plano.features).filter(([,v])=>v).slice(0,5).map(([k])=>`
+          <div style="font-size:12px;color:var(--fg2);padding:3px 0">
+            ✅ ${({graficosAnual:'Gráfico anual',radarMetas:'Radar de metas',statusPagamento:'Status de pagamento',exportarPDF:'Exportar PDF/CSV',contaCasal:'Conta casal',alertasVencimento:'Alertas de vencimento',projecoes:'Projeções inteligentes',relatorioEmail:'Relatório por e-mail'})[k]||k}
+          </div>`).join('')}
+        ${Object.entries(plano.features).filter(([,v])=>v).length > 5 ? `<div style="font-size:11px;color:var(--fg3);margin-top:4px">+ mais recursos...</div>` : ''}
+      </div>
+      <a href="${plano.hotmartUrl}" target="_blank" rel="noopener"
+         style="display:block;background:${plano.cor};color:#fff;border-radius:10px;padding:14px;font-weight:700;font-size:15px;text-decoration:none;margin-bottom:10px">
+        🚀 Assinar ${plano.nome} — ${plano.preco}
+      </a>
+      <button class="btn btn-ghost" onclick="document.getElementById('modal-upgrade').remove()" style="width:100%;font-size:13px">
+        Continuar no plano gratuito
+      </button>
+    </div>`;
+  document.body.appendChild(modal);
+};
+
+// ── Verificar e bloquear com modal se não tiver plano ───────────
+window.exigirPlano = function(planoMinimo, feature) {
+  if (!temPlano(planoMinimo)) {
+    mostrarModalUpgrade(feature, planoMinimo);
+    return false;
+  }
+  return true;
+};
+
+// ── Aplicar limites nos lançamentos manuais ──────────────────────
+function verificarLimiteLancamentos() {
+  const limite = getLimit('lancamentosMes');
+  if (!limite) return true; // ilimitado
+
+  // Conta lançamentos manuais do mês/ano atual
+  const agora = new Date();
+  const mesAtual = agora.toLocaleString('pt-BR', { month: 'long' });
+  const anoAtual = agora.getFullYear();
+  const lancs = (appData && appData.lancamentos) ? appData.lancamentos : [];
+  const cont = lancs.filter(l =>
+    l.ano === anoAtual &&
+    l.mes && l.mes.toLowerCase() === mesAtual.toLowerCase()
+  ).length;
+
+  if (cont >= limite) {
+    mostrarModalUpgrade('lancamentos', 'pro');
+    return false;
+  }
+  return true;
+}
+window.verificarLimiteLancamentos = verificarLimiteLancamentos;
+
+// ── Verificar limite de despesas fixas ──────────────────────────
+function verificarLimiteDespesasFixas() {
+  const limite = getLimit('despesasFixas');
+  if (!limite) return true;
+  const qtd = (appCfg && appCfg.extras ? appCfg.extras.length : 0);
+  if (qtd >= limite) {
+    mostrarModalUpgrade('despesasFixas', 'pro');
+    return false;
+  }
+  return true;
+}
+window.verificarLimiteDespesasFixas = verificarLimiteDespesasFixas;
+
+// ── Renderizar badge de plano no perfil/config ───────────────────
+window.renderBadgePlano = function() {
+  const el = document.getElementById('cfg-plano-badge');
+  if (!el) return;
+  const planoId = getPlanoAtual();
+  const plano = PLANOS[planoId];
+  if (!plano) return;
+  el.innerHTML = `
+    <div style="display:inline-flex;align-items:center;gap:8px;background:${plano.cor}22;border:1px solid ${plano.cor}55;border-radius:20px;padding:6px 14px">
+      <span style="font-size:16px">${plano.emoji}</span>
+      <span style="font-size:13px;font-weight:700;color:${plano.cor}">${plano.nome}</span>
+      ${planoId !== 'premium' ? `<span style="font-size:11px;color:var(--fg3)">·</span>
+      <span onclick="mostrarModalUpgrade('upgrade','${ORDEM_PLANOS[ORDEM_PLANOS.indexOf(planoId)+1]}')"
+            style="font-size:11px;color:${plano.cor};cursor:pointer;text-decoration:underline">Fazer upgrade</span>` : ''}
+    </div>`;
+};
+
+// ── Hookar em funções existentes ─────────────────────────────────
+
+// Bloquear lançamento manual se exceder limite
+const _origSalvarLanc = window.salvarLancamento;
+if (_origSalvarLanc) {
+  window.salvarLancamento = function() {
+    if (!verificarLimiteLancamentos()) return;
+    _origSalvarLanc.apply(this, arguments);
+  };
+}
+
+// Bloquear nova despesa fixa se exceder limite
+const _origSalvarFixa = window.salvarNovaFixa;
+if (_origSalvarFixa) {
+  window.salvarNovaFixa = function() {
+    if (!verificarLimiteDespesasFixas()) return;
+    _origSalvarFixa.apply(this, arguments);
+  };
+}
+
+// Bloquear gráfico anual
+const _origRenderAnual = window.renderGraficoAnual;
+if (_origRenderAnual) {
+  window.renderGraficoAnual = function() {
+    if (!temFeature('graficosAnual')) {
+      const el = document.getElementById('grafico-anual-container') ||
+                 document.getElementById('chart-anual');
+      if (el) el.innerHTML = `<div onclick="mostrarModalUpgrade('graficosAnual','pro')"
+        style="cursor:pointer;text-align:center;padding:40px;color:var(--fg3);border:2px dashed var(--border);border-radius:12px;margin:16px 0">
+        <div style="font-size:32px">🔒</div>
+        <div style="font-size:14px;margin-top:8px">Gráfico anual — Plano Pro</div>
+        <div style="font-size:12px;color:var(--accent);margin-top:4px">Toque para ver planos</div>
+      </div>`;
+      return;
+    }
+    _origRenderAnual.apply(this, arguments);
+  };
+}
+
+// Bloquear radar de metas
+const _origRenderRadar = window.renderRadarMetas;
+if (_origRenderRadar) {
+  window.renderRadarMetas = function() {
+    if (!temFeature('radarMetas')) {
+      const el = document.getElementById('radar-metas-container') ||
+                 document.getElementById('chart-radar');
+      if (el) el.innerHTML = `<div onclick="mostrarModalUpgrade('radarMetas','pro')"
+        style="cursor:pointer;text-align:center;padding:40px;color:var(--fg3);border:2px dashed var(--border);border-radius:12px;margin:16px 0">
+        <div style="font-size:32px">🔒</div>
+        <div style="font-size:14px;margin-top:8px">Radar de Metas — Plano Pro</div>
+        <div style="font-size:12px;color:var(--accent);margin-top:4px">Toque para ver planos</div>
+      </div>`;
+      return;
+    }
+    _origRenderRadar.apply(this, arguments);
+  };
+}
+
+// ── Seção de plano na Config ─────────────────────────────────────
+window.renderCfgPlano = function() {
+  const el = document.getElementById('cfg-plano-section');
+  if (!el) return;
+  const planoId = getPlanoAtual();
+  const plano = PLANOS[planoId];
+
+  const proxPlanoId = ORDEM_PLANOS[ORDEM_PLANOS.indexOf(planoId)+1];
+  const proxPlano   = proxPlanoId ? PLANOS[proxPlanoId] : null;
+
+  el.innerHTML = `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:12px;color:var(--fg3);margin-bottom:4px">Seu plano atual</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:24px">${plano.emoji}</span>
+            <span style="font-size:18px;font-weight:800;color:${plano.cor}">${plano.nome}</span>
+            ${plano.preco ? `<span style="font-size:12px;color:var(--fg3)">${plano.preco}</span>` : ''}
+          </div>
+        </div>
+        ${proxPlano ? `
+        <button class="btn btn-primary" style="font-size:12px;padding:8px 16px;background:${proxPlano.cor}"
+                onclick="mostrarModalUpgrade('upgrade','${proxPlanoId}')">
+          ${proxPlano.emoji} Upgrade para ${proxPlano.nome}
+        </button>` : `<div style="font-size:12px;color:${plano.cor}">✅ Plano máximo</div>`}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${[
+          ['Despesas fixas', 'despesasFixas', planoId === 'gratuito' ? '5 itens' : 'Ilimitado'],
+          ['Lançamentos', 'lancamentosMes', planoId === 'gratuito' ? '10/mês' : 'Ilimitado'],
+          ['Histórico', 'historicoMeses', planoId === 'gratuito' ? '1 mês' : planoId === 'pro' ? '12 meses' : 'Ilimitado'],
+          ['Conta casal', 'contaCasal', plano.features.contaCasal ? (planoId === 'premium' ? 'Até 5 membros' : '2 membros') : null],
+          ['Alertas', 'alertasVencimento', plano.features.alertasVencimento ? '✅' : null],
+          ['Exportar PDF', 'exportarPDF', plano.features.exportarPDF ? '✅' : null],
+        ].map(([label, feat, val]) => val ? `
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px">
+            <div style="font-size:10px;color:var(--fg3);margin-bottom:2px">${label}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--fg1)">${val}</div>
+          </div>` : '').join('')}
+      </div>
+
+      ${planoId === 'gratuito' ? `
+      <div style="margin-top:14px;padding:12px;background:${PLANOS.pro.cor}11;border:1px solid ${PLANOS.pro.cor}33;border-radius:10px">
+        <div style="font-size:12px;font-weight:700;color:${PLANOS.pro.cor};margin-bottom:6px">⚡ Por que fazer upgrade?</div>
+        <div style="font-size:11px;color:var(--fg2)">Plano Pro por apenas R$9,90/mês — o preço de um café. Lançamentos ilimitados, gráfico anual, radar de metas e exportação PDF.</div>
+        <button class="btn btn-primary" style="margin-top:10px;width:100%;background:${PLANOS.pro.cor}"
+                onclick="mostrarModalUpgrade('upgrade','pro')">
+          Ver planos e preços
+        </button>
+      </div>` : ''}
+    </div>`;
+};
+
+// Hookar no renderConfig para mostrar seção de plano
+const _rcPlano = window.renderConfig;
+window.renderConfig = function() {
+  if (_rcPlano) _rcPlano();
+  renderCfgPlano();
+  renderBadgePlano();
+};
+
+})();
+</script>
+<!-- ── Fim Sistema de Planos ─────────────────────────────────────────────── -->
