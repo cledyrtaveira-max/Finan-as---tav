@@ -2277,6 +2277,13 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
           <div style="font-size:11px;opacity:.8">Cola no WhatsApp, e-mail…</div>
         </div>
       </button>
+      <button class="btn btn-secondary" onclick="exportarPDF()" style="display:flex;align-items:center;gap:10px;justify-content:center;background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.25);color:#ef4444">
+        <span style="font-size:20px">📄</span>
+        <div style="text-align:left">
+          <div style="font-weight:700">Relatório PDF</div>
+          <div style="font-size:11px;opacity:.8">Salvar ou imprimir como PDF</div>
+        </div>
+      </button>
     </div>
     <div style="margin-top:14px;text-align:center">
       <button class="btn btn-ghost" onclick="fecharModalExportar()">Cancelar</button>
@@ -7358,6 +7365,193 @@ function abrirModalExportar() {
 function abrirModalExportarDash() { abrirModalExportar(); }
 function fecharModalExportar() {
   document.getElementById('modal-exportar').classList.add('hidden');
+}
+
+function exportarPDF() {
+  fecharModalExportar();
+
+  // Coleta dados do mês
+  const mes = mesSelecionado;
+  const ano = anoSelecionado;
+  const periodoKey = `${mes}_${ano}`;
+  const cfg = cfgPeriodo ? cfgPeriodo() : (appCfg.periodos?.[periodoKey] || {});
+
+  const baseVis = despesasEfetivas ? despesasEfetivas() : [];
+  const lanMes = (appData.lancamentos||[]).filter(l => l.mes === mes && String(l.ano||ano) === String(ano));
+
+  const rendaMesVal = cfg.rendaMes ? parseFloat(cfg.rendaMes) : 0;
+  const rendaBase = baseVis.filter(l => (appCfg.tipos?.[String(l._baseIdx)] || l.tipo) === 'entrada').reduce((s,l) => s+l.val, 0);
+  const rendaLan  = lanMes.filter(l => l.tipo === 'entrada').reduce((s,l) => s+l.val, 0);
+  const renda = rendaMesVal > 0 ? rendaMesVal : (rendaBase + rendaLan);
+
+  const despBase = baseVis.filter(l => (appCfg.tipos?.[String(l._baseIdx)] || l.tipo) === 'saida').reduce((s,l) => s+l.val, 0);
+  const despLan  = lanMes.filter(l => l.tipo === 'saida').reduce((s,l) => s+l.val, 0);
+  const desp = despBase + despLan;
+
+  const divBase = baseVis.filter(l => (appCfg.tipos?.[String(l._baseIdx)] || l.tipo) === 'divida').reduce((s,l) => s+l.val, 0);
+  const divLan  = lanMes.filter(l => l.tipo === 'divida').reduce((s,l) => s+l.val, 0);
+  const divs = divBase + divLan;
+
+  const saldo = renda - desp - divs;
+  const pct = renda > 0 ? Math.round(((desp + divs) / renda) * 100) : 0;
+
+  const brl = v => 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+  // Agrupa por categoria
+  const catMap = {};
+  [...baseVis.filter(l => ['saida','divida'].includes(appCfg.tipos?.[String(l._baseIdx)] || l.tipo)),
+   ...lanMes.filter(l => ['saida','divida'].includes(l.tipo))].forEach(l => {
+    const cat = l.cat || 'Outros';
+    catMap[cat] = (catMap[cat] || 0) + l.val;
+  });
+  const cats = Object.entries(catMap).sort((a,b) => b[1]-a[1]);
+
+  // Lançamentos variáveis do mês
+  const lanVariaveis = lanMes.filter(l => l.tipo === 'saida' || l.tipo === 'entrada');
+
+  const now = new Date();
+  const geradoEm = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const userName = fbAuth?.currentUser?.displayName || fbAuth?.currentUser?.email || '';
+
+  const saldoCor = saldo >= 0 ? '#16a34a' : '#dc2626';
+  const semaforo = pct <= 60 ? '🟢 No azul' : pct <= 85 ? '🟡 Atenção' : '🔴 No vermelho';
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Relatório Finanvô — ${mes} ${ano}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a2e; background: #fff; padding: 32px; font-size: 13px; }
+  .header { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 3px solid #4f7fff; padding-bottom: 16px; margin-bottom: 24px; }
+  .logo { font-size: 24px; font-weight: 900; color: #4f7fff; letter-spacing: -0.5px; }
+  .logo span { color: #7c3aed; }
+  .header-right { text-align: right; }
+  .periodo { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+  .gerado { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+  .user-tag { font-size: 11px; color: #64748b; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .kpi { background: #f8faff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 12px; text-align: center; }
+  .kpi-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+  .kpi-value { font-size: 16px; font-weight: 800; }
+  .kpi-value.green { color: #16a34a; }
+  .kpi-value.red { color: #dc2626; }
+  .kpi-value.blue { color: #4f7fff; }
+  .kpi-value.purple { color: #7c3aed; }
+  .section { margin-bottom: 24px; }
+  .section-title { font-size: 12px; font-weight: 800; color: #4f7fff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+  td { padding: 7px 8px; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+  td:last-child { text-align: right; font-family: monospace; font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  .bar-wrap { background: #f1f5f9; border-radius: 4px; height: 6px; flex: 1; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, #4f7fff, #7c3aed); border-radius: 4px; }
+  .cat-row td { vertical-align: middle; }
+  .semaforo { display: inline-block; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 700; color: #15803d; margin-bottom: 16px; }
+  .semaforo.amarelo { background: #fefce8; border-color: #fde68a; color: #92400e; }
+  .semaforo.vermelho { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+  .footer { margin-top: 32px; border-top: 1px solid #e2e8f0; padding-top: 12px; display: flex; justify-content: space-between; }
+  .footer-left { font-size: 10px; color: #94a3b8; }
+  .footer-right { font-size: 10px; color: #4f7fff; font-weight: 700; }
+  @media print {
+    body { padding: 16px; }
+    .no-print { display: none !important; }
+    @page { margin: 1cm; size: A4; }
+  }
+  .print-btn { position: fixed; bottom: 24px; right: 24px; background: #4f7fff; color: #fff; border: none; border-radius: 12px; padding: 12px 24px; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 20px rgba(79,127,255,.4); }
+  .print-btn:hover { background: #3d6be8; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="logo">Finan<span>vô</span></div>
+    <div class="gerado">Gerado em ${geradoEm}</div>
+    ${userName ? `<div class="user-tag">${userName}</div>` : ''}
+  </div>
+  <div class="header-right">
+    <div class="periodo">${mes} ${ano}</div>
+    <div class="gerado">Relatório Mensal</div>
+  </div>
+</div>
+
+<div class="kpis">
+  <div class="kpi">
+    <div class="kpi-label">Receita</div>
+    <div class="kpi-value blue">${brl(renda)}</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Despesas</div>
+    <div class="kpi-value red">${brl(desp)}</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Dívidas</div>
+    <div class="kpi-value purple">${brl(divs)}</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Saldo</div>
+    <div class="kpi-value" style="color:${saldoCor}">${brl(saldo)}</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Status do mês</div>
+  <div class="semaforo ${pct > 85 ? 'vermelho' : pct > 60 ? 'amarelo' : ''}">${semaforo} — ${pct}% da renda comprometida</div>
+</div>
+
+${cats.length > 0 ? `
+<div class="section">
+  <div class="section-title">Gastos por categoria</div>
+  <table>
+    <thead><tr><th>Categoria</th><th>Progresso</th><th>Total</th></tr></thead>
+    <tbody>
+      ${cats.map(([cat, val]) => {
+        const pctCat = renda > 0 ? Math.min((val/renda)*100, 100) : 0;
+        return `<tr class="cat-row">
+          <td>${cat}</td>
+          <td style="width:40%"><div style="display:flex;align-items:center;gap:6px"><div class="bar-wrap"><div class="bar-fill" style="width:${pctCat.toFixed(1)}%"></div></div><span style="font-size:10px;color:#64748b;width:28px;text-align:right">${pctCat.toFixed(0)}%</span></div></td>
+          <td>${brl(val)}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>
+</div>
+` : ''}
+
+${lanVariaveis.length > 0 ? `
+<div class="section">
+  <div class="section-title">Lançamentos variáveis do mês</div>
+  <table>
+    <thead><tr><th>Descrição</th><th>Categoria</th><th>Tipo</th><th>Valor</th></tr></thead>
+    <tbody>
+      ${lanVariaveis.map(l => `<tr>
+        <td>${l.desc}</td>
+        <td>${l.cat || '—'}</td>
+        <td style="color:${l.tipo==='entrada'?'#16a34a':'#dc2626'}">${l.tipo==='entrada'?'↑ Entrada':'↓ Saída'}</td>
+        <td style="color:${l.tipo==='entrada'?'#16a34a':'#dc2626'}">${l.tipo==='entrada'?'+':'−'}${brl(l.val)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+</div>
+` : ''}
+
+<div class="footer">
+  <div class="footer-left">Finanvô · Controle financeiro familiar</div>
+  <div class="footer-right">finanvo.app</div>
+</div>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ Salvar como PDF</button>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank', 'width=850,height=1100');
+  if (!win) { mostrarToast('⚠️ Permita pop-ups para gerar o PDF'); return; }
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 800);
 }
 function atualizarBotaoExportar() {
   const el = document.getElementById('btn-exp-label');
