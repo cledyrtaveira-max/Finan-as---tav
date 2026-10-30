@@ -7312,4 +7312,299 @@ function mostrarToast(msg) {
 
 // ── Init ──────────────────────────────────────────────────────────
 // Não renderiza nada até o login — tela de login já está visível
+
+// ══════════════════════════════════════════════════════════════════
+// ── ONBOARDING DE NOVO USUÁRIO ────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+(function() {
+
+// Injeta estilos do onboarding
+const style = document.createElement('style');
+style.textContent = `
+#onboarding-screen {
+  position: fixed; inset: 0; z-index: 998;
+  background: #080b12;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  padding: max(20px, env(safe-area-inset-left,0px));
+}
+#onboarding-screen.hidden { display: none }
+.ob-box {
+  background: rgba(14,18,30,0.96);
+  border: 1px solid rgba(79,127,255,0.22);
+  border-radius: 22px;
+  padding: 36px 30px 28px;
+  width: min(400px, calc(100vw - 32px));
+  position: relative; z-index: 1;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 28px 60px rgba(0,0,0,.65), 0 0 50px rgba(79,127,255,.07);
+  backdrop-filter: blur(24px);
+}
+.ob-steps {
+  display: flex; gap: 6px; justify-content: center; margin-bottom: 28px;
+}
+.ob-step-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(79,127,255,0.25); transition: background .3s;
+}
+.ob-step-dot.active { background: #4f7fff; width: 22px; border-radius: 4px; }
+.ob-step-dot.done { background: #22c55e; }
+.ob-icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; margin: 0 auto 16px;
+}
+.ob-title {
+  font-size: 19px; font-weight: 800; color: #e8ecf4;
+  text-align: center; margin-bottom: 6px; letter-spacing: -.3px;
+}
+.ob-sub {
+  font-size: 12.5px; color: #5a6480; text-align: center;
+  line-height: 1.6; margin-bottom: 24px;
+}
+.ob-field label {
+  display: block; font-size: 11px; font-weight: 700;
+  color: #6b7fa3; letter-spacing: .5px; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.ob-field input {
+  width: 100%; padding: 11px 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(79,127,255,0.22);
+  border-radius: 10px; color: #e8ecf4; font-size: 15px;
+  outline: none; transition: border-color .2s;
+  font-family: inherit; box-sizing: border-box;
+}
+.ob-field input:focus { border-color: #4f7fff; background: rgba(79,127,255,0.07); }
+.ob-field { margin-bottom: 14px; }
+.ob-despesas-list {
+  display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;
+  max-height: 220px; overflow-y: auto;
+}
+.ob-despesa-item {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; padding: 10px 12px;
+}
+.ob-despesa-item input[type="checkbox"] {
+  accent-color: #4f7fff; width: 16px; height: 16px; flex-shrink: 0;
+}
+.ob-despesa-desc { flex: 1; font-size: 13px; color: #c5cee0; font-weight: 500; }
+.ob-despesa-val { font-size: 12px; color: #4f7fff; font-family: 'JetBrains Mono', monospace; }
+.ob-btn {
+  width: 100%; padding: 13px; border-radius: 12px; border: none; cursor: pointer;
+  font-size: 14px; font-weight: 700; letter-spacing: .3px;
+  background: linear-gradient(135deg, #4f7fff, #7c3aed);
+  color: #fff; margin-top: 8px;
+  box-shadow: 0 4px 16px rgba(79,127,255,.35);
+  transition: opacity .2s;
+}
+.ob-btn:hover { opacity: .9; }
+.ob-btn-ghost {
+  width: 100%; padding: 10px; border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1); cursor: pointer;
+  font-size: 13px; color: #5a6480; background: transparent;
+  margin-top: 4px; transition: color .2s;
+}
+.ob-btn-ghost:hover { color: #8b99b8; }
+.ob-progress {
+  font-size: 11px; color: #3a4560; text-align: center; margin-top: 14px;
+}
+`;
+document.head.appendChild(style);
+
+// Injeta HTML do onboarding
+const div = document.createElement('div');
+div.id = 'onboarding-screen';
+div.classList.add('hidden');
+div.innerHTML = `
+<canvas id="ob-canvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.4"></canvas>
+<div class="ob-box">
+  <div class="ob-steps">
+    <div class="ob-step-dot active" id="ob-dot-0"></div>
+    <div class="ob-step-dot" id="ob-dot-1"></div>
+    <div class="ob-step-dot" id="ob-dot-2"></div>
+  </div>
+  <div id="ob-content"></div>
+</div>
+`;
+document.body.appendChild(div);
+
+// Dados coletados no onboarding
+let obStep = 0;
+let obRenda = 0;
+let obNome = '';
+let obDespesasSelecionadas = [];
+
+// Despesas sugeridas para novo usuário
+const DESPESAS_SUGERIDAS = [
+  { desc: 'Aluguel / Financiamento', cat: 'Moradia', val: 1500 },
+  { desc: 'Água', cat: 'Moradia', val: 80 },
+  { desc: 'Luz', cat: 'Moradia', val: 150 },
+  { desc: 'Internet', cat: 'Moradia', val: 120 },
+  { desc: 'Telefone', cat: 'Telefonia', val: 100 },
+  { desc: 'Supermercado', cat: 'Alimentação', val: 800 },
+  { desc: 'Escola / Faculdade', cat: 'Educação', val: 500 },
+  { desc: 'Plano de saúde', cat: 'Saúde', val: 400 },
+  { desc: 'Combustível / Transporte', cat: 'Transporte', val: 300 },
+  { desc: 'Streaming (Netflix etc)', cat: 'Lazer', val: 80 },
+];
+
+function obRender() {
+  // Atualiza dots
+  [0,1,2].forEach(i => {
+    const dot = document.getElementById('ob-dot-' + i);
+    dot.className = 'ob-step-dot';
+    if (i < obStep) dot.classList.add('done');
+    else if (i === obStep) dot.classList.add('active');
+  });
+
+  const content = document.getElementById('ob-content');
+
+  if (obStep === 0) {
+    // Passo 1: Boas-vindas
+    const nome = fbAuth.currentUser?.displayName || fbAuth.currentUser?.email?.split('@')[0] || 'você';
+    content.innerHTML = `
+      <div class="ob-icon" style="background:linear-gradient(135deg,#4f7fff,#7c3aed)">👋</div>
+      <div class="ob-title">Bem-vindo ao Finanvô!</div>
+      <div class="ob-sub">Olá, <strong style="color:#a0b0d0">${nome}</strong>! Vamos configurar seu controle financeiro em 2 minutos.<br>Pronto para começar?</div>
+      <div class="ob-field">
+        <label>Como quer ser chamado?</label>
+        <input id="ob-nome" type="text" placeholder="Seu nome" value="${nome}" autocomplete="given-name">
+      </div>
+      <button class="ob-btn" onclick="obNext()">Vamos lá! →</button>
+    `;
+    setTimeout(() => document.getElementById('ob-nome')?.focus(), 100);
+
+  } else if (obStep === 1) {
+    // Passo 2: Renda
+    content.innerHTML = `
+      <div class="ob-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a)">💰</div>
+      <div class="ob-title">Qual é sua renda mensal?</div>
+      <div class="ob-sub">Informe o total que entra na sua conta todo mês (salário, freelas, etc).</div>
+      <div class="ob-field">
+        <label>Renda mensal total (R$)</label>
+        <input id="ob-renda" type="number" placeholder="Ex: 5000" min="0" step="100" value="${obRenda||''}">
+      </div>
+      <button class="ob-btn" onclick="obNext()">Continuar →</button>
+      <button class="ob-btn-ghost" onclick="obNext()">Pular por agora</button>
+    `;
+    setTimeout(() => document.getElementById('ob-renda')?.focus(), 100);
+
+  } else if (obStep === 2) {
+    // Passo 3: Despesas fixas
+    content.innerHTML = `
+      <div class="ob-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">📋</div>
+      <div class="ob-title">Quais são suas despesas fixas?</div>
+      <div class="ob-sub">Marque as que você tem. Você pode editar os valores depois.</div>
+      <div class="ob-despesas-list" id="ob-desp-list">
+        ${DESPESAS_SUGERIDAS.map((d,i)=>`
+          <label class="ob-despesa-item" style="cursor:pointer">
+            <input type="checkbox" value="${i}" ${obDespesasSelecionadas.includes(i)?'checked':''}>
+            <span class="ob-despesa-desc">${d.desc}</span>
+            <span class="ob-despesa-val">R$ ${d.val.toLocaleString('pt-BR')}</span>
+          </label>
+        `).join('')}
+      </div>
+      <button class="ob-btn" onclick="obFinalizar()">Começar a usar! 🎉</button>
+      <button class="ob-btn-ghost" onclick="obFinalizar()">Pular e configurar depois</button>
+    `;
+  }
+}
+
+window.obNext = function() {
+  if (obStep === 0) {
+    obNome = document.getElementById('ob-nome')?.value?.trim() || '';
+    obStep = 1;
+    obRender();
+  } else if (obStep === 1) {
+    const v = parseFloat(document.getElementById('ob-renda')?.value || '0');
+    obRenda = isNaN(v) ? 0 : v;
+    obStep = 2;
+    obRender();
+  }
+};
+
+window.obFinalizar = function() {
+  // Coleta despesas selecionadas
+  const checks = document.querySelectorAll('#ob-desp-list input[type="checkbox"]:checked');
+  const despSel = [];
+  checks.forEach(c => { const i = parseInt(c.value); if (!isNaN(i)) despSel.push(i); });
+
+  // Salva nome no Firebase Auth displayName se necessário
+  if (obNome && fbAuth.currentUser && !fbAuth.currentUser.displayName) {
+    fbAuth.currentUser.updateProfile({ displayName: obNome }).catch(()=>{});
+  }
+
+  // Monta extras no appCfg com as despesas selecionadas
+  if (despSel.length > 0) {
+    if (!appCfg.extras) appCfg.extras = [];
+    despSel.forEach(i => {
+      const d = DESPESAS_SUGERIDAS[i];
+      appCfg.extras.push({ desc: d.desc, cat: d.cat, tipo: 'saida', val: d.val, mes: 'Todos', id: Date.now() + i });
+    });
+  }
+
+  // Salva renda no período atual se informada
+  if (obRenda > 0) {
+    const mesAtual = MESES[new Date().getMonth()];
+    const anoAtual = new Date().getFullYear();
+    const periodoKey = `${mesAtual}_${anoAtual}`;
+    if (!appCfg.periodos) appCfg.periodos = {};
+    if (!appCfg.periodos[periodoKey]) appCfg.periodos[periodoKey] = {};
+    appCfg.periodos[periodoKey].rendaMes = String(obRenda);
+  }
+
+  // Marca onboarding como completo
+  appCfg._onboardingDone = true;
+  saveCfg(appCfg);
+
+  // Fecha onboarding e mostra app
+  document.getElementById('onboarding-screen').classList.add('hidden');
+  mostrarToast('🎉 Tudo pronto! Bem-vindo ao Finanvô!');
+  renderDashboard();
+};
+
+// Verifica se deve mostrar onboarding
+window._checkOnboarding = function() {
+  if (!usuarioAtivo) return;
+  // Aguarda 1.5s para o Firestore sincronizar primeiro
+  setTimeout(() => {
+    if (!appCfg._onboardingDone) {
+      document.getElementById('onboarding-screen').classList.remove('hidden');
+      obStep = 0;
+      obRender();
+      // Mini canvas decorativo
+      _obCanvas();
+    }
+  }, 1500);
+};
+
+function _obCanvas() {
+  const canvas = document.getElementById('ob-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  window.addEventListener('resize', resize); resize();
+  const pts = Array.from({length:12},(_,i)=>({ x:(W/11)*i, y:H*.5+Math.sin(i*.8)*H*.12 }));
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    pts.forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.strokeStyle='rgba(79,127,255,0.3)'; ctx.lineWidth=2; ctx.stroke();
+    pts.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fillStyle='rgba(79,127,255,0.5)'; ctx.fill(); });
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// Hook no onAuthStateChanged — após iniciarSync, checa onboarding
+const _origIniciarSync = iniciarSync;
+window.iniciarSync = function() {
+  _origIniciarSync();
+  _checkOnboarding();
+};
+
+})();
+// ── Fim Onboarding ────────────────────────────────────────────────
 </script>
