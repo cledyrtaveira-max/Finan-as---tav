@@ -7863,3 +7863,242 @@ window.iniciarSync = function() {
 })();
 // ── Fim Onboarding ────────────────────────────────────────────────
 </script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     METAS POR CATEGORIA — sistema de limites de gasto com barras
+     ══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+'use strict';
+
+// ── Utilitários ──────────────────────────────────────────────────
+const brlMeta = v => 'R$ ' + Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+// Coleta categorias únicas das despesas ativas + lançamentos variáveis
+function categoriasDoApp() {
+  const cats = new Set();
+  const base = despesasEfetivas ? despesasEfetivas() : DESPESAS_BASE;
+  base.forEach(l => { if (l.cat && l.tipo !== 'entrada') cats.add(l.cat); });
+  (appData.lancamentos||[]).forEach(l => { if (l.cat && l.tipo !== 'entrada') cats.add(l.cat); });
+  return [...cats].sort();
+}
+
+// Calcula quanto foi gasto em cada categoria no mês selecionado
+function gastosPorCategoria() {
+  const base = despesasEfetivas ? despesasEfetivas() : DESPESAS_BASE;
+  const map = {};
+  const lanMes = (appData.lancamentos||[]).filter(l =>
+    l.mes === mesSelecionado && String(l.ano || anoSelecionado) === String(anoSelecionado)
+  );
+  function tipoEfetivo(l) {
+    if (l._baseIdx !== undefined && appCfg.tipos && appCfg.tipos[String(l._baseIdx)] !== undefined)
+      return appCfg.tipos[String(l._baseIdx)];
+    return l.tipo;
+  }
+  base.filter(l => tipoEfetivo(l) !== 'entrada').forEach(l => {
+    if (l.cat) map[l.cat] = (map[l.cat] || 0) + l.val;
+  });
+  lanMes.filter(l => l.tipo !== 'entrada').forEach(l => {
+    if (l.cat) map[l.cat] = (map[l.cat] || 0) + l.val;
+  });
+  return map;
+}
+
+// ── Salvar/carregar metas ────────────────────────────────────────
+function getMetas() { return appCfg.metas || {}; }
+function saveMeta(cat, valor) {
+  if (!appCfg.metas) appCfg.metas = {};
+  if (valor <= 0) { delete appCfg.metas[cat]; }
+  else { appCfg.metas[cat] = valor; }
+  saveCfg(appCfg);
+}
+
+// ── Painel no Dashboard ──────────────────────────────────────────
+function renderPainelMetas() {
+  const el = document.getElementById('painel-metas-dash');
+  if (!el) return;
+  const metas = getMetas();
+  if (!Object.keys(metas).length) {
+    el.innerHTML = '';
+    return;
+  }
+  const gastos = gastosPorCategoria();
+  const itens = Object.entries(metas)
+    .map(([cat, limite]) => ({ cat, limite, gasto: gastos[cat] || 0 }))
+    .sort((a,b) => (b.gasto/b.limite) - (a.gasto/a.limite));
+
+  const rows = itens.map(({cat, limite, gasto}) => {
+    const pct = Math.min((gasto / limite) * 100, 100);
+    const over = gasto > limite;
+    const cor = over ? '#ef4444' : pct >= 80 ? '#f59e0b' : '#22c55e';
+    const bgCor = over ? 'rgba(239,68,68,0.08)' : pct >= 80 ? 'rgba(245,158,11,0.08)' : 'rgba(34,197,94,0.08)';
+    const emoji = over ? '🔴' : pct >= 80 ? '🟡' : '🟢';
+    const resto = limite - gasto;
+    return `<div style="background:${bgCor};border:1px solid ${cor}22;border-radius:10px;padding:10px 14px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <span style="font-size:13px;font-weight:700;color:var(--fg1)">${emoji} ${cat}</span>
+        <span style="font-size:12px;color:var(--fg2)">${brlMeta(gasto)} <span style="color:var(--fg3);font-weight:400">/ ${brlMeta(limite)}</span></span>
+      </div>
+      <div style="background:rgba(0,0,0,0.08);border-radius:999px;height:7px;overflow:hidden">
+        <div style="background:${cor};height:100%;width:${pct.toFixed(1)}%;border-radius:999px;transition:width .4s"></div>
+      </div>
+      <div style="margin-top:4px;font-size:10px;color:${cor};font-weight:600">
+        ${over ? `⚠️ Excedido em ${brlMeta(gasto-limite)}` : `${brlMeta(resto)} restante (${(100-pct).toFixed(0)}%)`}
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div style="margin-top:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:13px;font-weight:700;color:var(--fg1)">🎯 Metas por categoria</div>
+        <button onclick="irParaMetas()" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:600;padding:0">Editar metas →</button>
+      </div>
+      ${rows}
+    </div>`;
+}
+
+window.irParaMetas = function() {
+  const navLinks = document.querySelectorAll('.nav-link');
+  navLinks.forEach(l => { if (l.textContent.includes('Configurações') || l.getAttribute('data-view')==='config') l.click(); });
+  setTimeout(()=>{ const el=document.getElementById('secao-metas-config'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }, 200);
+};
+
+// ── Painel em Configurações ──────────────────────────────────────
+function renderSecaoMetas() {
+  const el = document.getElementById('secao-metas-config');
+  if (!el) return;
+  const cats = categoriasDoApp();
+  const metas = getMetas();
+  if (!cats.length) {
+    el.innerHTML = '<p style="font-size:12px;color:var(--fg3);padding:12px 0">Adicione despesas para definir metas por categoria.</p>';
+    return;
+  }
+  const linhas = cats.map(cat => {
+    const meta = metas[cat] || 0;
+    const gastos = gastosPorCategoria();
+    const gasto = gastos[cat] || 0;
+    const pct = meta > 0 ? Math.min((gasto/meta)*100,100) : 0;
+    const cor = meta > 0 ? (gasto > meta ? '#ef4444' : pct >= 80 ? '#f59e0b' : '#22c55e') : 'var(--fg3)';
+    return `<tr>
+      <td style="font-weight:600;font-size:13px;padding:10px 12px;color:var(--fg1)">${cat}</td>
+      <td style="padding:10px 12px;color:var(--fg2);font-size:12px">${meta > 0 ? brlMeta(gasto) : '—'}</td>
+      <td style="padding:10px 12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:var(--fg3)">R$</span>
+          <input type="number" min="0" step="50" value="${meta > 0 ? meta : ''}" placeholder="Sem limite"
+            data-cat="${cat.replace(/"/g,'&quot;')}"
+            oninput="window._salvarMetaInput(this)"
+            style="width:110px;padding:5px 8px;border:1.5px solid var(--brd);border-radius:7px;font-size:13px;font-weight:600;background:var(--bg);color:var(--fg1);text-align:right"/>
+          ${meta > 0 ? `<span style="font-size:10px;color:${cor};font-weight:700;white-space:nowrap">${pct.toFixed(0)}% usado</span>` : ''}
+        </div>
+      </td>
+      <td style="padding:10px 12px;text-align:right">
+        ${meta > 0 ? `<button onclick="window._removerMeta('${cat.replace(/'/g,"\\'")}');renderSecaoMetas();renderPainelMetas()" style="font-size:10px;color:var(--red);background:none;border:1px solid var(--red)44;border-radius:6px;padding:3px 8px;cursor:pointer">Remover</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="table-wrap" style="overflow:visible">
+      <table style="border-collapse:collapse;width:100%">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border)">
+            <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--fg3);text-align:left;text-transform:uppercase;letter-spacing:.5px">Categoria</th>
+            <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--fg3);text-align:left;text-transform:uppercase;letter-spacing:.5px">Gasto no mês</th>
+            <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--fg3);text-align:left;text-transform:uppercase;letter-spacing:.5px">Limite mensal (R$)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>${linhas}</tbody>
+      </table>
+    </div>
+    <p style="font-size:11px;color:var(--fg3);margin-top:8px">💡 Deixe em branco para sem limite. Barra de progresso aparece no dashboard.</p>`;
+}
+
+window._salvarMetaInput = function(input) {
+  const cat = input.dataset.cat;
+  const val = parseFloat(input.value) || 0;
+  saveMeta(cat, val);
+  renderPainelMetas();
+  // debounce o render da seção
+  clearTimeout(input._t);
+  input._t = setTimeout(renderSecaoMetas, 600);
+};
+window._removerMeta = function(cat) {
+  saveMeta(cat, 0);
+  mostrarToast(`Meta de ${cat} removida`);
+};
+
+// ── Injeção de HTML ──────────────────────────────────────────────
+
+// 1. Placeholder no Dashboard (após o card de semáforo/saldo)
+function injetarPlaceholderDash() {
+  // Insere após o div do saldo no dashboard, se ainda não existir
+  if (document.getElementById('painel-metas-dash')) return;
+  const views = document.getElementById('view-dashboard');
+  if (!views) return;
+  const div = document.createElement('div');
+  div.id = 'painel-metas-dash';
+  // Insere no final do view-dashboard (antes de outros cards)
+  views.appendChild(div);
+}
+
+// 2. Seção em Configurações
+function injetarSecaoConfig() {
+  if (document.getElementById('secao-metas-config')) return;
+  const viewConfig = document.getElementById('view-config');
+  if (!viewConfig) return;
+  const inner = viewConfig.querySelector('[style*="max-width"]') || viewConfig;
+  const secao = document.createElement('div');
+  secao.id = 'secao-metas-config';
+  secao.innerHTML = '<p style="font-size:12px;color:var(--fg3)">Carregando…</p>';
+  // Adiciona bloco com título antes do placeholder
+  const wrapper = document.createElement('div');
+  wrapper.style.marginTop = '28px';
+  wrapper.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div class="section-title" style="margin-bottom:0">🎯 Metas por categoria</div>
+    <span style="font-size:11px;color:var(--fg3)">Limite mensal de gastos</span>
+  </div>`;
+  wrapper.appendChild(secao);
+  inner.appendChild(wrapper);
+}
+
+// ── Wrap no renderDashboard ──────────────────────────────────────
+const _rdMetas = renderDashboard;
+renderDashboard = function() {
+  _rdMetas();
+  injetarPlaceholderDash();
+  renderPainelMetas();
+};
+
+// ── Wrap no renderConfig ─────────────────────────────────────────
+const _rcMetas = renderConfig;
+renderConfig = function() {
+  _rcMetas();
+  injetarSecaoConfig();
+  renderSecaoMetas();
+};
+
+// ── Alerta de meta excedida no semáforo inteligente ─────────────
+const _origAtualizarFrase = typeof atualizarFrase === 'function' ? atualizarFrase : null;
+// Ao renderizar dashboard, verifica se alguma meta foi excedida e dispara toast
+const _rdMetasAlerta = renderDashboard;
+renderDashboard = function() {
+  _rdMetasAlerta();
+  // Toast de alerta por meta excedida (uma vez por sessão por categoria)
+  if (!window._metaAlertasSessao) window._metaAlertasSessao = new Set();
+  const metas = getMetas();
+  const gastos = gastosPorCategoria();
+  Object.entries(metas).forEach(([cat, limite]) => {
+    const g = gastos[cat] || 0;
+    if (g > limite && !window._metaAlertasSessao.has(cat)) {
+      window._metaAlertasSessao.add(cat);
+      setTimeout(() => mostrarToast(`🔴 Meta de ${cat} ultrapassada! (${brlMeta(g)} / ${brlMeta(limite)})`), 1500);
+    }
+  });
+};
+
+})();
+</script>
+<!-- ── Fim Metas por Categoria ──────────────────────────────────────────── -->
