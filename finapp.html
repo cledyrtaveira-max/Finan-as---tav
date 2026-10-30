@@ -75,6 +75,27 @@
 })();
 </script>
 
+<!-- ══ FIREBASE SDK ══ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCy4hUoPKlAuutoSZhliLetovHr9EK1JvA",
+  authDomain: "finanvo-4e9e0.firebaseapp.com",
+  projectId: "finanvo-4e9e0",
+  storageBucket: "finanvo-4e9e0.firebasestorage.app",
+  messagingSenderId: "953291975001",
+  appId: "1:953291975001:web:a985019f29f0e2f917c448"
+};
+firebase.initializeApp(firebaseConfig);
+const fbAuth = firebase.auth();
+const fbDb   = firebase.firestore();
+// Persistência offline
+fbDb.settings({ experimentalForceLongPolling: false });
+try { fbDb.enablePersistence({ synchronizeTabs: true }).catch(()=>{}); } catch(e) {}
+</script>
+
 <!-- ══ TELA DE LOGIN ══ -->
 <style>
 #login-screen {
@@ -298,7 +319,7 @@
 <canvas id="login-canvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
 <div id="login-screen">
   <div class="login-box">
-    <!-- Ícone + Identidade -->
+    <!-- Logo Finanvô -->
     <div class="login-logo">
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
         <path d="M4 20 L10 13 L15 17 L22 8" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -306,88 +327,55 @@
         <path d="M4 24 H24" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
     </div>
-    <div class="login-eyebrow">Controladoria</div>
-    <div class="login-title">Taveira Finance</div>
-    <div class="login-sub">Gestão financeira familiar · Acesso seguro</div>
+    <div class="login-eyebrow">Gestão Financeira</div>
+    <div class="login-title">Finanvô</div>
+    <div class="login-sub">Controle inteligente para sua família</div>
 
-    <!-- Métricas decorativas -->
-    <div class="login-metrics">
-      <div class="login-metric">
-        <span class="login-metric-icon">📊</span>
-        <span>Análise</span>
-      </div>
-      <div class="login-metric-sep">|</div>
-      <div class="login-metric">
-        <span class="login-metric-icon">🔒</span>
-        <span>Seguro</span>
-      </div>
-      <div class="login-metric-sep">|</div>
-      <div class="login-metric">
-        <span class="login-metric-icon">⚡</span>
-        <span>Tempo real</span>
-      </div>
+    <!-- Tab Login / Cadastro -->
+    <div id="login-tabs" style="display:flex;gap:4px;background:rgba(79,127,255,0.1);border-radius:10px;padding:4px;margin-bottom:20px;">
+      <button id="tab-entrar" onclick="mostrarAba('entrar')" style="flex:1;padding:8px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;background:#4f7fff;color:#fff;transition:.2s">Entrar</button>
+      <button id="tab-cadastrar" onclick="mostrarAba('cadastrar')" style="flex:1;padding:8px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;background:transparent;color:#8899bb;transition:.2s">Cadastrar</button>
     </div>
 
-    <div class="login-field">
-      <label>Usuário</label>
-      <input type="text" id="login-username" placeholder="ex: cledyr ou paty" autocomplete="username" oninput="loginClearError()">
-    </div>
-    <div class="login-field">
-      <label>Senha</label>
-      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" oninput="loginClearError()" onkeydown="if(event.key==='Enter')fazerLogin()">
-      <button class="login-eye" id="eye-btn" onclick="toggleSenha()" title="Mostrar/ocultar">👁</button>
-    </div>
+    <!-- Formulário -->
+    <div id="login-form-area">
+      <div class="login-field">
+        <label>E-mail</label>
+        <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email" oninput="loginClearError()" onkeydown="if(event.key==='Enter')fazerLogin()">
+      </div>
+      <div class="login-field">
+        <label id="label-nome" style="display:none">Nome completo</label>
+        <input type="text" id="login-nome" placeholder="Seu nome" style="display:none;margin-bottom:8px" autocomplete="name" oninput="loginClearError()">
+        <label>Senha</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" oninput="loginClearError()" onkeydown="if(event.key==='Enter')fazerLogin()">
+        <button class="login-eye" id="eye-btn" onclick="toggleSenha()" title="Mostrar/ocultar">👁</button>
+      </div>
 
-    <div id="login-error" class="login-error"></div>
-    <button class="login-btn" onclick="fazerLogin()">Acessar sistema →</button>
+      <div id="login-error" class="login-error"></div>
+      <button class="login-btn" id="btn-principal-login" onclick="fazerLogin()">Entrar →</button>
+
+      <!-- Divisor -->
+      <div style="display:flex;align-items:center;gap:10px;margin:14px 0;">
+        <div style="flex:1;height:1px;background:rgba(255,255,255,0.1)"></div>
+        <span style="font-size:11px;color:#545e78;letter-spacing:.5px">OU</span>
+        <div style="flex:1;height:1px;background:rgba(255,255,255,0.1)"></div>
+      </div>
+
+      <!-- Google Login -->
+      <button onclick="loginGoogle()" style="width:100%;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#e8ecf4;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.7 33.1 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.3 26.8 36 24 36c-5.2 0-9.6-3-11.3-7.4l-6.6 4.9C9.6 39.5 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.2 5.2C41.2 35.2 44 30 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
+        Entrar com Google
+      </button>
+
+      <div id="link-recuperar" style="text-align:center;margin-top:12px">
+        <button onclick="enviarRecuperacao()" style="background:none;border:none;cursor:pointer;font-size:12px;color:#8899bb;font-family:inherit;text-decoration:underline;text-underline-offset:3px;">Esqueci minha senha</button>
+      </div>
+    </div>
 
     <div id="login-plan-area"></div>
 
-    <div style="text-align:center;margin-top:10px">
-      <button onclick="abrirRecuperacao()" style="background:none;border:none;cursor:pointer;font-size:12px;color:#8899bb;font-family:inherit;text-decoration:underline;text-underline-offset:3px;letter-spacing:.2px;">Esqueci minha senha</button>
-    </div>
-
-    <!-- ── Painel de Recuperação de Senha ── -->
-    <div id="recuperacao-panel" style="display:none;margin-top:16px;padding:16px;border-radius:12px;background:rgba(79,127,255,0.07);border:1px solid rgba(79,127,255,0.18);">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-        <button onclick="fecharRecuperacao()" style="background:none;border:none;cursor:pointer;color:#6b7fa8;font-size:16px;padding:0;line-height:1;">←</button>
-        <span style="font-size:13px;font-weight:600;color:#c8d0e8;">🔑 Recuperar acesso</span>
-      </div>
-      <!-- Etapa 1: usuário -->
-      <div id="rec-step1">
-        <div class="login-field" style="margin-bottom:10px;">
-          <label style="font-size:11px;color:#6b7fa8;">Seu usuário</label>
-          <input type="text" id="rec-username" placeholder="ex: cledyr ou paty" oninput="recClearMsg()" onkeydown="if(event.key==='Enter')recVerificarUsuario()">
-        </div>
-        <button class="login-btn" style="font-size:13px;padding:10px;" onclick="recVerificarUsuario()">Continuar →</button>
-      </div>
-      <!-- Etapa 2: palavra-chave -->
-      <div id="rec-step2" style="display:none;">
-        <div style="font-size:12px;color:#6b9fff;margin-bottom:10px;" id="rec-saudacao"></div>
-        <div class="login-field" style="margin-bottom:10px;">
-          <label style="font-size:11px;color:#6b7fa8;">Palavra-chave de segurança</label>
-          <input type="text" id="rec-palavrachave" placeholder="sua palavra secreta" oninput="recClearMsg()" onkeydown="if(event.key==='Enter')recVerificarPalavra()">
-        </div>
-        <button class="login-btn" style="font-size:13px;padding:10px;" onclick="recVerificarPalavra()">Verificar →</button>
-      </div>
-      <!-- Etapa 3: nova senha -->
-      <div id="rec-step3" style="display:none;">
-        <div style="font-size:12px;color:#34d399;margin-bottom:10px;">✓ Identidade confirmada! Crie sua nova senha.</div>
-        <div class="login-field" style="margin-bottom:8px;">
-          <label style="font-size:11px;color:#6b7fa8;">Nova senha</label>
-          <input type="password" id="rec-novasenha" placeholder="mínimo 4 caracteres" oninput="recClearMsg()" onkeydown="if(event.key==='Enter')recSalvarSenha()">
-        </div>
-        <div class="login-field" style="margin-bottom:10px;">
-          <label style="font-size:11px;color:#6b7fa8;">Confirmar senha</label>
-          <input type="password" id="rec-confirmasenha" placeholder="repita a senha" oninput="recClearMsg()" onkeydown="if(event.key==='Enter')recSalvarSenha()">
-        </div>
-        <button class="login-btn" style="font-size:13px;padding:10px;" onclick="recSalvarSenha()">Salvar nova senha →</button>
-      </div>
-      <div id="rec-msg" style="font-size:12px;margin-top:8px;min-height:18px;"></div>
-    </div>
-
     <div class="login-footer" style="display:flex;align-items:center;justify-content:space-between;">
-      <span>TAVEIRA FINANCE · ACESSO PRIVADO</span>
+      <span>FINANVÔ · ACESSO PRIVADO</span>
       <button onclick="alternarTema()" id="tema-btn-login" title="Alternar tema" style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px;opacity:.7;line-height:1;">☀️</button>
     </div>
 
@@ -2334,35 +2322,22 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
 </div>
 
 <script>
-// ── Segurança — PINs ─────────────────────────────────────────────
-// PIN padrão: Cledyr = 1234  |  Paty = 0000
-// Para trocar: edite 'pinHash' = nome_do_usuario + novo_pin
-const USERS = {
-  cledyr: {
-    name: 'Cledyr Taveira', role: 'Titular', initials: 'CT', color: '#4f7fff',
-    username: 'cledyr', password: '152518',
-    palavraChave: 'taveira',
-    plano: 'premium', planoLabel: 'Vitalício', planoValidade: null
-  },
-  paty: {
-    name: 'Paty Taveira', role: 'Esposa', initials: 'PT', color: '#a855f7',
-    username: 'paty', aliases: ['patricia','paty taveira','patytaveira'], password: '152518',
-    palavraChave: 'patricia',
-    plano: 'premium', planoLabel: 'Vitalício', planoValidade: null
-  },
-};
-
-let usuarioAtivo = 'cledyr';
+// ── Autenticação Firebase ─────────────────────────────────────────
+let usuarioAtivo = null; // UID do Firebase
 let logado = false;
+let _abaAtual = 'entrar';
 
-function selecionarUsuario(u) {
-  usuarioAtivo = u;
-  document.getElementById('btn-cledyr').classList.toggle('selected', u==='cledyr');
-  document.getElementById('btn-paty').classList.toggle('selected', u==='paty');
-  // Preenche automático o campo username
-  const usernameEl = document.getElementById('login-username');
-  if (usernameEl) usernameEl.value = USERS[u].username;
-  document.getElementById('login-password').value = '';
+function mostrarAba(aba) {
+  _abaAtual = aba;
+  const isCad = aba === 'cadastrar';
+  document.getElementById('tab-entrar').style.background = isCad ? 'transparent' : '#4f7fff';
+  document.getElementById('tab-entrar').style.color = isCad ? '#8899bb' : '#fff';
+  document.getElementById('tab-cadastrar').style.background = isCad ? '#4f7fff' : 'transparent';
+  document.getElementById('tab-cadastrar').style.color = isCad ? '#fff' : '#8899bb';
+  document.getElementById('login-nome').style.display = isCad ? 'block' : 'none';
+  document.getElementById('label-nome').style.display = isCad ? 'block' : 'none';
+  document.getElementById('btn-principal-login').textContent = isCad ? 'Criar conta →' : 'Entrar →';
+  document.getElementById('link-recuperar').style.display = isCad ? 'none' : 'block';
   loginClearError();
 }
 
@@ -2370,6 +2345,96 @@ function toggleSenha() {
   const inp = document.getElementById('login-password');
   inp.type = inp.type === 'password' ? 'text' : 'password';
 }
+
+async function fazerLogin() {
+  const email = (document.getElementById('login-email').value || '').trim();
+  const senha = document.getElementById('login-password').value;
+  if (!email || !senha) { loginShakeError('Preencha e-mail e senha.'); return; }
+  const btn = document.getElementById('btn-principal-login');
+  btn.textContent = 'Aguarde...'; btn.disabled = true;
+  try {
+    if (_abaAtual === 'cadastrar') {
+      const nome = (document.getElementById('login-nome').value || '').trim();
+      if (!nome) { loginShakeError('Preencha seu nome.'); btn.disabled=false; mostrarAba('cadastrar'); return; }
+      const cred = await fbAuth.createUserWithEmailAndPassword(email, senha);
+      await cred.user.updateProfile({ displayName: nome });
+      // Perfil no Firestore
+      await fbDb.collection('users').doc(cred.user.uid).set({ nome, email, criado: new Date().toISOString() });
+    } else {
+      await fbAuth.signInWithEmailAndPassword(email, senha);
+    }
+    // onAuthStateChanged cuida do resto
+  } catch(e) {
+    const erros = {
+      'auth/email-already-in-use': 'Este e-mail já está cadastrado. Faça login.',
+      'auth/wrong-password': 'Senha incorreta. Tente novamente.',
+      'auth/user-not-found': 'E-mail não encontrado. Cadastre-se.',
+      'auth/invalid-email': 'E-mail inválido.',
+      'auth/weak-password': 'Senha muito fraca (mínimo 6 caracteres).',
+      'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos.',
+      'auth/network-request-failed': 'Sem conexão. Verifique a internet.',
+    };
+    loginShakeError(erros[e.code] || 'Erro: ' + e.message);
+    btn.disabled = false; mostrarAba(_abaAtual);
+  }
+}
+
+async function loginGoogle() {
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    await fbAuth.signInWithPopup(provider);
+    // onAuthStateChanged cuida do resto
+  } catch(e) {
+    if (e.code !== 'auth/popup-closed-by-user') loginShakeError('Erro Google: ' + e.message);
+  }
+}
+
+async function enviarRecuperacao() {
+  const email = (document.getElementById('login-email').value || '').trim();
+  if (!email) { loginShakeError('Digite seu e-mail para recuperar a senha.'); return; }
+  try {
+    await fbAuth.sendPasswordResetEmail(email);
+    const err = document.getElementById('login-error');
+    err.style.color = '#34d399';
+    err.textContent = '✓ E-mail de recuperação enviado! Verifique sua caixa.';
+    err.classList.add('visible');
+  } catch(e) {
+    loginShakeError('Erro ao enviar e-mail: ' + e.message);
+  }
+}
+
+// Escuta mudança de estado de auth
+fbAuth.onAuthStateChanged(async function(user) {
+  if (user) {
+    usuarioAtivo = user.uid;
+    logado = true;
+    document.getElementById('login-screen').classList.add('hidden');
+    // Monta nome/iniciais do sidebar
+    const nome = user.displayName || user.email || 'Usuário';
+    const iniciais = nome.split(' ').slice(0,2).map(p=>p[0].toUpperCase()).join('');
+    const cores = ['#4f7fff','#a855f7','#06d6a0','#ef8c4f','#f472b6'];
+    const cor = cores[(user.uid.charCodeAt(0)||0) % cores.length];
+    document.getElementById('sidebar-avatar').textContent = iniciais;
+    document.getElementById('sidebar-avatar').style.background = cor;
+    document.getElementById('sidebar-name').textContent = nome;
+    document.getElementById('sidebar-role').textContent = 'Finanvô · Sair 🔒';
+    iniciarSync();
+    renderDashboard();
+  } else {
+    // Deslogado
+    logado = false;
+    usuarioAtivo = null;
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('login-password').value = '';
+    loginClearError();
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (logado) return;
+  if (e.key === 'Enter') fazerLogin();
+});
 
 // ── Canvas financeiro animado (fundo login) ──────────────────────
 (function() {
@@ -2564,82 +2629,11 @@ function alternarTema() {
   } catch(e) {}
 })();
 
-let recUsuarioId = null;
-
-function abrirRecuperacao() {
-  document.getElementById('recuperacao-panel').style.display = 'block';
-  document.getElementById('rec-step1').style.display = 'block';
-  document.getElementById('rec-step2').style.display = 'none';
-  document.getElementById('rec-step3').style.display = 'none';
-  document.getElementById('rec-username').value = '';
-  document.getElementById('rec-msg').textContent = '';
-  recUsuarioId = null;
-  document.getElementById('rec-username').focus();
-}
-
-function fecharRecuperacao() {
-  document.getElementById('recuperacao-panel').style.display = 'none';
-  loginClearError();
-}
-
-function recClearMsg() {
-  document.getElementById('rec-msg').textContent = '';
-  document.getElementById('rec-msg').style.color = '';
-}
-
-function recMsg(txt, cor) {
-  const el = document.getElementById('rec-msg');
-  el.textContent = txt;
-  el.style.color = cor || '#f87171';
-}
-
-function recVerificarUsuario() {
-  const val = (document.getElementById('rec-username').value || '').trim().toLowerCase();
-  if (!val) { recMsg('Digite seu nome de usuário.'); return; }
-  const userId = Object.keys(USERS).find(k => {
-    const u = USERS[k];
-    if (u.username.toLowerCase() === val) return true;
-    if (u.aliases && u.aliases.some(a => a.toLowerCase() === val)) return true;
-    return false;
-  });
-  if (!userId) { recMsg('Usuário não encontrado.'); return; }
-  recUsuarioId = userId;
-  document.getElementById('rec-saudacao').textContent = `Olá, ${USERS[userId].name}! Digite sua palavra-chave de segurança.`;
-  document.getElementById('rec-step1').style.display = 'none';
-  document.getElementById('rec-step2').style.display = 'block';
-  document.getElementById('rec-palavrachave').value = '';
-  document.getElementById('rec-palavrachave').focus();
-}
-
-function recVerificarPalavra() {
-  const val = (document.getElementById('rec-palavrachave').value || '').trim().toLowerCase();
-  if (!val) { recMsg('Digite sua palavra-chave.'); return; }
-  const u = USERS[recUsuarioId];
-  if (!u.palavraChave || val !== u.palavraChave.toLowerCase()) {
-    recMsg('Palavra-chave incorreta. Tente novamente.');
-    return;
-  }
-  document.getElementById('rec-step2').style.display = 'none';
-  document.getElementById('rec-step3').style.display = 'block';
-  document.getElementById('rec-novasenha').value = '';
-  document.getElementById('rec-confirmasenha').value = '';
-  document.getElementById('rec-novasenha').focus();
-}
-
-function recSalvarSenha() {
-  const nova = document.getElementById('rec-novasenha').value;
-  const conf = document.getElementById('rec-confirmasenha').value;
-  if (!nova || nova.length < 4) { recMsg('A senha deve ter pelo menos 4 caracteres.'); return; }
-  if (nova !== conf) { recMsg('As senhas não coincidem.'); return; }
-  USERS[recUsuarioId].password = nova;
-  recMsg('✓ Senha alterada com sucesso! Faça login com a nova senha.', '#34d399');
-  setTimeout(() => {
-    fecharRecuperacao();
-    document.getElementById('login-username').value = USERS[recUsuarioId].username;
-    document.getElementById('login-password').value = '';
-    document.getElementById('login-password').focus();
-  }, 2000);
-}
+// Funções de recuperação — legacy (mantidas vazias para compatibilidade)
+function abrirRecuperacao() { enviarRecuperacao(); }
+function fecharRecuperacao() {}
+function recClearMsg() {}
+function recMsg() {}
 
 function loginClearError() {
   const err = document.getElementById('login-error');
@@ -2659,84 +2653,25 @@ function loginShakeError(msg) {
   setTimeout(() => { box.style.transition = ''; }, 350);
 }
 
-function fazerLogin() {
-  const username = (document.getElementById('login-username').value || '').trim().toLowerCase();
-  const password = document.getElementById('login-password').value;
-
-  // Encontra usuário pelo username ou aliases
-  const userId = Object.keys(USERS).find(k => {
-    const u = USERS[k];
-    if (u.username.toLowerCase() === username) return true;
-    if (u.aliases && u.aliases.some(a => a.toLowerCase() === username)) return true;
-    return false;
-  });
-  if (!userId) { loginShakeError('Usuário não encontrado.'); return; }
-  if (USERS[userId].password !== password) { loginShakeError('Senha incorreta. Tente novamente.'); return; }
-
-  usuarioAtivo = userId;
-  logado = true;
-  document.getElementById('login-screen').classList.add('hidden');
-  const u = USERS[userId];
-  document.getElementById('sidebar-avatar').textContent = u.initials;
-  document.getElementById('sidebar-avatar').style.background = u.color;
-  document.getElementById('sidebar-name').textContent = u.name;
-  document.getElementById('sidebar-role').textContent = u.role + ' · Sair 🔒';
-  iniciarSync();
-  renderDashboard();
-}
-
-function mostrarPlanoBadge() {
-  const u = USERS[usuarioAtivo];
-  const area = document.getElementById('login-plan-area');
-  if (!area || !u) return;
-
-  let badgeClass = u.plano || 'gratuito';
-  let badgeText = u.planoLabel || 'Gratuito';
-  let validadeHtml = '';
-
-  if (!u.planoValidade) {
-    // Plano vitalício
-    validadeHtml = `<div class="login-validity" style="color:#34d399;margin-top:4px">✓ Licença vitalícia · Operacional</div>`;
-  } else {
-    const hoje = new Date(); hoje.setHours(0,0,0,0);
-    const validade = new Date(u.planoValidade + 'T00:00:00');
-    const diasRestantes = Math.round((validade - hoje) / 86400000);
-    const dataFormatada = validade.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
-    if (diasRestantes < 0) {
-      badgeClass = 'vencido'; badgeText = 'Plano Vencido';
-      validadeHtml = `<div class="login-validity expired">⚠️ Plano vencido em ${dataFormatada}. Renove para continuar.</div>`;
-    } else if (diasRestantes <= 7) {
-      validadeHtml = `<div class="login-validity warning">⏳ Válido até ${dataFormatada} · ${diasRestantes} dia${diasRestantes!==1?'s':''} restante${diasRestantes!==1?'s':''}</div>`;
-    } else {
-      validadeHtml = `<div class="login-validity">Válido até ${dataFormatada}</div>`;
-    }
+// Stub de compatibilidade — retorna dados do usuário Firebase atual
+const USERS = new Proxy({}, {
+  get(_, uid) {
+    const u = fbAuth.currentUser;
+    if (!u) return { name:'Usuário', role:'', initials:'U', color:'#4f7fff', plano:'premium', planoLabel:'Vitalício', planoValidade:null };
+    const nome = u.displayName || u.email || 'Usuário';
+    const iniciais = nome.split(' ').slice(0,2).map(p=>p[0].toUpperCase()).join('');
+    const cores = ['#4f7fff','#a855f7','#06d6a0','#ef8c4f','#f472b6'];
+    const cor = cores[(u.uid.charCodeAt(0)||0) % cores.length];
+    return { name: nome, role: 'Usuário', initials: iniciais, color: cor, plano:'premium', planoLabel:'Vitalício', planoValidade:null };
   }
+});
 
-  area.innerHTML = `<span class="login-plan-badge ${badgeClass}">⬡ ${badgeText}</span>${validadeHtml}`;
-}
+function mostrarPlanoBadge() { /* não usado no Firebase auth */ }
 
 function logout() {
-  logado = false;
-  document.getElementById('login-password').value = '';
-  loginClearError();
-  document.getElementById('login-screen').classList.remove('hidden');
-  // Preenche username do usuário ativo
-  const usernameEl = document.getElementById('login-username');
-  if (usernameEl) usernameEl.value = USERS[usuarioAtivo].username;
-  mostrarPlanoBadge();
+  fbAuth.signOut().catch(()=>{});
+  // onAuthStateChanged cuida de mostrar tela de login
 }
-
-// Init: preenche username padrão e mostra badge
-(function() {
-  const usernameEl = document.getElementById('login-username');
-  if (usernameEl) usernameEl.value = USERS[usuarioAtivo].username;
-  mostrarPlanoBadge();
-})();
-
-document.addEventListener('keydown', e => {
-  if (logado) return;
-  if (e.key === 'Enter') fazerLogin();
-});
 
 // ── Dados (localStorage) ──────────────────────────────────────────
 const STORAGE_KEY = 'fin_taveira_v1';
@@ -3564,7 +3499,7 @@ function limparHistorico() {
   if (!confirm('Apagar todos os lançamentos manuais do histórico?\nAs despesas fixas não serão afetadas.')) return;
   if (dbRef) {
     appData.lancamentos.forEach(l => {
-      dbRef.collection('lancamentos').doc(String(l.id)).delete().catch(()=>{});
+      userCol('lancamentos').doc(String(l.id)).delete().catch(()=>{});
     });
   }
   appData.lancamentos = [];
@@ -4996,7 +4931,7 @@ function salvarModalEditarLanc() {
   it.cat   = getCatValue('mel-cat', 'mel-cat-custom');
   const melConta = document.getElementById('mel-conta');
   it.conta = melConta ? melConta.value : (it.conta || '');
-  if (dbRef) { dbRef.collection('lancamentos').doc(String(id)).set(it).catch(()=>{}); }
+  if (dbRef) { userCol('lancamentos').doc(String(id)).set(it).catch(()=>{}); }
   saveData(appData);
   fecharModalEditarLanc();
   renderLancamentos();
@@ -5048,7 +4983,7 @@ function ocultarBasePeriodo(idx) {
 // Remove lançamento manual (sincronizado)
 function removerManual(id) {
   if (dbRef) {
-    dbRef.collection('lancamentos').doc(String(id)).delete().catch(()=>{});
+    userCol('lancamentos').doc(String(id)).delete().catch(()=>{});
   }
   appData.lancamentos = appData.lancamentos.filter(l => String(l.id) !== String(id));
   saveData(appData);
@@ -5131,7 +5066,7 @@ function saveCfg(cfg) {
   // sync via db se disponível — salva cfg completo como JSON string para preservar zeros e períodos
   if (dbRef) {
     try {
-      dbRef.collection('config').doc('cfg_full').set({ json: JSON.stringify(cfg), ts: cfg._ts });
+      userCol('config').doc('cfg_full').set({ json: JSON.stringify(cfg), ts: cfg._ts });
     } catch(e) {}
   }
 }
@@ -5581,60 +5516,76 @@ function salvarNovaFixa() {
   mostrarToast(`"${desc}" adicionado como ${tipoLabel} fixa ✓`);
 }
 
-// ── Sync de config via db ─────────────────────────────────────────
-let dbRef = null;
+// ── Sync via Firebase Firestore (isolado por UID) ─────────────────
+let dbRef = null; // coleção raiz do usuário: /users/{uid}
+let _unsubLanc = null;
+let _unsubCfg  = null;
 
-async function iniciarSync() {
+function userCol(sub) {
+  // /users/{uid}/{sub}
+  return fbDb.collection('users').doc(usuarioAtivo).collection(sub);
+}
+
+function iniciarSync() {
+  if (!usuarioAtivo) return;
+
+  // Carrega localStorage do usuário específico
+  const UID_KEY   = 'finvo_data_' + usuarioAtivo;
+  const UID_CFG   = 'finvo_cfg_'  + usuarioAtivo;
   try {
-    const db = await claude.use('db');
-    if (!db) return;
-    dbRef = db;
+    const raw = localStorage.getItem(UID_KEY);
+    if (raw) appData = JSON.parse(raw);
+  } catch(e) {}
+  try {
+    const rawC = localStorage.getItem(UID_CFG);
+    if (rawC) Object.assign(appCfg, JSON.parse(rawC));
+  } catch(e) {}
 
-    // Sync lançamentos
-    db.collection('lancamentos').onSnapshot(snap => {
-      const remotos = [];
-      snap.forEach(doc => remotos.push({ id: doc.id, ...doc.data() }));
-      appData.lancamentos = remotos;
-      saveData(appData);
-      const v = document.querySelector('.view.active');
-      if (v && v.id === 'view-dashboard') renderDashboard();
-      if (v && v.id === 'view-lancamentos') renderLancamentos();
-      if (v && v.id === 'view-mensal') renderMensal();
-      if (v && v.id === 'view-graficos') renderGrafico && renderGrafico();
-    });
+  dbRef = fbDb; // sinaliza que db está ativo
 
-    // Sync config completo (novo formato)
-    let _lastLocalSave = 0; // timestamp da última escrita local
-    const _origSaveCfg = saveCfg;
-    // Intercepta saveCfg para marcar momento da escrita
-    window._cfgSaveTs = () => { _lastLocalSave = Date.now(); };
+  // Cancela listeners anteriores
+  if (_unsubLanc) _unsubLanc();
+  if (_unsubCfg)  _unsubCfg();
 
-    db.collection('config').doc('cfg_full').onSnapshot &&
-    db.collection('config').doc('cfg_full').onSnapshot(docSnap => {
-      // Ignora snapshots por 4s após uma escrita local (evita race condition)
-      if (Date.now() - _lastLocalSave < 4000) return;
-      if (docSnap && docSnap.exists) {
-        const data = docSnap.data();
-        if (data && data.json) {
-          try {
-            const remote = JSON.parse(data.json);
-            if (remote && typeof remote === 'object') {
-              const localTs = appCfg._ts || 0;
-              const remoteTs = data.ts || 0;
-              if (remoteTs > localTs) {
-                Object.assign(appCfg, remote);
-                try { localStorage.setItem(CFG_KEY, data.json); } catch(e) {}
-                const v = document.querySelector('.view.active');
-                if (v && v.id === 'view-config') renderConfig();
-                if (v && v.id === 'view-dashboard') renderDashboard();
-              }
+  let _lastLocalSave = 0;
+
+  // Listener lançamentos
+  _unsubLanc = userCol('lancamentos').onSnapshot(snap => {
+    const remotos = [];
+    snap.forEach(d => remotos.push({ id: d.id, ...d.data() }));
+    appData.lancamentos = remotos;
+    try { localStorage.setItem('finvo_data_' + usuarioAtivo, JSON.stringify(appData)); } catch(e) {}
+    const v = document.querySelector('.view.active');
+    if (v && v.id === 'view-dashboard') renderDashboard();
+    if (v && v.id === 'view-lancamentos') renderLancamentos();
+    if (v && v.id === 'view-mensal') renderMensal();
+    if (v && v.id === 'view-graficos') renderGrafico && renderGrafico();
+  }, () => {});
+
+  // Listener config
+  _unsubCfg = fbDb.collection('users').doc(usuarioAtivo).collection('config').doc('cfg_full').onSnapshot(docSnap => {
+    if (Date.now() - _lastLocalSave < 4000) return;
+    if (docSnap && docSnap.exists) {
+      const data = docSnap.data();
+      if (data && data.json) {
+        try {
+          const remote = JSON.parse(data.json);
+          if (remote && typeof remote === 'object') {
+            const remoteTs = data.ts || 0;
+            if (remoteTs > (appCfg._ts || 0)) {
+              Object.assign(appCfg, remote);
+              try { localStorage.setItem('finvo_cfg_' + usuarioAtivo, data.json); } catch(e) {}
+              const v = document.querySelector('.view.active');
+              if (v && v.id === 'view-config') renderConfig();
+              if (v && v.id === 'view-dashboard') renderDashboard();
             }
-          } catch(e) {}
-        }
+          }
+        } catch(e) {}
       }
-    });
+    }
+  }, () => {});
 
-  } catch(e) { /* db não disponível, usa localStorage */ }
+  window._cfgSaveTs = () => { _lastLocalSave = Date.now(); };
 }
 
 // Sobrescreve salvarLancamento para sincronizar via db quando disponível
@@ -5653,7 +5604,7 @@ window.salvarLancamentoSynced = function() {
   const id = String(Date.now());
   const novo = { desc, val, tipo, mes, ano, cat, conta };
   if (dbRef) {
-    dbRef.collection('lancamentos').doc(id).set(novo);
+    userCol('lancamentos').doc(id).set(novo);
   } else {
     appData.lancamentos.push({ ...novo, id });
     saveData(appData);
@@ -5677,14 +5628,14 @@ function loadDividas() {
 }
 function saveDividas(arr) {
   try { localStorage.setItem(DIV_KEY, JSON.stringify(arr)); } catch(e) {}
-  if (dbRef) { try { dbRef.collection('dividas').doc('lista').set({itens: arr}); } catch(e) {} }
+  if (dbRef) { try { userCol('dividas').doc('lista').set({itens: arr}); } catch(e) {} }
 }
 function loadInvestimentos() {
   try { return JSON.parse(localStorage.getItem(INV_KEY)||'[]'); } catch(e) { return []; }
 }
 function saveInvestimentos(arr) {
   try { localStorage.setItem(INV_KEY, JSON.stringify(arr)); } catch(e) {}
-  if (dbRef) { try { dbRef.collection('investimentos').doc('lista').set({itens: arr}); } catch(e) {} }
+  if (dbRef) { try { userCol('investimentos').doc('lista').set({itens: arr}); } catch(e) {} }
 }
 
 // ── Semáforo inteligente ──────────────────────────────────────────
@@ -5753,7 +5704,7 @@ function getDefaultPendentes() {
 
 function saveDivPendentes(arr) {
   try { localStorage.setItem(DIV_PEND_KEY, JSON.stringify(arr)); } catch(e) {}
-  if (dbRef) { try { dbRef.collection('divpendentes').doc('lista').set({itens:arr}); } catch(e){} }
+  if (dbRef) { try { userCol('divpendentes').doc('lista').set({itens:arr}); } catch(e){} }
 }
 
 function renderDivPendentes() {
@@ -6431,12 +6382,12 @@ const OBJ_KEY = 'ftav_objetivos';
 function loadCriptos() { try { return JSON.parse(localStorage.getItem(CRIPTO_KEY)||'[]'); } catch(e) { return []; } }
 function saveCriptos(arr) {
   try { localStorage.setItem(CRIPTO_KEY, JSON.stringify(arr)); } catch(e) {}
-  if (dbRef) { try { dbRef.collection('criptos').doc('lista').set({itens: arr}); } catch(e) {} }
+  if (dbRef) { try { userCol('criptos').doc('lista').set({itens: arr}); } catch(e) {} }
 }
 function loadObjetivos() { try { return JSON.parse(localStorage.getItem(OBJ_KEY)||'[]'); } catch(e) { return []; } }
 function saveObjetivos(arr) {
   try { localStorage.setItem(OBJ_KEY, JSON.stringify(arr)); } catch(e) {}
-  if (dbRef) { try { dbRef.collection('objetivos').doc('lista').set({itens: arr}); } catch(e) {} }
+  if (dbRef) { try { userCol('objetivos').doc('lista').set({itens: arr}); } catch(e) {} }
 }
 
 function renderCriptos() {
@@ -6615,7 +6566,7 @@ const ACOES_KEY = 'ftav_acoes';
 function loadAcoes() { try { return JSON.parse(localStorage.getItem(ACOES_KEY)||'[]'); } catch(e) { return []; } }
 function saveAcoes(arr) {
   try { localStorage.setItem(ACOES_KEY, JSON.stringify(arr)); } catch(e) {}
-  if (dbRef) { try { dbRef.collection('acoes').doc('lista').set({itens: arr}); } catch(e) {} }
+  if (dbRef) { try { userCol('acoes').doc('lista').set({itens: arr}); } catch(e) {} }
 }
 
 function renderAcoes() {
@@ -6842,7 +6793,7 @@ function loadMetas() {
 function saveMetas(arr) {
   try { localStorage.setItem('finMetas', JSON.stringify(arr)); } catch {}
   if (dbRef) {
-    arr.forEach(m => dbRef.collection('metas').doc(String(m.id)).set(m).catch(()=>{}));
+    arr.forEach(m => userCol('metas').doc(String(m.id)).set(m).catch(()=>{}));
   }
 }
 
@@ -6902,7 +6853,7 @@ function excluirMeta(id) {
   if (!confirm('Excluir esta meta?')) return;
   const metas = loadMetas().filter(m => m.id !== id);
   saveMetas(metas);
-  if (dbRef) dbRef.collection('metas').doc(String(id)).delete().catch(()=>{});
+  if (dbRef) userCol('metas').doc(String(id)).delete().catch(()=>{});
   renderMetasDash();
 }
 
