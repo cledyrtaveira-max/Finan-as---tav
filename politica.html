@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Política de Privacidade — Finanvô</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+:root {
+  --bg: #0a0e1a; --bg2: #111827; --bg3: #1e2537;
+  --fg1: #f0f4ff; --fg2: #a8b8d8; --fg3: #64748b;
+  --accent: #4f7fff; --border: rgba(255,255,255,0.07);
+  --grd: linear-gradient(135deg, #4f7fff, #7c3aed);
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--fg1); line-height: 1.7; font-size: 15px; }
+header { background: rgba(10,14,26,0.95); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+.logo { font-size: 20px; font-weight: 900; }
+.logo span { background: var(--grd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.back { font-size: 13px; color: var(--accent); font-weight: 600; text-decoration: none; }
+.back:hover { opacity: .8; }
+main { max-width: 720px; margin: 48px auto; padding: 0 24px 80px; }
+h1 { font-size: 32px; font-weight: 900; margin-bottom: 6px; }
+.meta { font-size: 13px; color: var(--fg3); margin-bottom: 40px; }
+h2 { font-size: 18px; font-weight: 700; color: var(--fg1); margin: 36px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+p { color: var(--fg2); margin-bottom: 14px; }
+ul { color: var(--fg2); padding-left: 20px; margin-bottom: 14px; }
+ul li { margin-bottom: 6px; }
+a { color: var(--accent); }
+.highlight { background: rgba(79,127,255,0.08); border: 1px solid rgba(79,127,255,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 14px; }
+.highlight p { margin: 0; }
+footer { text-align: center; padding: 24px; font-size: 12px; color: var(--fg3); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Finan<span>vô</span></div>
+  <a href="index.html" class="back">← Voltar</a>
+</header>
+<main>
+  <h1>Política de Privacidade</h1>
+  <p class="meta">Última atualização: outubro de 2024 · Finanvô</p>
+
+  <div class="highlight">
+    <p>🔒 Resumo simples: seus dados financeiros ficam na sua conta e não são compartilhados com terceiros para fins comerciais. Você pode excluir tudo a qualquer momento.</p>
+  </div>
+
+  <h2>1. Quem somos</h2>
+  <p>O Finanvô é um aplicativo web gratuito de controle financeiro familiar, desenvolvido e mantido de forma independente. Este documento descreve como coletamos, usamos e protegemos suas informações pessoais, em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei n.º 13.709/2018).</p>
+
+  <h2>2. Dados que coletamos</h2>
+  <p>Para o funcionamento do app, coletamos as seguintes informações:</p>
+  <ul>
+    <li><strong>Dados de conta:</strong> nome, endereço de e-mail e foto de perfil (quando você entra com Google) ou e-mail e senha (quando usa e-mail/senha).</li>
+    <li><strong>Dados financeiros:</strong> valores de despesas, receitas, dívidas, categorias e lançamentos que você cadastra no app.</li>
+    <li><strong>Configurações do app:</strong> metas por categoria, preferências de exibição e configurações de períodos.</li>
+    <li><strong>Dados técnicos:</strong> identificador de usuário (UID), data/hora de criação da conta e última autenticação.</li>
+  </ul>
+  <p><strong>Não coletamos:</strong> número de CPF, dados bancários, cartões de crédito, localização, contatos do celular ou qualquer dado sensível além dos descritos acima.</p>
+
+  <h2>3. Como usamos seus dados</h2>
+  <p>Seus dados são usados exclusivamente para:</p>
+  <ul>
+    <li>Autenticar e identificar sua conta no app;</li>
+    <li>Armazenar e sincronizar suas informações financeiras entre dispositivos;</li>
+    <li>Exibir relatórios, gráficos e o dashboard personalizado para você;</li>
+    <li>Enviar e-mails de redefinição de senha, quando solicitado.</li>
+  </ul>
+  <p><strong>Nunca usamos seus dados para:</strong> publicidade direcionada, venda a terceiros, análises de comportamento para fins comerciais ou criação de perfis de marketing.</p>
+
+  <h2>4. Onde seus dados são armazenados</h2>
+  <p>Seus dados são armazenados no <strong>Google Firebase</strong> (serviço da Google LLC), utilizando:</p>
+  <ul>
+    <li><strong>Firebase Authentication:</strong> gerenciamento seguro de contas e senhas;</li>
+    <li><strong>Cloud Firestore:</strong> banco de dados com isolamento por usuário (seus dados ficam em um caminho exclusivo identificado pelo seu UID, inacessível a outros usuários).</li>
+  </ul>
+  <p>O Firebase segue as normas de privacidade da GDPR/LGPD e mantém dados em servidores com certificação de segurança. Para saber mais: <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">firebase.google.com/support/privacy</a></p>
+
+  <h2>5. Segurança dos dados</h2>
+  <p>Adotamos as seguintes práticas de segurança:</p>
+  <ul>
+    <li>Toda comunicação é criptografada via HTTPS/TLS;</li>
+    <li>Senhas nunca são armazenadas em texto claro (gerenciadas pelo Firebase Auth com hashing seguro);</li>
+    <li>Regras de segurança do Firestore garantem que cada usuário acessa apenas seus próprios dados;</li>
+    <li>Autenticação multifator disponível via conta Google.</li>
+  </ul>
+
+  <h2>6. Compartilhamento de dados</h2>
+  <p>Seus dados pessoais e financeiros <strong>não são compartilhados</strong> com terceiros, exceto:</p>
+  <ul>
+    <li><strong>Google Firebase:</strong> infraestrutura necessária para o funcionamento do app (processador de dados);</li>
+    <li><strong>Obrigação legal:</strong> quando exigido por lei, decisão judicial ou autoridade competente.</li>
+  </ul>
+
+  <h2>7. Seus direitos (LGPD)</h2>
+  <p>Como titular de dados, você tem os seguintes direitos garantidos pela LGPD:</p>
+  <ul>
+    <li><strong>Acesso:</strong> solicitar uma cópia de todos os seus dados armazenados;</li>
+    <li><strong>Correção:</strong> atualizar dados incorretos ou desatualizados;</li>
+    <li><strong>Exclusão:</strong> excluir sua conta e todos os dados associados a qualquer momento;</li>
+    <li><strong>Portabilidade:</strong> exportar seus dados em formato legível (CSV disponível no app);</li>
+    <li><strong>Revogação:</strong> revogar consentimento e parar de usar o app.</li>
+  </ul>
+  <p>Para exercer qualquer desses direitos, você pode excluir sua conta diretamente no app ou entrar em contato pelo e-mail abaixo.</p>
+
+  <h2>8. Cookies e armazenamento local</h2>
+  <p>O Finanvô utiliza <strong>localStorage</strong> do navegador para:</p>
+  <ul>
+    <li>Manter suas configurações enquanto você está offline;</li>
+    <li>Armazenar temporariamente dados financeiros para funcionamento como PWA.</li>
+  </ul>
+  <p>Não utilizamos cookies de rastreamento, pixels de publicidade ou ferramentas de análise de terceiros (como Google Analytics).</p>
+
+  <h2>9. Menores de idade</h2>
+  <p>O Finanvô não é destinado a menores de 18 anos. Não coletamos conscientemente dados de crianças ou adolescentes. Se você acredita que um menor cadastrou uma conta, entre em contato para que possamos excluir os dados.</p>
+
+  <h2>10. Alterações nesta política</h2>
+  <p>Podemos atualizar esta política ocasionalmente. Alterações significativas serão comunicadas por meio de aviso no app. A data de "última atualização" no topo deste documento sempre indica a versão vigente.</p>
+
+  <h2>11. Contato</h2>
+  <p>Para dúvidas, solicitações de dados ou exercício de direitos LGPD, entre em contato pelo e-mail: <a href="mailto:cledyrtaveira@gmail.com">cledyrtaveira@gmail.com</a></p>
+</main>
+<footer>© 2024 Finanvô · <a href="index.html">Início</a> · <a href="termos.html">Termos de uso</a></footer>
+</body>
+</html>
