@@ -1,33 +1,46 @@
-<title>Finanças Taveira</title>
+<title>Finanvô</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="application-name" content="Finanças Taveira">
+<meta name="application-name" content="Finanvô">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Finanças">
-<meta name="theme-color" content="#0f1117">
+<meta name="apple-mobile-web-app-title" content="Finanvô">
+<meta name="theme-color" content="#4f7fff">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="Controle financeiro inteligente para sua família">
+<meta property="og:title" content="Finanvô">
+<meta property="og:description" content="Controle financeiro inteligente para sua família">
+<meta property="og:type" content="website">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <script>
-// ── PWA Manifest inline ──────────────────────────────────────────
+// ── PWA Manifest + Service Worker ───────────────────────────────
 (function() {
+  // Ícone Finanvô — gráfico de linha ascendente + "Fv"
   const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-    <rect width="512" height="512" rx="112" fill="#0f1117"/>
-    <rect x="60" y="60" width="392" height="392" rx="80" fill="#181c27"/>
-    <!-- Gráfico de barras estilizado -->
-    <rect x="100" y="300" width="60" height="120" rx="8" fill="#22c55e"/>
-    <rect x="186" y="220" width="60" height="200" rx="8" fill="#4f7fff"/>
-    <rect x="272" y="260" width="60" height="160" rx="8" fill="#22c55e"/>
-    <rect x="358" y="180" width="60" height="240" rx="8" fill="#4f7fff"/>
-    <!-- Linha de saldo -->
-    <polyline points="130,240 216,190 302,210 388,140" stroke="#f59e0b" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <rect width="512" height="512" rx="108" fill="#0f1117"/>
+    <defs>
+      <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#4f7fff"/>
+        <stop offset="100%" stop-color="#7c3aed"/>
+      </linearGradient>
+    </defs>
+    <!-- Fundo card -->
+    <rect x="56" y="56" width="400" height="400" rx="72" fill="url(#g1)" opacity=".18"/>
+    <!-- Linha de tendência ascendente -->
+    <polyline points="100,360 175,280 250,310 330,210 415,150"
+      stroke="#4f7fff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
     <!-- Pontos -->
-    <circle cx="130" cy="240" r="12" fill="#f59e0b"/>
-    <circle cx="216" cy="190" r="12" fill="#f59e0b"/>
-    <circle cx="302" cy="210" r="12" fill="#f59e0b"/>
-    <circle cx="388" cy="140" r="12" fill="#f59e0b"/>
-    <!-- F inicial -->
-    <text x="256" y="490" font-family="system-ui,sans-serif" font-size="36" font-weight="700" fill="#545e78" text-anchor="middle">Família Taveira</text>
+    <circle cx="100" cy="360" r="14" fill="#4f7fff"/>
+    <circle cx="175" cy="280" r="14" fill="#4f7fff"/>
+    <circle cx="250" cy="310" r="14" fill="#4f7fff"/>
+    <circle cx="330" cy="210" r="18" fill="#7c3aed"/>
+    <circle cx="415" cy="150" r="22" fill="#22c55e"/>
+    <!-- Seta de alta no último ponto -->
+    <polyline points="415,150 415,108 455,130" stroke="#22c55e" stroke-width="12"
+      stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <!-- Texto Fv -->
+    <text x="256" y="470" font-family="system-ui,sans-serif" font-size="52" font-weight="900"
+      fill="rgba(255,255,255,0.18)" text-anchor="middle">Finanvô</text>
   </svg>`;
 
   function svgToDataUrl(svg) {
@@ -37,20 +50,22 @@
   const iconUrl = svgToDataUrl(icon);
 
   const manifest = {
-    name: 'Finanças Taveira',
-    short_name: 'Finanças',
-    description: 'Controle financeiro da Família Taveira',
-    start_url: window.location.href,
+    name: 'Finanvô',
+    short_name: 'Finanvô',
+    description: 'Controle financeiro inteligente para sua família',
+    start_url: window.location.pathname,
+    scope: window.location.pathname.replace(/[^/]*$/, ''),
     display: 'standalone',
-    orientation: 'portrait',
+    orientation: 'portrait-primary',
     background_color: '#0f1117',
-    theme_color: '#0f1117',
+    theme_color: '#4f7fff',
     icons: [
       { src: iconUrl, sizes: '192x192', type: 'image/svg+xml' },
       { src: iconUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
     ],
     categories: ['finance', 'productivity'],
-    lang: 'pt-BR'
+    lang: 'pt-BR',
+    dir: 'ltr'
   };
 
   const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
@@ -72,6 +87,52 @@
   favicon.type = 'image/svg+xml';
   favicon.href = iconUrl;
   document.head.appendChild(favicon);
+
+  // ── Service Worker (cache offline) ──────────────────────────────
+  if ('serviceWorker' in navigator) {
+    const swCode = `
+const CACHE = 'finanvo-v2';
+const SHELL = [self.registration.scope + 'finapp.html'];
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys => Promise.all(
+      keys.filter(k => k !== CACHE).map(k => caches.delete(k))
+    )).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', e => {
+  // Só faz cache de requisições GET ao próprio domínio
+  if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return;
+
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      const fresh = fetch(e.request).then(resp => {
+        if (resp && resp.status === 200) {
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return resp;
+      }).catch(() => cached);
+      return cached || fresh;
+    })
+  );
+});
+`;
+    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl, { scope: window.location.pathname.replace(/[^/]*$/, '') || '/' })
+      .catch(() => {}); // falha silenciosa em contextos sem suporte
+  }
 })();
 </script>
 
