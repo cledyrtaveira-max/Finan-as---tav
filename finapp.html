@@ -8682,12 +8682,13 @@ async function inicializarFamilia() {
 const _origSyncFamilia = window.iniciarSync;
 window.iniciarSync = function() {
   if (_origSyncFamilia) _origSyncFamilia();
-  setTimeout(inicializarFamilia, 1000);
+  setTimeout(window._inicializarFamilia, 1000);
 };
 
 // Expor globais
 window.renderCfgFamilia = renderCfgFamilia;
 window.renderBadgeFamilia = renderBadgeFamilia;
+window._inicializarFamilia = inicializarFamilia;
 
 })();
 </script>
