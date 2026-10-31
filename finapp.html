@@ -9238,6 +9238,619 @@ window.renderConfig = function() {
 </script>
 <!-- ── Fim Sistema de Planos ─────────────────────────────────────────────── -->
 
+<!-- ── Importação de Extrato Bancário ─────────────────────────────────────── -->
+<script>
+(function() {
+
+// ═══════════════════════════════════════════════════════════════════
+//  PARSERS DE CSV POR BANCO
+// ═══════════════════════════════════════════════════════════════════
+
+// Utilitários
+function parseBRL(str) {
+  if (!str) return 0;
+  // Remove R$, espaços, pontos de milhar; troca vírgula por ponto
+  const s = String(str).replace(/R\$\s*/g,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.');
+  return parseFloat(s) || 0;
+}
+
+function parseDataBR(str) {
+  if (!str) return null;
+  str = str.trim();
+  // DD/MM/YYYY
+  const m1 = str.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (m1) return { dia: m1[1], mes: m1[2], ano: m1[3] };
+  // YYYY-MM-DD
+  const m2 = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m2) return { dia: m2[3], mes: m2[2], ano: m2[1] };
+  return null;
+}
+
+function mesPorNumero(n) {
+  const MESES_NUM = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                     'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  return MESES_NUM[parseInt(n) - 1] || 'Janeiro';
+}
+
+// Detecta separador
+function detectSep(linha) {
+  const tabs = (linha.match(/\t/g)||[]).length;
+  const pts  = (linha.match(/;/g)||[]).length;
+  const vir  = (linha.match(/,/g)||[]).length;
+  if (tabs >= pts && tabs >= vir) return '\t';
+  if (pts >= vir) return ';';
+  return ',';
+}
+
+// Parse CSV respeitando campos com aspas
+function parseCSVLine(line, sep) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; continue; }
+    if (!inQ && line.slice(i, i + sep.length) === sep) {
+      result.push(cur.trim()); cur = ''; i += sep.length - 1;
+    } else { cur += c; }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function parseCSV(text, sep) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (!lines.length) return [];
+  return lines.map(l => parseCSVLine(l, sep));
+}
+
+// ─── NUBANK CARTÃO ─── colunas: date,title,amount
+function parseNubankCartao(rows) {
+  const header = rows[0].map(h => h.toLowerCase().replace(/\s/g,''));
+  const iData  = header.findIndex(h => h === 'date');
+  const iDesc  = header.findIndex(h => h === 'title');
+  const iVal   = header.findIndex(h => h === 'amount');
+  if (iData < 0 || iDesc < 0 || iVal < 0) return null;
+
+  return rows.slice(1).map(r => {
+    const d = parseDataBR(r[iData]);
+    const val = Math.abs(parseBRL(r[iVal]));
+    if (!d || !val) return null;
+    return {
+      desc: r[iDesc] || 'Nubank',
+      val,
+      tipo: 'saida',
+      mes: mesPorNumero(d.mes),
+      ano: parseInt(d.ano),
+      cat: categorizarAuto(r[iDesc] || ''),
+      conta: 'Nubank Cartão'
+    };
+  }).filter(Boolean);
+}
+
+// ─── NUBANK CONTA ─── colunas: Data,Valor,Identificador,Descrição
+function parseNubankConta(rows) {
+  const header = rows[0].map(h => h.toLowerCase().trim());
+  const iData  = header.findIndex(h => h === 'data');
+  const iVal   = header.findIndex(h => h === 'valor');
+  const iDesc  = header.findIndex(h => h.includes('descri'));
+  if (iData < 0 || iVal < 0) return null;
+
+  return rows.slice(1).map(r => {
+    const d = parseDataBR(r[iData]);
+    const raw = parseBRL(r[iVal]);
+    if (!d || raw === 0) return null;
+    const desc = (iDesc >= 0 ? r[iDesc] : r[2]) || 'Nubank';
+    return {
+      desc,
+      val: Math.abs(raw),
+      tipo: raw >= 0 ? 'entrada' : 'saida',
+      mes: mesPorNumero(d.mes),
+      ano: parseInt(d.ano),
+      cat: categorizarAuto(desc),
+      conta: 'Nubank Conta'
+    };
+  }).filter(Boolean);
+}
+
+// ─── BANCO INTER CONTA ─── sep:; colunas: Data Lançamento;Histórico;Valor;Saldo
+function parseInterConta(rows) {
+  const header = rows[0].map(h => h.toLowerCase().trim());
+  const iData  = header.findIndex(h => h.includes('data'));
+  const iDesc  = header.findIndex(h => h.includes('hist') || h.includes('descri'));
+  const iVal   = header.findIndex(h => h === 'valor' || h === 'valor (r$)');
+  if (iData < 0 || iVal < 0) return null;
+
+  return rows.slice(1).map(r => {
+    const d = parseDataBR(r[iData]);
+    const raw = parseBRL(r[iVal]);
+    if (!d || raw === 0) return null;
+    const desc = (iDesc >= 0 ? r[iDesc] : '') || 'Inter';
+    return {
+      desc,
+      val: Math.abs(raw),
+      tipo: raw >= 0 ? 'entrada' : 'saida',
+      mes: mesPorNumero(d.mes),
+      ano: parseInt(d.ano),
+      cat: categorizarAuto(desc),
+      conta: 'Banco Inter'
+    };
+  }).filter(Boolean);
+}
+
+// ─── BANCO INTER CARTÃO ─── sep:, colunas: Data,Lançamento,Categoria,Tipo,Valor
+function parseInterCartao(rows) {
+  const header = rows[0].map(h => h.toLowerCase().trim());
+  const iData  = header.findIndex(h => h === 'data');
+  const iDesc  = header.findIndex(h => h === 'lançamento' || h === 'lancamento' || h === 'descrição' || h === 'descricao');
+  const iVal   = header.findIndex(h => h === 'valor');
+  if (iData < 0 || iVal < 0) return null;
+
+  return rows.slice(1).map(r => {
+    const d = parseDataBR(r[iData]);
+    const val = Math.abs(parseBRL(r[iVal]));
+    if (!d || !val) return null;
+    const desc = (iDesc >= 0 ? r[iDesc] : r[1]) || 'Inter';
+    return {
+      desc,
+      val,
+      tipo: 'saida',
+      mes: mesPorNumero(d.mes),
+      ano: parseInt(d.ano),
+      cat: categorizarAuto(desc),
+      conta: 'Inter Cartão'
+    };
+  }).filter(Boolean);
+}
+
+// ─── ITAÚ ─── sep:; colunas: Data;Lançamento;Débito;Crédito;Saldo
+function parseItau(rows) {
+  // Itaú tem linhas de cabeçalho antes dos dados — procura a linha com "Data"
+  let headerIdx = rows.findIndex(r => r[0] && r[0].toLowerCase().trim() === 'data');
+  if (headerIdx < 0) headerIdx = 0;
+  const header = rows[headerIdx].map(h => h.toLowerCase().trim());
+  const iData   = header.findIndex(h => h === 'data');
+  const iDesc   = header.findIndex(h => h.includes('lança') || h.includes('histor') || h.includes('descri'));
+  const iDeb    = header.findIndex(h => h.includes('débit') || h.includes('debit'));
+  const iCred   = header.findIndex(h => h.includes('crédit') || h.includes('credit'));
+  if (iData < 0) return null;
+
+  return rows.slice(headerIdx + 1).map(r => {
+    const d = parseDataBR(r[iData]);
+    if (!d) return null;
+    const deb  = iDeb  >= 0 ? parseBRL(r[iDeb])  : 0;
+    const cred = iCred >= 0 ? parseBRL(r[iCred]) : 0;
+    if (!deb && !cred) return null;
+    const desc = (iDesc >= 0 ? r[iDesc] : r[1]) || 'Itaú';
+    return {
+      desc,
+      val: deb || cred,
+      tipo: cred > 0 ? 'entrada' : 'saida',
+      mes: mesPorNumero(d.mes),
+      ano: parseInt(d.ano),
+      cat: categorizarAuto(desc),
+      conta: 'Itaú'
+    };
+  }).filter(Boolean);
+}
+
+// ─── BRADESCO ─── sep:; colunas: Data;Histórico;Docto;Crédito(R$);Débito(R$);Saldo(R$)
+function parseBradesco(rows) {
+  let headerIdx = rows.findIndex(r => {
+    const h = r[0] && r[0].toLowerCase().trim();
+    return h === 'data' || h === 'lançamento' || h === 'lancamento';
+  });
+  if (headerIdx < 0) headerIdx = 0;
+  const header = rows[headerIdx].map(h => h.toLowerCase().trim());
+  const iData  = header.findIndex(h => h === 'data');
+  const iDesc  = header.findIndex(h => h.includes('hist') || h.includes('lança') || h.includes('descri'));
+  const iCred  = header.findIndex(h => h.includes('crédit') || h.includes('credit'));
+  const iDeb   = header.findIndex(h => h.includes('débit') || h.includes('debit'));
+  if (iData < 0) return null;
+
+  return rows.slice(headerIdx + 1).map(r => {
+    const d = parseDataBR(r[iData]);
+    if (!d) return null;
+    const cred = iCred >= 0 ? parseBRL(r[iCred]) : 0;
+    const deb  = iDeb  >= 0 ? parseBRL(r[iDeb])  : 0;
+    if (!cred && !deb) return null;
+    const desc = (iDesc >= 0 ? r[iDesc] : r[1]) || 'Bradesco';
+    return {
+      desc,
+      val: cred || deb,
+      tipo: cred > 0 ? 'entrada' : 'saida',
+      mes: mesPorNumero(d.mes),
+      ano: parseInt(d.ano),
+      cat: categorizarAuto(desc),
+      conta: 'Bradesco'
+    };
+  }).filter(Boolean);
+}
+
+// ─── C6 BANK ─── sep:, colunas: Data,Descrição,Valor,Parcelas,Categoria
+function parseC6(rows) {
+  const header = rows[0].map(h => h.toLowerCase().trim());
+  const iData  = header.findIndex(h => h === 'data');
+  const iDesc  = header.findIndex(h => h.includes('descri'));
+  const iVal   = header.findIndex(h => h === 'valor');
+  if (iData < 0 || iVal < 0) return null;
+
+  return rows.slice(1).map(r => {
+    const d = parseDataBR(r[iData]);
+    const raw = parseBRL(r[iVal]);
+    if (!d || raw === 0) return null;
+    const desc = (iDesc >= 0 ? r[iDesc] : r[1]) || 'C6 Bank';
+    return {
+      desc,
+      val: Math.abs(raw),
+      tipo: raw > 0 ? 'entrada' : 'saida',
+      mes: mesPorNumero(d.mes),
+      ano: parseInt(d.ano),
+      cat: categorizarAuto(desc),
+      conta: 'C6 Bank'
+    };
+  }).filter(Boolean);
+}
+
+// ─── BB (Banco do Brasil) ─── sep:; colunas: Data;Dependência Origem;Histórico;Data Balancete;Número do documento;Valor
+function parseBB(rows) {
+  let headerIdx = rows.findIndex(r => r[0] && r[0].toLowerCase().trim() === 'data');
+  if (headerIdx < 0) headerIdx = 0;
+  const header = rows[headerIdx].map(h => h.toLowerCase().trim());
+  const iData  = header.findIndex(h => h === 'data');
+  const iDesc  = header.findIndex(h => h.includes('hist'));
+  const iVal   = header.findIndex(h => h === 'valor');
+  if (iData < 0 || iVal < 0) return null;
+
+  return rows.slice(headerIdx + 1).map(r => {
+    const d = parseDataBR(r[iData]);
+    const raw = parseBRL(r[iVal]);
+    if (!d || raw === 0) return null;
+    const desc = (iDesc >= 0 ? r[iDesc] : r[2]) || 'BB';
+    return {
+      desc,
+      val: Math.abs(raw),
+      tipo: raw >= 0 ? 'entrada' : 'saida',
+      mes: mesPorNumero(d.mes),
+      ano: parseInt(d.ano),
+      cat: categorizarAuto(desc),
+      conta: 'Banco do Brasil'
+    };
+  }).filter(Boolean);
+}
+
+// ─── GENÉRICO ─── tenta detectar Data+Descrição+Valor em qualquer CSV
+function parseGenerico(rows, sep) {
+  if (!rows.length) return null;
+  const header = rows[0].map(h => h.toLowerCase().trim());
+  const iData  = header.findIndex(h => h.includes('data') || h === 'date');
+  const iDesc  = header.findIndex(h => h.includes('descri') || h.includes('histor') || h === 'title' || h === 'lancamento' || h.includes('lança'));
+  const iVal   = header.findIndex(h => h === 'valor' || h === 'amount' || h === 'value' || h.includes('valor'));
+  if (iData < 0 || iVal < 0) return null;
+
+  return rows.slice(1).map(r => {
+    const d = parseDataBR(r[iData]);
+    const raw = parseBRL(r[iVal]);
+    if (!d || raw === 0) return null;
+    const desc = (iDesc >= 0 ? r[iDesc] : r[1]) || 'Importado';
+    return {
+      desc,
+      val: Math.abs(raw),
+      tipo: raw >= 0 ? 'entrada' : 'saida',
+      mes: mesPorNumero(d.mes),
+      ano: parseInt(d.ano),
+      cat: categorizarAuto(desc),
+      conta: 'Importado'
+    };
+  }).filter(Boolean);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  DETECÇÃO AUTOMÁTICA DO BANCO
+// ═══════════════════════════════════════════════════════════════════
+function detectarBanco(text, rows, sep) {
+  const header = rows[0] ? rows[0].map(h => h.toLowerCase().trim()).join('|') : '';
+  const textLow = text.slice(0, 500).toLowerCase();
+
+  // Nubank Cartão: date,title,amount
+  if (header.includes('date') && header.includes('title') && header.includes('amount')) {
+    return { banco: 'Nubank Cartão', parser: parseNubankCartao };
+  }
+  // Nubank Conta: Data,Valor,Identificador,Descrição
+  if (header.includes('identificador') || (header.includes('data') && header.includes('valor') && header.includes('descri') && sep === ',')) {
+    return { banco: 'Nubank Conta', parser: parseNubankConta };
+  }
+  // Inter Cartão: Data,Lançamento,Categoria,Tipo,Valor
+  if (header.includes('lançamento') || header.includes('lancamento') && header.includes('categoria') && header.includes('tipo')) {
+    return { banco: 'Inter Cartão', parser: parseInterCartao };
+  }
+  // Inter Conta: Data Lançamento;Histórico;Valor;Saldo (sep ;)
+  if ((header.includes('histórico') || header.includes('historico')) && sep === ';') {
+    return { banco: 'Banco Inter', parser: parseInterConta };
+  }
+  // BB: Dependência Origem
+  if (header.includes('dependência') || header.includes('dependencia')) {
+    return { banco: 'Banco do Brasil', parser: parseBB };
+  }
+  // Bradesco: Docto ou Crédito(R$)
+  if (header.includes('docto') || textLow.includes('bradesco')) {
+    return { banco: 'Bradesco', parser: parseBradesco };
+  }
+  // Itaú: Lançamento + Débito + Crédito
+  if ((header.includes('débito') || header.includes('debito')) && (header.includes('crédito') || header.includes('credito'))) {
+    return { banco: 'Itaú', parser: parseItau };
+  }
+  // C6: Parcelas
+  if (header.includes('parcelas')) {
+    return { banco: 'C6 Bank', parser: parseC6 };
+  }
+  // Genérico
+  return { banco: 'Genérico', parser: (rows) => parseGenerico(rows, sep) };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  CATEGORIZAÇÃO AUTOMÁTICA
+// ═══════════════════════════════════════════════════════════════════
+function categorizarAuto(desc) {
+  const d = desc.toLowerCase();
+  if (/supermercado|mercado|padaria|açougue|hortifruti|ifood|rappi|uber.?eat|delivery|restaurante|lanchonete|mcdonalds|burguer|subway|pizza|sushi|refeição|alimentação/.test(d)) return 'Alimentação';
+  if (/farmácia|farmacia|drogaria|hospital|clínica|clinica|médico|medico|plano.*saúde|plano.*saude|convenio|consulta|exame|remédio|remedio|unimed|amil|bradesco.*saude|sulamerica/.test(d)) return 'Saúde';
+  if (/escola|faculdade|universidade|curso|mensalidade|fies|material.*escolar|educação|educacao|uniforme|colégio|colegio|creche|aula/.test(d)) return 'Educação';
+  if (/netflix|spotify|amazon|prime|disney|hbo|apple|globoplay|youtube|steam|jogos|lazer|cinema|teatro|show|ingresso|clube|academia|gym|fitness/.test(d)) return 'Lazer';
+  if (/uber|99|ônibus|onibus|metrô|metro|trem|transporte|combustível|combustivel|posto|gasolina|etanol|pedágio|pedagio|estacionamento|parking|carro|moto|seguro.*auto/.test(d)) return 'Transporte';
+  if (/aluguel|condomínio|condominio|iptu|energia|luz|agua|água|gás|gas|internet|fibra|vivo|claro|tim|oi|telefone|telefonia|celular/.test(d)) return /internet|fibra|vivo|claro|tim|oi|telefone|telefonia|celular/.test(d) ? 'Telefonia' : 'Moradia';
+  if (/salário|salario|pagamento|holerite|pro.?labore|honorário|honorario|freela|renda|receita|transferência.*recebida|pix.*recebido/.test(d)) return 'Salário';
+  if (/cartão|cartao|fatura|nubank|itaú|itau|bradesco|inter|c6|caixa|banco/.test(d)) return 'Outros';
+  if (/imposto|ir |irpf|das|inss|iss|darf|simples|receita.*federal/.test(d)) return 'Impostos';
+  if (/empréstimo|emprestimo|financiamento|parcela|prestação|prestacao|divida|dívida/.test(d)) return 'Dívida';
+  if (/investimento|tesouro|cdb|lci|lca|ações|acoes|fundo|previdência|previdencia|poupança|poupanca/.test(d)) return 'Investimento';
+  return 'Outros';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  PROCESSAR ARQUIVO CSV
+// ═══════════════════════════════════════════════════════════════════
+function processarCSV(text) {
+  // Remove BOM
+  text = text.replace(/^﻿/, '');
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (!lines.length) return { erro: 'Arquivo vazio.' };
+
+  // Detecta separador na primeira linha não vazia com dados
+  const sep = detectSep(lines[0]);
+  const allRows = parseCSV(text, sep);
+
+  // Encontra linha de cabeçalho (ignora linhas de metadados do banco)
+  let dataStart = 0;
+  for (let i = 0; i < Math.min(10, allRows.length); i++) {
+    const row = allRows[i];
+    const joined = row.join('|').toLowerCase();
+    if (joined.includes('data') || joined.includes('date') || joined.includes('valor') || joined.includes('amount')) {
+      dataStart = i;
+      break;
+    }
+  }
+  const rows = allRows.slice(dataStart);
+  if (rows.length < 2) return { erro: 'Não encontrei linhas de dados no arquivo.' };
+
+  const { banco, parser } = detectarBanco(text, rows, sep);
+  const transacoes = parser(rows);
+
+  if (!transacoes || !transacoes.length) {
+    return { erro: `Não consegui ler o formato deste arquivo. Banco detectado: ${banco}. Verifique se exportou o CSV pelo app/site do banco.` };
+  }
+
+  return { banco, transacoes };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  MODAL DE IMPORTAÇÃO
+// ═══════════════════════════════════════════════════════════════════
+window.abrirImportarExtrato = function() {
+  let modal = document.getElementById('modal-importar');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-importar';
+    modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1100;display:flex;align-items:center;justify-content:center;padding:16px`;
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div style="background:var(--card);border-radius:16px;padding:24px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;position:relative">
+      <button onclick="fecharImportarExtrato()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;color:var(--fg3);cursor:pointer">✕</button>
+      <div style="font-size:18px;font-weight:700;color:var(--fg1);margin-bottom:4px">📂 Importar Extrato</div>
+      <div style="font-size:12px;color:var(--fg3);margin-bottom:20px">Suporta: Nubank, Inter, Itaú, Bradesco, C6 Bank, BB e outros</div>
+
+      <div style="background:var(--surface2);border:2px dashed var(--border);border-radius:12px;padding:32px 16px;text-align:center;margin-bottom:20px;cursor:pointer"
+           onclick="document.getElementById('csv-file-input').click()"
+           ondragover="event.preventDefault()"
+           ondrop="handleCSVDrop(event)">
+        <div style="font-size:32px;margin-bottom:8px">📄</div>
+        <div style="font-size:14px;font-weight:600;color:var(--fg2)">Clique para selecionar ou arraste o CSV aqui</div>
+        <div style="font-size:12px;color:var(--fg3);margin-top:4px">Exporte o extrato direto do app ou site do seu banco</div>
+        <input type="file" id="csv-file-input" accept=".csv,.txt,.ofx" style="display:none" onchange="handleCSVFile(this)">
+      </div>
+
+      <div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--fg3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Como exportar o extrato</div>
+        <div style="font-size:12px;color:var(--fg2);line-height:1.7">
+          <b>Nubank:</b> App → Extrato → ··· → Exportar CSV<br>
+          <b>Inter:</b> App → Extrato → Exportar (.csv)<br>
+          <b>Itaú:</b> Site → Conta corrente → Extrato → Exportar<br>
+          <b>Bradesco:</b> Site → Extratos → Exportar<br>
+          <b>C6:</b> App → Extrato → Compartilhar → CSV
+        </div>
+      </div>
+
+      <div id="imp-resultado" style="display:none"></div>
+    </div>
+  `;
+  modal.style.display = 'flex';
+};
+
+window.fecharImportarExtrato = function() {
+  const m = document.getElementById('modal-importar');
+  if (m) m.style.display = 'none';
+};
+
+window.handleCSVDrop = function(e) {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) lerCSVFile(file);
+};
+
+window.handleCSVFile = function(input) {
+  const file = input.files[0];
+  if (file) lerCSVFile(file);
+};
+
+function lerCSVFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => mostrarPreviewCSV(e.target.result, file.name);
+  // Tenta UTF-8 primeiro
+  reader.readAsText(file, 'UTF-8');
+}
+
+function mostrarPreviewCSV(text, filename) {
+  const resultado = document.getElementById('imp-resultado');
+  if (!resultado) return;
+  resultado.style.display = 'block';
+  resultado.innerHTML = `<div style="text-align:center;padding:20px;color:var(--fg3)">⏳ Processando...</div>`;
+
+  setTimeout(() => {
+    const r = processarCSV(text);
+    if (r.erro) {
+      resultado.innerHTML = `<div style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:10px;padding:14px;color:#f87171;font-size:13px">⚠️ ${r.erro}</div>`;
+      return;
+    }
+
+    const { banco, transacoes } = r;
+    // Agrupa por mês/ano para resumo
+    const porMes = {};
+    transacoes.forEach(t => {
+      const k = `${t.mes} ${t.ano}`;
+      if (!porMes[k]) porMes[k] = { ent: 0, sai: 0, n: 0 };
+      porMes[k].n++;
+      if (t.tipo === 'entrada') porMes[k].ent += t.val;
+      else porMes[k].sai += t.val;
+    });
+
+    const resumoHTML = Object.entries(porMes).map(([k, v]) => `
+      <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--fg2)">${k}</span>
+        <span style="color:var(--fg3)">${v.n} transações</span>
+        <span style="color:#4ade80">+${brl(v.ent)}</span>
+        <span style="color:#f87171">-${brl(v.sai)}</span>
+      </div>`).join('');
+
+    // Preview das primeiras 5 transações
+    const previewHTML = transacoes.slice(0, 5).map(t => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;color:var(--fg1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.desc}</div>
+          <div style="font-size:11px;color:var(--fg3)">${t.mes} ${t.ano} · ${t.cat}</div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:${t.tipo==='entrada'?'#4ade80':'#f87171'};white-space:nowrap">
+          ${t.tipo==='entrada'?'+':'-'}${brl(t.val)}
+        </div>
+      </div>`).join('');
+
+    // Guarda transações no window para confirmar depois
+    window._csvTransacoesPendentes = transacoes;
+
+    resultado.innerHTML = `
+      <div style="background:rgba(79,127,255,.08);border:1px solid rgba(79,127,255,.25);border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;color:var(--fg1);margin-bottom:2px">✅ ${banco} detectado</div>
+        <div style="font-size:12px;color:var(--fg3)">${transacoes.length} transações encontradas</div>
+      </div>
+
+      <div style="font-size:11px;font-weight:700;color:var(--fg3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Resumo por mês</div>
+      <div style="margin-bottom:14px">${resumoHTML}</div>
+
+      <div style="font-size:11px;font-weight:700;color:var(--fg3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Prévia (5 primeiras)</div>
+      <div style="margin-bottom:16px">${previewHTML}</div>
+      ${transacoes.length > 5 ? `<div style="font-size:12px;color:var(--fg3);text-align:center;margin-bottom:14px">...e mais ${transacoes.length-5} transações</div>` : ''}
+
+      <div style="display:flex;gap:10px">
+        <button onclick="confirmarImportacao()"
+          style="flex:1;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
+          ✅ Importar ${transacoes.length} lançamentos
+        </button>
+        <button onclick="document.getElementById('csv-file-input').click()"
+          style="padding:12px 16px;background:var(--surface2);color:var(--fg2);border:1px solid var(--border);border-radius:10px;font-size:13px;cursor:pointer">
+          Outro arquivo
+        </button>
+      </div>
+    `;
+  }, 50);
+}
+
+window.confirmarImportacao = function() {
+  const transacoes = window._csvTransacoesPendentes;
+  if (!transacoes || !transacoes.length) return;
+
+  let importados = 0, duplicados = 0;
+  const agora = Date.now();
+
+  transacoes.forEach((t, i) => {
+    // Checagem simples de duplicata: mesmo desc + val + mes + ano
+    const jaExiste = (appData.lancamentos || []).some(l =>
+      l.desc === t.desc && l.val === t.val && l.mes === t.mes && l.ano === t.ano
+    );
+    if (jaExiste) { duplicados++; return; }
+
+    appData.lancamentos.push({
+      desc: t.desc,
+      val: t.val,
+      tipo: t.tipo,
+      mes: t.mes,
+      ano: t.ano,
+      cat: t.cat,
+      conta: t.conta,
+      id: agora + i
+    });
+    importados++;
+  });
+
+  saveData(appData);
+  fecharImportarExtrato();
+  renderDashboard();
+
+  const msg = duplicados > 0
+    ? `✅ ${importados} lançamentos importados! (${duplicados} duplicatas ignoradas)`
+    : `✅ ${importados} lançamentos importados com sucesso!`;
+  mostrarToast(msg);
+  window._csvTransacoesPendentes = null;
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  BOTÃO NA TELA DE LANÇAMENTOS
+// ═══════════════════════════════════════════════════════════════════
+// Injeta botão de importar na barra de filtros dos lançamentos
+function injetarBotaoImportar() {
+  const filtros = document.querySelector('.lanc-filtros');
+  if (!filtros || document.getElementById('btn-importar-csv')) return;
+  const btn = document.createElement('button');
+  btn.id = 'btn-importar-csv';
+  btn.className = 'lanc-filtro-btn';
+  btn.style.cssText = 'background:var(--accent);color:#fff;border-color:var(--accent);margin-left:auto';
+  btn.innerHTML = '📂 Importar CSV';
+  btn.onclick = () => window.abrirImportarExtrato();
+  filtros.appendChild(btn);
+}
+
+// Hook no renderLancamentos para garantir que o botão apareça
+const _rlOrig = window.renderLancamentos;
+window.renderLancamentos = function() {
+  if (_rlOrig) _rlOrig();
+  setTimeout(injetarBotaoImportar, 0);
+};
+
+// Também tenta injetar após carregamento inicial
+document.addEventListener('DOMContentLoaded', () => setTimeout(injetarBotaoImportar, 1000));
+
+})();
+</script>
+<!-- ── Fim Importação de Extrato ──────────────────────────────────────────── -->
+
 <!-- Crisp Chat Widget -->
 <script type="text/javascript">
 window.$crisp=[];window.CRISP_WEBSITE_ID="76981913-2052-4a13-8705-c2f0f906fc4d";
