@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Finanvo — Planos</title>
+<title>Finanvô — Planos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg: #0f0f13;
@@ -15,7 +15,7 @@
   --fg1: #f0f0f5;
   --fg2: #a0a0b8;
   --fg3: #5a5a78;
-  --pro: #3b82f6;
+  --basico: #3b82f6;
   --familia: #8b5cf6;
   --premium: #f59e0b;
   --green: #22c55e;
@@ -50,129 +50,150 @@ body {
   margin-bottom: 20px;
 }
 .hero h1 {
-  font-size: clamp(28px, 6vw, 52px);
+  font-size: clamp(32px,6vw,56px);
   font-weight: 900;
   line-height: 1.1;
   margin-bottom: 16px;
 }
-.hero h1 span { color: #a78bfa }
+.hero h1 span { color: #a78bfa; }
 .hero p {
-  font-size: 16px;
   color: var(--fg2);
-  max-width: 480px;
-  margin: 0 auto 32px;
+  font-size: 16px;
+  max-width: 440px;
+  margin: 0 auto 36px;
   line-height: 1.6;
 }
-.toggle-periodo {
-  display: inline-flex;
-  background: var(--surface);
+
+/* TOGGLE */
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 48px;
+}
+.toggle-label { color: var(--fg2); font-size: 14px; font-weight: 600; }
+.toggle-label.active { color: var(--fg1); }
+.toggle {
+  position: relative;
+  width: 56px; height: 28px;
+  background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: 30px;
-  padding: 4px;
-  gap: 4px;
-}
-.toggle-periodo button {
-  background: none;
-  border: none;
-  color: var(--fg3);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 8px 20px;
-  border-radius: 24px;
+  border-radius: 14px;
   cursor: pointer;
-  transition: all .2s;
+  transition: background .2s;
 }
-.toggle-periodo button.active {
-  background: var(--familia);
+.toggle.on { background: #8b5cf6; border-color: #8b5cf6; }
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 22px; height: 22px;
+  background: #fff;
+  border-radius: 50%;
+  top: 2px; left: 3px;
+  transition: transform .2s;
+}
+.toggle.on::after { transform: translateX(26px); }
+.badge-anual {
+  background: linear-gradient(135deg,#22c55e,#16a34a);
   color: #fff;
-}
-.desconto-badge {
-  display: inline-block;
-  background: rgba(34,197,94,.15);
-  border: 1px solid rgba(34,197,94,.3);
-  color: var(--green);
   font-size: 11px;
   font-weight: 700;
-  border-radius: 20px;
-  padding: 2px 10px;
-  margin-left: 6px;
-  vertical-align: middle;
+  padding: 3px 8px;
+  border-radius: 8px;
 }
 
 /* CARDS */
-.cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+.cards-wrap {
+  display: flex;
   gap: 16px;
-  max-width: 1080px;
-  margin: 40px auto 0;
+  max-width: 1100px;
+  margin: 0 auto;
   padding: 0 20px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   border-radius: 20px;
-  padding: 28px 24px;
+  padding: 28px 24px 32px;
+  width: 240px;
+  min-width: 220px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   position: relative;
-  transition: transform .2s, box-shadow .2s;
+  transition: transform .2s, border-color .2s;
 }
-.card:hover { transform: translateY(-4px); box-shadow: 0 20px 60px rgba(0,0,0,.4) }
+.card:hover { transform: translateY(-4px); }
 .card.destaque {
   border-color: var(--familia);
-  box-shadow: 0 0 0 1px var(--familia), 0 20px 60px rgba(139,92,246,.2);
+  background: linear-gradient(180deg, rgba(139,92,246,.08) 0%, var(--surface) 100%);
 }
-.card-popular {
+.badge-popular {
   position: absolute;
-  top: -12px;
-  left: 50%;
+  top: -13px; left: 50%;
   transform: translateX(-50%);
-  background: var(--familia);
+  background: linear-gradient(135deg,#8b5cf6,#6d28d9);
   color: #fff;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: .5px;
-  text-transform: uppercase;
-  border-radius: 20px;
   padding: 4px 14px;
+  border-radius: 20px;
   white-space: nowrap;
 }
-.card-emoji { font-size: 32px; margin-bottom: 12px }
-.card-nome { font-size: 13px; font-weight: 700; color: var(--fg3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px }
-.card-preco {
-  font-size: 38px;
+.card-emoji { font-size: 28px; margin-bottom: 10px; }
+.card-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--fg3);
+  margin-bottom: 6px;
+}
+.card-nome { font-size: 17px; font-weight: 800; margin-bottom: 16px; }
+.card-preco { margin-bottom: 6px; }
+.preco-valor {
+  font-size: 36px;
   font-weight: 900;
   line-height: 1;
-  margin-bottom: 4px;
 }
-.card-preco span { font-size: 16px; font-weight: 600; color: var(--fg2) }
-.card-preco-anual { font-size: 12px; color: var(--fg3); margin-bottom: 20px; min-height: 18px }
-.card-btn {
+.preco-valor span { font-size: 18px; font-weight: 600; color: var(--fg2); }
+.preco-anual {
+  font-size: 12px;
+  color: var(--fg3);
+  margin-bottom: 20px;
+  min-height: 18px;
+}
+.btn {
   display: block;
   width: 100%;
   padding: 13px;
   border-radius: 12px;
-  border: none;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
+  border: none;
   cursor: pointer;
   text-align: center;
   text-decoration: none;
   margin-bottom: 24px;
-  transition: opacity .2s;
+  transition: opacity .2s, transform .1s;
 }
-.card-btn:hover { opacity: .85 }
-.card-btn.ghost {
-  background: var(--surface2);
+.btn:hover { opacity: .88; transform: scale(.98); }
+.btn-outline {
+  background: transparent;
+  border: 1.5px solid var(--border);
   color: var(--fg1);
-  border: 1px solid var(--border);
 }
-.card-divider {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin-bottom: 20px;
-}
-.feature-list { list-style: none; display: flex; flex-direction: column; gap: 10px }
-.feature-list li {
+.btn-basico { background: linear-gradient(135deg,#3b82f6,#2563eb); color: #fff; }
+.btn-familia { background: linear-gradient(135deg,#8b5cf6,#6d28d9); color: #fff; }
+.btn-premium { background: linear-gradient(135deg,#f59e0b,#d97706); color: #fff; }
+
+/* FEATURES */
+.features { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.feat {
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -180,422 +201,431 @@ body {
   color: var(--fg2);
   line-height: 1.4;
 }
-.feature-list li .ico { flex-shrink: 0; margin-top: 1px; font-size: 14px }
-.feature-list li.disabled { color: var(--fg3) }
-.lim-badge {
+.feat.ok { color: var(--fg1); }
+.feat-icon { flex-shrink: 0; width: 18px; text-align: center; margin-top: 1px; }
+.feat-icon.yes { color: var(--green); }
+.feat-icon.no { color: var(--fg3); }
+.feat-group { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--fg3); text-transform: uppercase; margin: 8px 0 2px; }
+
+/* TESTE BADGE */
+.teste-badge {
   display: inline-block;
-  background: rgba(255,255,255,.06);
-  border-radius: 6px;
-  padding: 1px 7px;
+  background: rgba(34,197,94,.12);
+  border: 1px solid rgba(34,197,94,.3);
+  color: #4ade80;
   font-size: 11px;
   font-weight: 700;
-  color: var(--fg3);
-  margin-left: 4px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
 }
 
-/* TABELA COMPARATIVA */
+/* TABELA */
 .tabela-wrap {
   max-width: 900px;
-  margin: 60px auto 0;
+  margin: 72px auto 0;
   padding: 0 20px;
 }
-.tabela-titulo {
+.tabela-wrap h2 {
   text-align: center;
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 800;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
-.tabela-titulo span { color: #a78bfa }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-thead th {
-  padding: 12px 16px;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--fg3);
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  background: var(--surface);
-  border-bottom: 2px solid var(--border);
-}
-thead th:first-child { text-align: left }
-tbody tr { border-bottom: 1px solid var(--border) }
-tbody tr:last-child { border-bottom: none }
-tbody tr:hover td { background: rgba(255,255,255,.02) }
-td {
-  padding: 12px 16px;
-  text-align: center;
-  color: var(--fg2);
-  background: var(--surface);
-}
-td:first-child {
-  text-align: left;
-  font-weight: 600;
-  color: var(--fg1);
-  border-right: 1px solid var(--border);
-}
-.t-grp td {
+.tabela-wrap h2 span { color: #a78bfa; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 13px 16px; text-align: center; font-size: 13px; border-bottom: 1px solid var(--border); }
+th { font-size: 12px; font-weight: 700; color: var(--fg2); }
+td:first-child { text-align: left; color: var(--fg2); font-weight: 500; }
+th:first-child { text-align: left; }
+.th-basico { color: var(--basico); }
+.th-familia { color: var(--familia); }
+.th-premium { color: var(--premium); }
+tr:hover td { background: rgba(255,255,255,.02); }
+.row-group td, .row-group th {
   background: var(--surface2);
-  color: var(--fg3);
   font-size: 11px;
   font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--fg3);
   text-transform: uppercase;
-  letter-spacing: .5px;
   padding: 8px 16px;
 }
-.t-sim { color: var(--green); font-size: 16px }
-.t-nao { color: var(--fg3); font-size: 16px }
-.t-val { font-weight: 700; color: var(--fg1) }
-.col-familia { background: rgba(139,92,246,.05) !important }
+.check { color: var(--green); font-size: 16px; }
+.cross { color: var(--fg3); font-size: 16px; }
 
 /* FAQ */
-.faq { max-width: 640px; margin: 60px auto 0; padding: 0 20px }
-.faq h2 { text-align: center; font-size: 22px; font-weight: 800; margin-bottom: 32px }
+.faq-wrap {
+  max-width: 680px;
+  margin: 72px auto 0;
+  padding: 0 20px;
+}
+.faq-wrap h2 {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 32px;
+}
 .faq-item {
-  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   overflow: hidden;
 }
 .faq-q {
-  width: 100%;
-  background: none;
-  border: none;
-  color: var(--fg1);
-  font-size: 14px;
-  font-weight: 600;
-  text-align: left;
   padding: 18px 20px;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
 }
+.faq-q:hover { background: var(--surface2); }
+.faq-arrow { font-size: 18px; color: var(--fg3); transition: transform .2s; }
+.faq-item.open .faq-arrow { transform: rotate(180deg); }
 .faq-a {
   display: none;
   padding: 0 20px 18px;
-  font-size: 13px;
   color: var(--fg2);
+  font-size: 14px;
   line-height: 1.7;
 }
-.faq-item.open .faq-a { display: block }
-.faq-item.open .faq-arr { transform: rotate(180deg) }
-.faq-arr { transition: transform .2s; flex-shrink: 0 }
+.faq-item.open .faq-a { display: block; }
 
-/* RODAPÉ CTA */
-.cta-bottom {
+/* CTA */
+.cta {
   text-align: center;
-  padding: 60px 24px 0;
+  padding: 72px 24px 0;
 }
-.cta-bottom h2 { font-size: 26px; font-weight: 900; margin-bottom: 12px }
-.cta-bottom p { font-size: 14px; color: var(--fg2); margin-bottom: 24px }
-.cta-bottom a {
+.cta h2 { font-size: 32px; font-weight: 900; margin-bottom: 12px; }
+.cta p { color: var(--fg2); margin-bottom: 28px; font-size: 15px; }
+.cta-btn {
   display: inline-block;
-  background: var(--familia);
+  background: linear-gradient(135deg,#8b5cf6,#6d28d9);
   color: #fff;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
+  padding: 16px 40px;
   border-radius: 14px;
-  padding: 16px 36px;
   text-decoration: none;
   transition: opacity .2s;
 }
-.cta-bottom a:hover { opacity: .85 }
+.cta-btn:hover { opacity: .88; }
 </style>
 </head>
 <body>
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-badge">💎 Planos Finanvo</div>
+  <div class="hero-badge">✦ PLANOS FINANVÔ</div>
   <h1>Controle total das<br><span>suas finanças</span></h1>
-  <p>Comece grátis. Faça upgrade quando precisar de mais. Sem contratos, cancele quando quiser.</p>
-  <div class="toggle-periodo">
-    <button class="active" onclick="setPeriodo('mensal',this)">Mensal</button>
-    <button onclick="setPeriodo('anual',this)">Anual <span class="desconto-badge">-20%</span></button>
+  <p>Comece grátis por 7 dias. Experimente tudo. Assine quando se apaixonar.</p>
+
+  <div class="toggle-wrap">
+    <span class="toggle-label active" id="lbl-mensal">Mensal</span>
+    <div class="toggle" id="toggle" onclick="trocarPeriodo()"></div>
+    <span class="toggle-label" id="lbl-anual">Anual</span>
+    <span class="badge-anual">até 12% OFF</span>
   </div>
 </div>
 
 <!-- CARDS -->
-<div class="cards">
+<div class="cards-wrap">
 
-  <!-- GRATUITO -->
+  <!-- TESTE -->
   <div class="card">
     <div class="card-emoji">🆓</div>
-    <div class="card-nome">Gratuito</div>
-    <div class="card-preco">R$ 0<span>/mês</span></div>
-    <div class="card-preco-anual"> </div>
-    <a href="#" class="card-btn ghost">Usar grátis</a>
-    <hr class="card-divider">
-    <ul class="feature-list">
-      <li><span class="ico">📋</span> Até <strong>5</strong> despesas fixas</li>
-      <li><span class="ico">✏️</span> Até <strong>10</strong> lançamentos/mês</li>
-      <li><span class="ico">📊</span> Gráfico mensal</li>
-      <li><span class="ico">📅</span> Histórico de <strong>1 mês</strong></li>
-      <li class="disabled"><span class="ico">✖️</span> Gráfico anual</li>
-      <li class="disabled"><span class="ico">✖️</span> Radar de metas</li>
-      <li class="disabled"><span class="ico">✖️</span> Status de pagamento</li>
-      <li class="disabled"><span class="ico">✖️</span> Exportar PDF/CSV</li>
-    </ul>
+    <div class="teste-badge">7 dias grátis</div>
+    <div class="card-tag">Teste</div>
+    <div class="card-nome">Teste Grátis</div>
+    <div class="card-preco">
+      <div class="preco-valor">R$ <span>0</span></div>
+    </div>
+    <div class="preco-anual">Experimenta tudo por 7 dias</div>
+    <a href="#" class="btn btn-outline">Começar grátis</a>
+    <div class="features">
+      <div class="feat-group">Durante os 7 dias</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Acesso completo a tudo</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Todas as features liberadas</div>
+      <div class="feat-group">Após o teste</div>
+      <div class="feat"><span class="feat-icon no">×</span>Até 6 despesas fixas</div>
+      <div class="feat"><span class="feat-icon no">×</span>Até 6 lançamentos/mês</div>
+      <div class="feat"><span class="feat-icon no">×</span>Histórico de 2 meses</div>
+      <div class="feat"><span class="feat-icon no">×</span>Suporte por e-mail</div>
+    </div>
   </div>
 
-  <!-- PRO -->
+  <!-- BÁSICO -->
   <div class="card">
     <div class="card-emoji">⚡</div>
-    <div class="card-nome">Pro</div>
-    <div class="card-preco" id="preco-pro">R$ 12,99<span>/mês</span></div>
-    <div class="card-preco-anual" id="anual-pro"> </div>
-    <a href="#" class="card-btn" style="background:var(--pro);color:#fff">Assinar Pro</a>
-    <hr class="card-divider">
-    <ul class="feature-list">
-      <li><span class="ico">✅</span> Despesas fixas <strong>ilimitadas</strong></li>
-      <li><span class="ico">✅</span> Lançamentos <strong>ilimitados</strong></li>
-      <li><span class="ico">✅</span> Gráfico mensal + <strong>anual</strong></li>
-      <li><span class="ico">✅</span> Histórico de <strong>12 meses</strong></li>
-      <li><span class="ico">✅</span> Radar de metas</li>
-      <li><span class="ico">✅</span> Status de pagamento</li>
-      <li><span class="ico">✅</span> Exportar PDF/CSV</li>
-      <li class="disabled"><span class="ico">✖️</span> Conta casal</li>
-      <li class="disabled"><span class="ico">✖️</span> Alertas de vencimento</li>
-    </ul>
+    <div class="card-tag">Finanvô</div>
+    <div class="card-nome">Básico</div>
+    <div class="card-preco">
+      <div class="preco-valor" id="preco-basico">R$ <span>12,99</span>/mês</div>
+    </div>
+    <div class="preco-anual" id="anual-basico"></div>
+    <a href="https://hotmart.com/product/financas-taveira-pro" class="btn btn-basico">Assinar Básico</a>
+    <div class="features">
+      <div class="feat-group">Limites</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>12–16 despesas fixas</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>15–20 lançamentos/mês</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Histórico 12 meses</div>
+      <div class="feat-group">Recursos</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Gráfico mensal</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Gráfico anual</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Alertas de vencimento</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Conta casal (2 usuários)</div>
+      <div class="feat"><span class="feat-icon no">×</span>Radar de metas</div>
+      <div class="feat"><span class="feat-icon no">×</span>Status de pagamento</div>
+      <div class="feat"><span class="feat-icon no">×</span>Exportar PDF/CSV</div>
+      <div class="feat"><span class="feat-icon no">×</span>Projeções inteligentes</div>
+      <div class="feat-group">Suporte</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>E-mail</div>
+    </div>
   </div>
 
   <!-- FAMÍLIA -->
   <div class="card destaque">
-    <div class="card-popular">⭐ Mais popular</div>
+    <div class="badge-popular">⭐ MAIS POPULAR</div>
     <div class="card-emoji">👨‍👩‍👧</div>
+    <div class="card-tag">Finanvô</div>
     <div class="card-nome">Família</div>
-    <div class="card-preco" id="preco-familia">R$ 22,99<span>/mês</span></div>
-    <div class="card-preco-anual" id="anual-familia"> </div>
-    <a href="#" class="card-btn" style="background:var(--familia);color:#fff">Assinar Família</a>
-    <hr class="card-divider">
-    <ul class="feature-list">
-      <li><span class="ico">✅</span> Tudo do plano Pro</li>
-      <li><span class="ico">👫</span> <strong>Conta casal</strong> — 2 usuários</li>
-      <li><span class="ico">🔔</span> Alertas de vencimento</li>
-      <li><span class="ico">📅</span> Histórico <strong>ilimitado</strong></li>
-      <li><span class="ico">✅</span> Orçamento compartilhado em tempo real</li>
-      <li class="disabled"><span class="ico">✖️</span> Projeções inteligentes</li>
-      <li class="disabled"><span class="ico">✖️</span> Relatório por e-mail</li>
-    </ul>
+    <div class="card-preco">
+      <div class="preco-valor" id="preco-familia">R$ <span>22,99</span>/mês</div>
+    </div>
+    <div class="preco-anual" id="anual-familia"></div>
+    <a href="https://hotmart.com/product/financas-taveira-familia" class="btn btn-familia">Assinar Família</a>
+    <div class="features">
+      <div class="feat-group">Limites</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>17–30 despesas fixas</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>21–30 lançamentos/mês</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Histórico 24 meses</div>
+      <div class="feat-group">Recursos</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Gráfico mensal e anual</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Radar de metas</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Status de pagamento</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Exportar PDF/CSV</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Alertas de vencimento</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Conta família (6 usuários)</div>
+      <div class="feat"><span class="feat-icon no">×</span>Projeções inteligentes</div>
+      <div class="feat"><span class="feat-icon no">×</span>Relatório por e-mail</div>
+      <div class="feat-group">Suporte</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>E-mail prioritário</div>
+    </div>
   </div>
 
   <!-- PREMIUM -->
   <div class="card">
     <div class="card-emoji">👑</div>
+    <div class="card-tag">Finanvô</div>
     <div class="card-nome">Premium</div>
-    <div class="card-preco" id="preco-premium">R$ 32,99<span>/mês</span></div>
-    <div class="card-preco-anual" id="anual-premium"> </div>
-    <a href="#" class="card-btn" style="background:var(--premium);color:#000">Assinar Premium</a>
-    <hr class="card-divider">
-    <ul class="feature-list">
-      <li><span class="ico">✅</span> Tudo do plano Família</li>
-      <li><span class="ico">👨‍👩‍👧‍👦</span> Até <strong>5 membros</strong> na família</li>
-      <li><span class="ico">🤖</span> Projeções inteligentes</li>
-      <li><span class="ico">📧</span> Relatório mensal por e-mail</li>
-      <li><span class="ico">💬</span> Suporte via WhatsApp</li>
-      <li><span class="ico">📅</span> Histórico ilimitado</li>
-    </ul>
+    <div class="card-preco">
+      <div class="preco-valor" id="preco-premium">R$ <span>32,99</span>/mês</div>
+    </div>
+    <div class="preco-anual" id="anual-premium"></div>
+    <a href="https://hotmart.com/product/financas-taveira-premium" class="btn btn-premium">Assinar Premium</a>
+    <div class="features">
+      <div class="feat-group">Limites</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Despesas ilimitadas</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Lançamentos ilimitados</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Histórico ilimitado</div>
+      <div class="feat-group">Recursos</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Tudo do plano Família</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Conta família (12 usuários)</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Projeções inteligentes</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>Relatório mensal por e-mail</div>
+      <div class="feat-group">Suporte</div>
+      <div class="feat ok"><span class="feat-icon yes">✓</span>WhatsApp direto</div>
+    </div>
   </div>
 
 </div>
 
 <!-- TABELA COMPARATIVA -->
 <div class="tabela-wrap">
-  <div class="tabela-titulo">Comparação <span>completa</span></div>
+  <h2>Comparação <span>completa</span></h2>
   <table>
     <thead>
       <tr>
-        <th style="width:35%">Funcionalidade</th>
-        <th>Gratuito</th>
-        <th style="color:var(--pro)">Pro</th>
-        <th style="color:var(--familia)">Família</th>
-        <th style="color:var(--premium)">Premium</th>
+        <th>Funcionalidade</th>
+        <th>Teste</th>
+        <th class="th-basico">Básico</th>
+        <th class="th-familia">Família</th>
+        <th class="th-premium">Premium</th>
       </tr>
     </thead>
     <tbody>
-      <tr class="t-grp"><td colspan="5">Limites</td></tr>
+      <tr class="row-group"><td colspan="5">Limites</td></tr>
       <tr>
         <td>Despesas fixas</td>
-        <td><span class="t-val">5 itens</span></td>
-        <td><span class="t-val">Ilimitado</span></td>
-        <td class="col-familia"><span class="t-val">Ilimitado</span></td>
-        <td><span class="t-val">Ilimitado</span></td>
+        <td>até 6*</td>
+        <td>12–16</td>
+        <td>17–30</td>
+        <td>Ilimitado</td>
       </tr>
       <tr>
-        <td>Lançamentos manuais</td>
-        <td><span class="t-val">10/mês</span></td>
-        <td><span class="t-val">Ilimitado</span></td>
-        <td class="col-familia"><span class="t-val">Ilimitado</span></td>
-        <td><span class="t-val">Ilimitado</span></td>
+        <td>Lançamentos/mês</td>
+        <td>até 6*</td>
+        <td>15–20</td>
+        <td>21–30</td>
+        <td>Ilimitado</td>
       </tr>
       <tr>
         <td>Histórico</td>
-        <td><span class="t-val">1 mês</span></td>
-        <td><span class="t-val">12 meses</span></td>
-        <td class="col-familia"><span class="t-val">Ilimitado</span></td>
-        <td><span class="t-val">Ilimitado</span></td>
+        <td>2 meses*</td>
+        <td>12 meses</td>
+        <td>24 meses</td>
+        <td>Ilimitado</td>
       </tr>
-
-      <tr class="t-grp"><td colspan="5">Gráficos</td></tr>
+      <tr>
+        <td>Membros família</td>
+        <td>2*</td>
+        <td>2</td>
+        <td>6</td>
+        <td>12</td>
+      </tr>
+      <tr class="row-group"><td colspan="5">Gráficos</td></tr>
       <tr>
         <td>Gráfico mensal</td>
-        <td class="t-sim">✅</td>
-        <td class="t-sim">✅</td>
-        <td class="col-familia t-sim">✅</td>
-        <td class="t-sim">✅</td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
       </tr>
       <tr>
         <td>Gráfico anual</td>
-        <td class="t-nao">✖</td>
-        <td class="t-sim">✅</td>
-        <td class="col-familia t-sim">✅</td>
-        <td class="t-sim">✅</td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
       </tr>
       <tr>
         <td>Radar de metas</td>
-        <td class="t-nao">✖</td>
-        <td class="t-sim">✅</td>
-        <td class="col-familia t-sim">✅</td>
-        <td class="t-sim">✅</td>
+        <td><span class="check">✓</span></td>
+        <td><span class="cross">×</span></td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
       </tr>
-
-      <tr class="t-grp"><td colspan="5">Recursos</td></tr>
+      <tr class="row-group"><td colspan="5">Recursos</td></tr>
       <tr>
         <td>Status de pagamento</td>
-        <td class="t-nao">✖</td>
-        <td class="t-sim">✅</td>
-        <td class="col-familia t-sim">✅</td>
-        <td class="t-sim">✅</td>
+        <td><span class="check">✓</span></td>
+        <td><span class="cross">×</span></td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
       </tr>
       <tr>
         <td>Exportar PDF/CSV</td>
-        <td class="t-nao">✖</td>
-        <td class="t-sim">✅</td>
-        <td class="col-familia t-sim">✅</td>
-        <td class="t-sim">✅</td>
+        <td><span class="check">✓</span></td>
+        <td><span class="cross">×</span></td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
       </tr>
       <tr>
         <td>Alertas de vencimento</td>
-        <td class="t-nao">✖</td>
-        <td class="t-nao">✖</td>
-        <td class="col-familia t-sim">✅</td>
-        <td class="t-sim">✅</td>
-      </tr>
-      <tr>
-        <td>Conta casal / família</td>
-        <td class="t-nao">✖</td>
-        <td class="t-nao">✖</td>
-        <td class="col-familia"><span class="t-val">2 usuários</span></td>
-        <td><span class="t-val">Até 5</span></td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
       </tr>
       <tr>
         <td>Projeções inteligentes</td>
-        <td class="t-nao">✖</td>
-        <td class="t-nao">✖</td>
-        <td class="col-familia t-nao">✖</td>
-        <td class="t-sim">✅</td>
+        <td><span class="check">✓</span></td>
+        <td><span class="cross">×</span></td>
+        <td><span class="cross">×</span></td>
+        <td><span class="check">✓</span></td>
       </tr>
       <tr>
         <td>Relatório por e-mail</td>
-        <td class="t-nao">✖</td>
-        <td class="t-nao">✖</td>
-        <td class="col-familia t-nao">✖</td>
-        <td class="t-sim">✅</td>
+        <td><span class="cross">×</span></td>
+        <td><span class="cross">×</span></td>
+        <td><span class="cross">×</span></td>
+        <td><span class="check">✓</span></td>
       </tr>
+      <tr class="row-group"><td colspan="5">Suporte</td></tr>
       <tr>
         <td>Suporte</td>
-        <td class="t-nao">✖</td>
         <td>E-mail</td>
-        <td class="col-familia">E-mail prioritário</td>
+        <td>E-mail</td>
+        <td>E-mail prioritário</td>
         <td>WhatsApp</td>
       </tr>
     </tbody>
   </table>
+  <p style="font-size:12px;color:var(--fg3);margin-top:12px">* Durante os 7 dias de teste, todos os recursos ficam totalmente liberados. Após o teste, os limites acima se aplicam até você assinar.</p>
 </div>
 
 <!-- FAQ -->
-<div class="faq">
-  <h2>Dúvidas frequentes</h2>
+<div class="faq-wrap">
+  <h2>Dúvidas <span style="color:#a78bfa">frequentes</span></h2>
 
   <div class="faq-item">
-    <button class="faq-q" onclick="toggleFaq(this)">
-      Posso cancelar quando quiser?
-      <span class="faq-arr">▼</span>
-    </button>
-    <div class="faq-a">Sim. Não há fidelidade. Você cancela quando quiser direto pela Hotmart e continua com acesso até o fim do período pago.</div>
+    <div class="faq-q" onclick="toggleFaq(this)">
+      O teste é realmente grátis? <span class="faq-arrow">▾</span>
+    </div>
+    <div class="faq-a">Sim, 100% grátis por 7 dias. Você tem acesso a tudo que o Finanvô oferece — sem precisar de cartão de crédito. Após os 7 dias, você decide se quer assinar.</div>
   </div>
 
   <div class="faq-item">
-    <button class="faq-q" onclick="toggleFaq(this)">
-      Como funciona o Modo Família?
-      <span class="faq-arr">▼</span>
-    </button>
-    <div class="faq-a">Um código único é gerado para sua família. Você compartilha com seu parceiro(a), ele(a) entra com o código e os dois passam a ver e lançar no mesmo orçamento, em tempo real.</div>
+    <div class="faq-q" onclick="toggleFaq(this)">
+      O que acontece quando o teste acaba? <span class="faq-arrow">▾</span>
+    </div>
+    <div class="faq-a">Seus dados ficam salvos. O acesso fica limitado (até 6 despesas e lançamentos) por até 15 dias enquanto você decide. Assinou? Tudo volta imediatamente.</div>
   </div>
 
   <div class="faq-item">
-    <button class="faq-q" onclick="toggleFaq(this)">
-      O que acontece se eu atingir o limite do plano gratuito?
-      <span class="faq-arr">▼</span>
-    </button>
-    <div class="faq-a">Um aviso aparece na hora com a opção de fazer upgrade. Seus dados anteriores nunca são apagados — você só fica impedido de adicionar novos itens até fazer upgrade.</div>
+    <div class="faq-q" onclick="toggleFaq(this)">
+      Posso cancelar quando quiser? <span class="faq-arrow">▾</span>
+    </div>
+    <div class="faq-a">Sim, sem fidelidade. Cancele a qualquer momento pela Hotmart. Você continua com acesso até o fim do período pago.</div>
   </div>
 
   <div class="faq-item">
-    <button class="faq-q" onclick="toggleFaq(this)">
-      Meus dados ficam seguros?
-      <span class="faq-arr">▼</span>
-    </button>
-    <div class="faq-a">Sim. Todos os dados ficam no Firebase (Google) com isolamento por usuário. Ninguém além de você (e seu parceiro no Família) tem acesso aos seus lançamentos.</div>
+    <div class="faq-q" onclick="toggleFaq(this)">
+      Como funciona o plano Família? <span class="faq-arrow">▾</span>
+    </div>
+    <div class="faq-a">Você cria um grupo familiar e convida até 6 pessoas (Família) ou 12 (Premium). Cada membro usa o app com login próprio, mas o orçamento e os lançamentos são compartilhados em tempo real.</div>
   </div>
 
   <div class="faq-item">
-    <button class="faq-q" onclick="toggleFaq(this)">
-      Desconto anual — como funciona?
-      <span class="faq-arr">▼</span>
-    </button>
-    <div class="faq-a">Pagando o plano anual você economiza 20% — equivalente a 2 meses e meio grátis. O pagamento é feito de uma vez pela Hotmart.</div>
+    <div class="faq-q" onclick="toggleFaq(this)">
+      Meus dados ficam seguros? <span class="faq-arrow">▾</span>
+    </div>
+    <div class="faq-a">Sim. Tudo é salvo no Firebase (Google) com criptografia. Seus dados financeiros são privados e nunca são compartilhados com terceiros.</div>
   </div>
 </div>
 
 <!-- CTA -->
-<div class="cta-bottom">
-  <h2>Comece hoje, é grátis</h2>
-  <p>Sem cartão de crédito. Faça upgrade só quando precisar.</p>
-  <a href="#">Abrir o Finanvo grátis →</a>
+<div class="cta">
+  <h2>Pronto para começar?</h2>
+  <p>7 dias grátis. Sem cartão. Sem compromisso.</p>
+  <a href="https://cledyrtaveira-max.github.io/Finan-as---tav/finapp.html" class="cta-btn">Começar agora →</a>
 </div>
 
 <script>
-let periodoAtual = 'mensal';
+let anual = false;
+
 const precos = {
-  pro:     { mensal: 12.99, anual: 10.39 },
-  familia: { mensal: 22.99, anual: 18.39 },
-  premium: { mensal: 32.99, anual: 26.39 }
+  basico:  { mensal: 'R$ <span>12,99</span>/mês', anual: 'R$ <span>12,40</span>/mês', anualInfo: 'R$ 149,00 cobrado por ano' },
+  familia: { mensal: 'R$ <span>22,99</span>/mês', anual: 'R$ <span>20,75</span>/mês', anualInfo: 'R$ 249,00 cobrado por ano' },
+  premium: { mensal: 'R$ <span>32,99</span>/mês', anual: 'R$ <span>29,00</span>/mês', anualInfo: 'R$ 349,00 cobrado por ano' }
 };
 
-function setPeriodo(p, btn) {
-  periodoAtual = p;
-  document.querySelectorAll('.toggle-periodo button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+function trocarPeriodo() {
+  anual = !anual;
+  document.getElementById('toggle').classList.toggle('on', anual);
+  document.getElementById('lbl-mensal').classList.toggle('active', !anual);
+  document.getElementById('lbl-anual').classList.toggle('active', anual);
 
-  ['pro','familia','premium'].forEach(plano => {
-    const v = precos[plano][p];
-    document.getElementById('preco-' + plano).innerHTML =
-      `R$ ${v.toFixed(2).replace('.',',')}<span>/mês</span>`;
-    document.getElementById('anual-' + plano).textContent =
-      p === 'anual' ? `R$ ${(v*12).toFixed(2).replace('.',',')} cobrado por ano` : ' ';
-  });
+  for (const [k, v] of Object.entries(precos)) {
+    document.getElementById('preco-' + k).innerHTML = anual ? v.anual : v.mensal;
+    document.getElementById('anual-' + k).textContent = anual ? v.anualInfo : '';
+  }
 }
 
-function toggleFaq(btn) {
-  btn.closest('.faq-item').classList.toggle('open');
+function toggleFaq(el) {
+  el.parentElement.classList.toggle('open');
 }
 </script>
 </body>

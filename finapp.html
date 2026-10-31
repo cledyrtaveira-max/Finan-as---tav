@@ -8704,17 +8704,21 @@ window._inicializarFamilia = inicializarFamilia;
 // ── Definição de planos e limites ────────────────────────────────
 const PLANOS = {
   gratuito: {
-    nome: 'Gratuito',
+    nome: 'Teste',
     cor: '#6b7280',
     emoji: '🆓',
+    diasTeste: 7,
+    prazoAssinar: 15, // dias para assinar após fim do teste
     limites: {
-      despesasFixas: 5,
-      lancamentosMes: 10,
-      historicoMeses: 1,
-      categorias: null // sem limite no gratuito para não quebrar onboarding
+      despesasFixas: 6,       // 3–6 gradativo, usa max
+      lancamentosMes: 6,      // 3–6 gradativo, usa max
+      historicoMeses: 2,
+      categorias: null
     },
+    // Durante os 7 dias de teste tudo fica liberado (testeAtivo=true)
+    // Após 7 dias reverte para limites acima
     features: {
-      graficosAnual: false,
+      graficosAnual: false,   // liberado só no período de teste
       radarMetas: false,
       statusPagamento: false,
       exportarPDF: false,
@@ -8725,40 +8729,45 @@ const PLANOS = {
     }
   },
   pro: {
-    nome: 'Pro',
+    nome: 'Finanvô Básico',
     cor: '#3b82f6',
     emoji: '⚡',
     preco: 'R$ 12,99/mês',
+    precoAnual: 'R$ 149,00/ano',
+    precoAnualMes: 'R$ 12,40/mês',
     hotmartUrl: 'https://hotmart.com/product/financas-taveira-pro',
     limites: {
-      despesasFixas: null,   // ilimitado
-      lancamentosMes: null,
+      despesasFixas: 16,      // 12–16, usa max
+      lancamentosMes: 20,     // 15–20, usa max
       historicoMeses: 12,
-      categorias: null
+      categorias: null,
+      membrosFamilia: 2
     },
     features: {
       graficosAnual: true,
-      radarMetas: true,
-      statusPagamento: true,
-      exportarPDF: true,
-      contaCasal: false,
-      alertasVencimento: false,
+      radarMetas: false,
+      statusPagamento: false,
+      exportarPDF: false,
+      contaCasal: true,
+      alertasVencimento: true,
       projecoes: false,
       relatorioEmail: false
     }
   },
   familia: {
-    nome: 'Família',
+    nome: 'Finanvô Família',
     cor: '#8b5cf6',
     emoji: '👨‍👩‍👧',
     preco: 'R$ 22,99/mês',
+    precoAnual: 'R$ 249,00/ano',
+    precoAnualMes: 'R$ 20,75/mês',
     hotmartUrl: 'https://hotmart.com/product/financas-taveira-familia',
     limites: {
-      despesasFixas: null,
-      lancamentosMes: null,
-      historicoMeses: null,
+      despesasFixas: 30,      // 17–30, usa max
+      lancamentosMes: 30,     // 21–30, usa max
+      historicoMeses: 24,
       categorias: null,
-      membrosFamilia: 2
+      membrosFamilia: 6
     },
     features: {
       graficosAnual: true,
@@ -8772,17 +8781,19 @@ const PLANOS = {
     }
   },
   premium: {
-    nome: 'Premium',
+    nome: 'Finanvô Premium',
     cor: '#f59e0b',
     emoji: '👑',
     preco: 'R$ 32,99/mês',
+    precoAnual: 'R$ 349,00/ano',
+    precoAnualMes: 'R$ 29,00/mês',
     hotmartUrl: 'https://hotmart.com/product/financas-taveira-premium',
     limites: {
-      despesasFixas: null,
+      despesasFixas: null,    // ilimitado
       lancamentosMes: null,
       historicoMeses: null,
       categorias: null,
-      membrosFamilia: 5
+      membrosFamilia: 12
     },
     features: {
       graficosAnual: true,
@@ -8805,6 +8816,28 @@ const ADMINS_VITALICIOS = [
   'cledyrtaveira@gmail.com'
 ];
 
+// ── Verificar se teste de 7 dias ainda está ativo ────────────────
+window.testeAtivo = function() {
+  try {
+    if (!appCfg || !appCfg.dataCadastro) return true; // sem data = recém cadastrado
+    const cadastro = new Date(appCfg.dataCadastro);
+    const agora = new Date();
+    const diasPassados = (agora - cadastro) / (1000 * 60 * 60 * 24);
+    return diasPassados <= 7;
+  } catch(e) { return true; }
+};
+
+// ── Verificar se ainda está no prazo de assinar (15 dias) ────────
+window.prazoAssinarAtivo = function() {
+  try {
+    if (!appCfg || !appCfg.dataCadastro) return true;
+    const cadastro = new Date(appCfg.dataCadastro);
+    const agora = new Date();
+    const diasPassados = (agora - cadastro) / (1000 * 60 * 60 * 24);
+    return diasPassados <= 15;
+  } catch(e) { return true; }
+};
+
 // ── Obter plano atual do usuário ─────────────────────────────────
 window.getPlanoAtual = function() {
   try {
@@ -8825,13 +8858,17 @@ window.temPlano = function(planoMinimo) {
 };
 
 // ── Verificar feature específica ────────────────────────────────
+// Durante os 7 dias de teste, TUDO está liberado
 window.temFeature = function(feature) {
+  if (getPlanoAtual() === 'gratuito' && testeAtivo()) return true; // teste = tudo livre
   const plano = getPlanoAtual();
   return !!(PLANOS[plano] && PLANOS[plano].features[feature]);
 };
 
 // ── Verificar limite numérico ────────────────────────────────────
+// Durante os 7 dias de teste, sem limites numéricos
 window.getLimit = function(campo) {
+  if (getPlanoAtual() === 'gratuito' && testeAtivo()) return null; // null = ilimitado no teste
   const plano = getPlanoAtual();
   return PLANOS[plano] ? PLANOS[plano].limites[campo] : 0;
 };
