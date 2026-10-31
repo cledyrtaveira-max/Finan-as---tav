@@ -2671,6 +2671,11 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
         style="font-size:18px;font-weight:700;text-align:center"
         onkeydown="if(event.key==='Enter') salvarEdicao()">
     </div>
+    <div class="field" id="edit-dia-venc-field">
+      <label>🔔 Dia de vencimento (opcional)</label>
+      <input id="edit-dia-venc" type="number" min="1" max="31" placeholder="Ex: 5">
+      <p style="font-size:11px;color:var(--fg3);margin:4px 0 0">Para receber alerta quando esta conta estiver perto de vencer.</p>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="fecharModalEdit()">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarEdicao()">✓ Salvar</button>
@@ -5314,6 +5319,15 @@ function abrirEditarBase(idx) {
     item.tipo === 'entrada' ? 'Renda (R$)' :
     item.tipo === 'divida'  ? 'Parcela (R$)' : 'Valor (R$)';
   document.getElementById('edit-val').value = valBase(idx);
+  // Carregar dia de vencimento salvo (se houver)
+  const diaVencField = document.getElementById('edit-dia-venc');
+  const diaVencWrapper = document.getElementById('edit-dia-venc-field');
+  if (diaVencField) {
+    const diaAtual = (appCfg.diaVenc && appCfg.diaVenc[String(idx)]) || item.diaVenc || '';
+    diaVencField.value = diaAtual;
+    // Ocultar campo para entradas
+    if (diaVencWrapper) diaVencWrapper.style.display = item.tipo === 'entrada' ? 'none' : '';
+  }
   document.getElementById('modal-edit').classList.remove('hidden');
   setTimeout(() => document.getElementById('edit-val').select(), 80);
 }
@@ -5485,6 +5499,20 @@ function salvarEdicao() {
   const novoVal = parseFloat(document.getElementById('edit-val').value);
   if (isNaN(novoVal) || novoVal < 0) return;
   appCfg.overrides[String(editIdx)] = novoVal;
+  // Salvar dia de vencimento (se preenchido)
+  const diaVencInput = document.getElementById('edit-dia-venc');
+  if (diaVencInput) {
+    const diaVal = parseInt(diaVencInput.value);
+    if (!appCfg.diaVenc) appCfg.diaVenc = {};
+    if (diaVal >= 1 && diaVal <= 31) {
+      appCfg.diaVenc[String(editIdx)] = diaVal;
+      // Sincronizar com DESPESAS_BASE para getItensComVencimento funcionar
+      if (DESPESAS_BASE[editIdx]) DESPESAS_BASE[editIdx].diaVenc = diaVal;
+    } else {
+      delete appCfg.diaVenc[String(editIdx)];
+      if (DESPESAS_BASE[editIdx]) delete DESPESAS_BASE[editIdx].diaVenc;
+    }
+  }
   saveCfg(appCfg);
   fecharModalEdit();
   // Re-renderiza a view ativa
@@ -5928,7 +5956,15 @@ function iniciarSync() {
   } catch(e) {}
   try {
     const rawC = localStorage.getItem(UID_CFG);
-    if (rawC) Object.assign(appCfg, JSON.parse(rawC));
+    if (rawC) {
+      Object.assign(appCfg, JSON.parse(rawC));
+      // Restaurar diaVenc nas DESPESAS_BASE
+      if (appCfg.diaVenc) {
+        Object.keys(appCfg.diaVenc).forEach(idx => {
+          if (DESPESAS_BASE[idx]) DESPESAS_BASE[idx].diaVenc = appCfg.diaVenc[idx];
+        });
+      }
+    }
   } catch(e) {}
 
   dbRef = fbDb; // sinaliza que db está ativo
@@ -5964,6 +6000,12 @@ function iniciarSync() {
             const remoteTs = data.ts || 0;
             if (remoteTs > (appCfg._ts || 0)) {
               Object.assign(appCfg, remote);
+              // Restaurar diaVenc nas DESPESAS_BASE após sync
+              if (appCfg.diaVenc) {
+                Object.keys(appCfg.diaVenc).forEach(idx => {
+                  if (DESPESAS_BASE[idx]) DESPESAS_BASE[idx].diaVenc = appCfg.diaVenc[idx];
+                });
+              }
               try { localStorage.setItem('finvo_cfg_' + usuarioAtivo, data.json); } catch(e) {}
               const v = document.querySelector('.view.active');
               if (v && v.id === 'view-config') renderConfig();
