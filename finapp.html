@@ -2389,18 +2389,18 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(139,92,246,0.08);border-radius:8px">
                 <div style="font-size:12px;color:var(--fg2)">20–24 indicações · 💎 Super Embaixador</div>
-                <div style="font-size:12px;font-weight:700;color:#a78bfa">+90 dias + Premium vitalício</div>
+                <div style="font-size:12px;font-weight:700;color:#a78bfa">+90 dias cada</div>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(135deg,rgba(251,191,36,0.12),rgba(245,158,11,0.08));border:1px solid rgba(251,191,36,0.25);border-radius:8px">
                 <div style="font-size:12px;font-weight:700;color:var(--fg1)">25–30+ indicações · 👑 Lenda Finanvô</div>
-                <div style="font-size:12px;font-weight:800;color:#fbbf24">Premium para sempre!</div>
+                <div style="font-size:12px;font-weight:800;color:#fbbf24">+120 dias cada</div>
               </div>
             </div>
           </div>
 
           <!-- Dica -->
           <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--fg2)">
-            💡 <strong>Desafio:</strong> Indique 25–30 pessoas em <strong>60 dias</strong> e garanta o Finanvô Premium para sempre — de graça!
+            💡 <strong>Desafio:</strong> Indique 25–30 pessoas em <strong>60 dias</strong> e acumule 120 dias de Premium por indicação — anos de app grátis!
           </div>
         </div>
       </div>
@@ -10355,12 +10355,14 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(injetarBotaoImpor
 
 // Pirâmide: quantas indicações em 60 dias → dias por indicação + bônus
 // Regra: indicações devem ocorrer dentro de 60 dias do início
+// Pirâmide: quantas indicações em 60 dias → dias por indicação acumulados
+// Sem vitalício — recompensa em dias que o usuário usa enquanto durar
 const PIRAMIDE_INDICACAO = [
-  { min: 1,  max: 4,  diasPorInd: 30,  badge: null,                    bonus: null,                   prazo: 60 },
-  { min: 5,  max: 9,  diasPorInd: 45,  badge: 'Embaixador Prata 🥈',   bonus: null,                   prazo: 60 },
-  { min: 10, max: 19, diasPorInd: 60,  badge: 'Embaixador Ouro 🥇',    bonus: null,                   prazo: 60 },
-  { min: 20, max: 24, diasPorInd: 90,  badge: 'Super Embaixador 💎',   bonus: 'premium_vitalicio',    prazo: 60 },
-  { min: 25, max: 999,diasPorInd: 999, badge: 'Lenda Finanvô 👑',      bonus: 'premium_para_sempre',  prazo: 60 },
+  { min: 1,  max: 4,  diasPorInd: 30,  badge: null,                  bonus: null, prazo: 60 },
+  { min: 5,  max: 9,  diasPorInd: 45,  badge: 'Embaixador Prata 🥈', bonus: null, prazo: 60 },
+  { min: 10, max: 19, diasPorInd: 60,  badge: 'Embaixador Ouro 🥇',  bonus: null, prazo: 60 },
+  { min: 20, max: 24, diasPorInd: 90,  badge: 'Super Embaixador 💎', bonus: null, prazo: 60 },
+  { min: 25, max: 999,diasPorInd: 120, badge: 'Lenda Finanvô 👑',    bonus: null, prazo: 60 },
 ];
 
 function getNivelIndicacao(total) {
