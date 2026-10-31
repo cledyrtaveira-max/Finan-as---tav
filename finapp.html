@@ -8451,6 +8451,15 @@ function gerarCodigo() {
 // ── Criar família nova ───────────────────────────────────────────
 window.criarFamilia = async function() {
   if (!usuarioAtivo) return;
+
+  // Verificar se o plano permite conta casal/família
+  if (window.temFeature && !window.temFeature('contaCasal')) {
+    const planoAtual = window.getPlanoAtual ? window.getPlanoAtual() : 'gratuito';
+    mostrarToast('⚠️ Modo família disponível a partir do Finanvô Básico. Faça upgrade do seu plano!');
+    setTimeout(() => { window.open('https://cledyrtaveira-max.github.io/Finan-as---tav/preview-planos.html', '_blank'); }, 1200);
+    return;
+  }
+
   const btnArea = document.getElementById('criar-familia-btn-area');
   if (btnArea) btnArea.innerHTML = '<div style="text-align:center;color:var(--fg3);font-size:13px">Criando...</div>';
 
@@ -8533,10 +8542,23 @@ window.entrarFamilia = async function() {
       return;
     }
 
-    // Adiciona usuário como membro
+    // Verificar limite de membros pelo plano do criador da família
     const data = doc.data();
     const membros = data.membros || [];
+
     if (!membros.includes(usuarioAtivo)) {
+      // Verificar limite do plano
+      const limiteMembrosFamilia = window.getLimit ? window.getLimit('membrosFamilia') : 2;
+      if (limiteMembrosFamilia !== null && membros.length >= limiteMembrosFamilia) {
+        const planoAtual = window.getPlanoAtual ? window.getPlanoAtual() : 'gratuito';
+        const nomesPlanos = { gratuito: 'Teste', pro: 'Finanvô Básico', familia: 'Finanvô Família', premium: 'Finanvô Premium' };
+        if (erroEl) {
+          erroEl.innerHTML = `❌ Esta família atingiu o limite de <strong>${limiteMembrosFamilia} membros</strong> do plano ${nomesPlanos[planoAtual] || planoAtual}. O administrador precisa fazer upgrade para adicionar mais pessoas.`;
+          erroEl.style.display = 'block';
+        }
+        input.disabled = false;
+        return;
+      }
       membros.push(usuarioAtivo);
       await fbDb.collection('familias').doc(codigo).update({ membros });
     }
@@ -8589,16 +8611,21 @@ function renderCfgFamilia() {
   if (!el) return;
 
   const fam = getFamiliaCodigo();
+  const temCasal = window.temFeature ? window.temFeature('contaCasal') : false;
+  const limMembros = window.getLimit ? window.getLimit('membrosFamilia') : 2;
+  const plano = window.getPlanoAtual ? window.getPlanoAtual() : 'gratuito';
+  const nomesPlanos = { gratuito: 'Teste', pro: 'Finanvô Básico', familia: 'Finanvô Família', premium: 'Finanvô Premium' };
 
   if (fam) {
-    // Está em família — mostrar painel
+    // Está em família — mostrar painel com info de membros
+    const membrosLabel = limMembros ? `até ${limMembros} membros` : 'membros ilimitados';
     el.innerHTML = `
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
           <span style="font-size:28px">👨‍👩‍👧</span>
           <div>
             <div style="font-size:14px;font-weight:700;color:var(--fg1)">Família ativa ✅</div>
-            <div style="font-size:11px;color:var(--fg3)">Orçamento compartilhado com seu parceiro(a)</div>
+            <div style="font-size:11px;color:var(--fg3)">Plano ${nomesPlanos[plano]} · ${membrosLabel}</div>
           </div>
         </div>
         <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:14px">
@@ -8609,12 +8636,27 @@ function renderCfgFamilia() {
           </div>
           <div style="font-size:11px;color:var(--fg3);margin-top:6px">Compartilhe este código para adicionar membros.</div>
         </div>
+        ${plano === 'pro' ? `
+        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--fg2)">
+          ⭐ Quer adicionar até 6 pessoas? <a href="https://cledyrtaveira-max.github.io/Finan-as---tav/preview-planos.html" target="_blank" style="color:var(--accent);font-weight:700">Upgrade para Finanvô Família →</a>
+        </div>` : ''}
         <button class="btn btn-ghost" style="font-size:12px;color:var(--red);border:1px solid rgba(239,68,68,0.3)" onclick="sairFamilia()">
           🚪 Sair da família
         </button>
       </div>`;
+  } else if (!temCasal) {
+    // Plano gratuito sem teste ativo — mostrar card de upgrade
+    el.innerHTML = `
+      <div style="background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(79,70,229,.05));border:1px solid rgba(139,92,246,.3);border-radius:12px;padding:20px;margin-bottom:12px;text-align:center">
+        <div style="font-size:32px;margin-bottom:8px">👨‍👩‍👧</div>
+        <div style="font-size:15px;font-weight:700;color:var(--fg1);margin-bottom:6px">Modo Família</div>
+        <p style="font-size:13px;color:var(--fg2);margin:0 0 16px">Compartilhe o orçamento com seu parceiro(a) e até mais pessoas. Disponível a partir do Finanvô Básico.</p>
+        <a href="https://cledyrtaveira-max.github.io/Finan-as---tav/preview-planos.html" target="_blank" class="btn btn-primary" style="display:inline-block;text-decoration:none">
+          Ver planos →
+        </a>
+      </div>`;
   } else {
-    // Não está em família — opções de criar ou entrar
+    // Tem acesso — opções de criar ou entrar
     el.innerHTML = `
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px">
         <p style="font-size:13px;color:var(--fg2);margin:0 0 16px">Compartilhe o orçamento com seu parceiro(a). Os dois podem lançar despesas e ver o mesmo dashboard.</p>
