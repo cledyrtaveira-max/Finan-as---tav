@@ -1969,6 +1969,16 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
     </div>
 
     <div class="sidebar-section">
+      <div class="sidebar-label">Comunidade</div>
+      <div class="nav-item" onclick="navTo('indicacao', this)">
+        <span class="nav-icon">🎁</span> Indique e Ganhe
+      </div>
+      <div class="nav-item" onclick="navTo('afiliados', this)">
+        <span class="nav-icon">💸</span> Afiliados
+      </div>
+    </div>
+
+    <div class="sidebar-section">
       <div class="sidebar-label">Sistema</div>
       <div class="nav-item" onclick="navTo('config', this)">
         <span class="nav-icon">⚙️</span> Configurações
@@ -2271,6 +2281,224 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
         </div>
         <div id="est-lista"></div>
 
+      </div>
+
+      <!-- ══ VIEW: INDICAÇÃO ══ -->
+      <div class="view" id="view-indicacao">
+        <div style="max-width:680px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+            <div style="font-size:28px">🎁</div>
+            <div>
+              <div style="font-size:18px;font-weight:700;color:var(--fg1)">Indique e Ganhe</div>
+              <div style="font-size:12px;color:var(--fg3)">Você e seu amigo ganham 30 dias Premium grátis</div>
+            </div>
+          </div>
+
+          <!-- Como funciona -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center">
+              <div style="font-size:22px;margin-bottom:6px">🔗</div>
+              <div style="font-size:12px;font-weight:700;color:var(--fg1);margin-bottom:4px">1. Compartilhe</div>
+              <div style="font-size:11px;color:var(--fg3)">Envie seu link único para amigos e família</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center">
+              <div style="font-size:22px;margin-bottom:6px">✅</div>
+              <div style="font-size:12px;font-weight:700;color:var(--fg1);margin-bottom:4px">2. Amigo se cadastra</div>
+              <div style="font-size:11px;color:var(--fg3)">Ele cria a conta pelo seu link e ganha 30 dias grátis</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center">
+              <div style="font-size:22px;margin-bottom:6px">🎉</div>
+              <div style="font-size:12px;font-weight:700;color:var(--fg1);margin-bottom:4px">3. Você também ganha</div>
+              <div style="font-size:11px;color:var(--fg3)">+30 dias Premium adicionados à sua conta</div>
+            </div>
+          </div>
+
+          <!-- Seu link -->
+          <div style="background:linear-gradient(135deg,rgba(79,127,255,0.12),rgba(120,80,255,0.08));border:1px solid rgba(79,127,255,0.25);border-radius:14px;padding:18px 20px;margin-bottom:16px">
+            <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">Seu link de indicação</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="ind-link" readonly value="Carregando..."
+                style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--fg1);font-size:12px;font-family:monospace;outline:none">
+              <button onclick="copiarLinkIndicacao()"
+                style="padding:10px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap" id="ind-copy-btn">
+                📋 Copiar
+              </button>
+            </div>
+          </div>
+
+          <!-- Compartilhar -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px">
+            <button onclick="compartilharWhats()"
+              style="padding:10px;background:#25d366;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+              📱 WhatsApp
+            </button>
+            <button onclick="compartilharInstagram()"
+              style="padding:10px;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">
+              📸 Instagram
+            </button>
+            <button onclick="compartilharNativo()"
+              style="padding:10px;background:var(--surface);border:1px solid var(--border);color:var(--fg1);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">
+              ↗ Mais opções
+            </button>
+          </div>
+
+          <!-- Placar -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:16px">
+            <div style="font-size:13px;font-weight:700;color:var(--fg1);margin-bottom:14px">📊 Seu placar de indicações</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+              <div>
+                <div style="font-size:28px;font-weight:800;color:var(--accent)" id="ind-total">0</div>
+                <div style="font-size:11px;color:var(--fg3);margin-top:2px">Indicações</div>
+              </div>
+              <div>
+                <div style="font-size:28px;font-weight:800;color:#22c55e" id="ind-ativos">0</div>
+                <div style="font-size:11px;color:var(--fg3);margin-top:2px">Cadastros confirmados</div>
+              </div>
+              <div>
+                <div style="font-size:28px;font-weight:800;color:#f59e0b" id="ind-dias">0</div>
+                <div style="font-size:11px;color:var(--fg3);margin-top:2px">Dias ganhos</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lista de indicados -->
+          <div id="ind-lista-wrap" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:16px">
+            <div style="font-size:13px;font-weight:700;color:var(--fg1);margin-bottom:12px">👥 Seus indicados</div>
+            <div id="ind-lista"></div>
+          </div>
+
+          <!-- Dica -->
+          <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--fg2)">
+            💡 <strong>Dica:</strong> Quanto mais você indica, mais dias Premium acumula — podendo usar o app gratuitamente para sempre!
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ VIEW: AFILIADOS ══ -->
+      <div class="view" id="view-afiliados">
+        <div style="max-width:680px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+            <div style="font-size:28px">💸</div>
+            <div>
+              <div style="font-size:18px;font-weight:700;color:var(--fg1)">Programa de Afiliados</div>
+              <div style="font-size:12px;color:var(--fg3)">Divulgue o Finanvô e ganhe comissão por cada venda</div>
+            </div>
+          </div>
+
+          <!-- Destaque comissão -->
+          <div style="background:linear-gradient(135deg,#1a3a1a,#0f2d0f);border:1px solid rgba(34,197,94,0.3);border-radius:14px;padding:20px 24px;margin:20px 0;text-align:center">
+            <div style="font-size:12px;color:rgba(34,197,94,0.7);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:6px">Sua comissão por venda</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px">
+              <div style="background:rgba(34,197,94,0.1);border-radius:10px;padding:12px">
+                <div style="font-size:22px;font-weight:800;color:#22c55e">4%</div>
+                <div style="font-size:11px;color:rgba(34,197,94,0.7);margin-top:2px">Mensal</div>
+              </div>
+              <div style="background:rgba(34,197,94,0.15);border-radius:10px;padding:12px;border:1px solid rgba(34,197,94,0.25)">
+                <div style="font-size:22px;font-weight:800;color:#22c55e">6%</div>
+                <div style="font-size:11px;color:rgba(34,197,94,0.7);margin-top:2px">Trimestral</div>
+              </div>
+              <div style="background:rgba(34,197,94,0.2);border-radius:10px;padding:12px;border:1px solid rgba(34,197,94,0.35)">
+                <div style="font-size:22px;font-weight:800;color:#4ade80">8%</div>
+                <div style="font-size:11px;color:rgba(34,197,94,0.7);margin-top:2px">Anual ⭐ (teto)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Como funciona -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:16px">
+            <div style="font-size:13px;font-weight:700;color:var(--fg1);margin-bottom:14px">Como funciona</div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="background:var(--accent);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">1</div>
+                <div style="font-size:13px;color:var(--fg2)">Cadastre-se gratuitamente como afiliado na Hotmart</div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="background:var(--accent);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">2</div>
+                <div style="font-size:13px;color:var(--fg2)">Receba seu link de afiliado exclusivo</div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="background:var(--accent);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">3</div>
+                <div style="font-size:13px;color:var(--fg2)">Divulgue para sua audiência — cada venda gera comissão automática</div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="background:#22c55e;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">$</div>
+                <div style="font-size:13px;color:var(--fg2)">A Hotmart deposita na sua conta automaticamente</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kit de materiais -->
+          <div style="font-size:13px;font-weight:700;color:var(--fg1);margin-bottom:12px">📦 Kit do Afiliado — copie e use!</div>
+
+          <!-- WhatsApp -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div style="font-size:12px;font-weight:700;color:var(--fg1)">📱 Texto para WhatsApp/Status</div>
+              <button onclick="copiarTexto('afil-whats')" style="font-size:11px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--fg2);cursor:pointer">Copiar</button>
+            </div>
+            <div id="afil-whats" style="font-size:12px;color:var(--fg2);line-height:1.6;white-space:pre-line">💰 Você ainda anota seus gastos no caderno ou esquece no final do mês?
+
+Eu uso o Finanvô — um app que organiza tudo automático, mostra onde estou gastando demais e ainda tem IA pra me dar dicas.
+
+Experimenta grátis: {LINK_AFILIADO}
+
+Vale muito a pena! 🚀</div>
+          </div>
+
+          <!-- Instagram -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div style="font-size:12px;font-weight:700;color:var(--fg1)">📸 Caption para Instagram/Reels</div>
+              <button onclick="copiarTexto('afil-insta')" style="font-size:11px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--fg2);cursor:pointer">Copiar</button>
+            </div>
+            <div id="afil-insta" style="font-size:12px;color:var(--fg2);line-height:1.6;white-space:pre-line">Minha virada financeira começou quando parei de adivinhar pra onde ia meu dinheiro 💸
+
+Com o Finanvô eu:
+✅ Vejo tudo num só lugar
+✅ Importo meu extrato bancário direto
+✅ Recebo análise de IA do meu mês
+
+Link na bio ou acesse: {LINK_AFILIADO}
+
+#financaspessoais #controledegastos #finanvo #organizacaofinanceira #dinheiroconsciente</div>
+          </div>
+
+          <!-- Email/Blog -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div style="font-size:12px;font-weight:700;color:var(--fg1)">✉️ Texto para e-mail ou blog</div>
+              <button onclick="copiarTexto('afil-email')" style="font-size:11px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--fg2);cursor:pointer">Copiar</button>
+            </div>
+            <div id="afil-email" style="font-size:12px;color:var(--fg2);line-height:1.6;white-space:pre-line">Assunto: O app que mudou minha relação com o dinheiro
+
+Oi [nome],
+
+Eu queria te contar sobre uma ferramenta que mudou completamente como eu gerencio meu dinheiro.
+
+O Finanvô é um app brasileiro de controle financeiro familiar. Ele permite:
+
+→ Organizar entradas e saídas por categoria
+→ Importar extrato bancário automaticamente (Nubank, Inter, Itaú e mais)
+→ Receber análise de IA sobre seus gastos mensais
+→ Planejar dívidas e estratégia de investimentos
+
+E o melhor: tem um período grátis para você testar sem compromisso.
+
+Acesse aqui: {LINK_AFILIADO}
+
+Abraços!</div>
+          </div>
+
+          <!-- CTA Hotmart -->
+          <div style="background:linear-gradient(135deg,rgba(79,127,255,0.12),rgba(120,80,255,0.08));border:1px solid rgba(79,127,255,0.25);border-radius:14px;padding:20px;text-align:center">
+            <div style="font-size:15px;font-weight:700;color:var(--fg1);margin-bottom:6px">Pronto para começar a ganhar?</div>
+            <div style="font-size:12px;color:var(--fg3);margin-bottom:14px">Cadastro gratuito na Hotmart — você começa a ganhar no mesmo dia</div>
+            <a href="https://hotmart.com/affiliate/finanvo" target="_blank" rel="noopener"
+              style="display:inline-block;padding:12px 28px;background:var(--accent);color:#fff;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none">
+              🚀 Quero ser afiliado
+            </a>
+          </div>
+        </div>
       </div>
 
       <!-- ══ VIEW: ANÁLISE IA ══ -->
@@ -3126,6 +3354,8 @@ function navTo(view, el) {
     dividas: ['Planejamento','Dívidas'],
     estrategia: ['Planejamento','Estratégia'],
     ia: ['Planejamento','Análise IA'],
+    indicacao: ['Comunidade','Indique e Ganhe'],
+    afiliados: ['Comunidade','Afiliados'],
     config: ['Sistema','Configurações'],
   };
   document.getElementById('breadcrumb').textContent = (titles[view]||['',''])[0];
@@ -3139,6 +3369,8 @@ function navTo(view, el) {
   if (view === 'dividas') renderDividas();
   if (view === 'estrategia') renderEstrategia();
   if (view === 'ia') iniciarViewIA();
+  if (view === 'indicacao') iniciarViewIndicacao();
+  if (view === 'afiliados') iniciarViewAfiliados();
 }
 
 // ── Bottom nav (mobile) ────────────────────────────────────────────
@@ -10067,6 +10299,206 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(injetarBotaoImpor
 })();
 </script>
 <!-- ── Fim Importação de Extrato ──────────────────────────────────────────── -->
+
+<!-- ── Indicação & Afiliados ──────────────────────────────────────────── -->
+<script>
+// ══════════════════════════════════════════════════
+// PROGRAMA DE INDICAÇÃO — PIRÂMIDE DE RECOMPENSAS
+// ══════════════════════════════════════════════════
+
+// Pirâmide: quantas indicações → quantos dias por indicação + bônus
+const PIRAMIDE_INDICACAO = [
+  { min: 1,  max: 2,  diasPorInd: 30,  badge: null,            bonus: null },
+  { min: 3,  max: 5,  diasPorInd: 45,  badge: 'Embaixador 🥈', bonus: null },
+  { min: 6,  max: 11, diasPorInd: 60,  badge: 'Embaixador 🥇', bonus: 'premium_vitalicio_nivel' },
+  { min: 12, max: 999,diasPorInd: 999, badge: 'Lenda 👑',       bonus: 'premium_para_sempre' },
+];
+
+function getNivelIndicacao(total) {
+  return PIRAMIDE_INDICACAO.find(n => total >= n.min && total <= n.max) || PIRAMIDE_INDICACAO[0];
+}
+
+function gerarCodigoIndicacao(uid) {
+  // Código curto baseado no UID do usuário
+  return uid.substring(0, 8).toUpperCase();
+}
+
+function getLinkIndicacao(uid) {
+  const codigo = gerarCodigoIndicacao(uid);
+  return `https://cledyrtaveira-max.github.io/Finan-as---tav/finapp.html?ref=${codigo}`;
+}
+
+window.iniciarViewIndicacao = async function() {
+  if (!usuarioAtivo) return;
+
+  const link = getLinkIndicacao(usuarioAtivo);
+  const el = document.getElementById('ind-link');
+  if (el) el.value = link;
+
+  // Carregar dados de indicação do Firestore
+  try {
+    const db = firebase.firestore();
+    const doc = await db.collection('users').doc(usuarioAtivo).get();
+    const dados = doc.data() || {};
+    const indicacoes = dados.indicacoes || [];
+    const total = indicacoes.length;
+    const ativos = indicacoes.filter(i => i.ativo).length;
+    const nivel = getNivelIndicacao(total);
+    const diasGanhos = indicacoes.filter(i => i.ativo).reduce((acc, _) => acc + nivel.diasPorInd, 0);
+
+    document.getElementById('ind-total').textContent = total;
+    document.getElementById('ind-ativos').textContent = ativos;
+    document.getElementById('ind-dias').textContent = diasGanhos === 999 ? '∞' : diasGanhos;
+
+    // Lista de indicados
+    if (indicacoes.length > 0) {
+      const wrap = document.getElementById('ind-lista-wrap');
+      const lista = document.getElementById('ind-lista');
+      wrap.style.display = '';
+      lista.innerHTML = indicacoes.map(i => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--fg1)">${i.nome || 'Usuário'}</div>
+            <div style="font-size:11px;color:var(--fg3)">${i.data || ''}</div>
+          </div>
+          <div style="font-size:12px;padding:3px 10px;border-radius:20px;background:${i.ativo ? 'rgba(34,197,94,0.1)' : 'rgba(156,163,175,0.1)'};color:${i.ativo ? '#22c55e' : 'var(--fg3)'}">
+            ${i.ativo ? '✅ Ativo' : '⏳ Pendente'}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Mostrar nível/badge atual
+    if (nivel.badge) {
+      const badge = document.createElement('div');
+      badge.style.cssText = 'background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(245,158,11,0.05));border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--fg1);margin-bottom:14px;display:flex;align-items:center;gap:8px';
+      badge.innerHTML = `<span style="font-size:18px">${nivel.badge.split(' ')[1]}</span> <strong>Nível: ${nivel.badge}</strong> — você ganha ${nivel.diasPorInd} dias por indicação`;
+      const wrap = document.getElementById('ind-lista-wrap');
+      wrap.parentNode.insertBefore(badge, wrap);
+    }
+
+  } catch(e) {
+    console.warn('Indicação Firestore:', e.message);
+  }
+};
+
+window.copiarLinkIndicacao = function() {
+  if (!usuarioAtivo) return;
+  const link = getLinkIndicacao(usuarioAtivo);
+  navigator.clipboard.writeText(link).then(() => {
+    const btn = document.getElementById('ind-copy-btn');
+    if (btn) { btn.textContent = '✅ Copiado!'; setTimeout(() => btn.textContent = '📋 Copiar', 2000); }
+  }).catch(() => {
+    const el = document.getElementById('ind-link');
+    if (el) { el.select(); document.execCommand('copy'); }
+  });
+};
+
+window.compartilharWhats = function() {
+  if (!usuarioAtivo) return;
+  const link = getLinkIndicacao(usuarioAtivo);
+  const texto = encodeURIComponent(`💰 Controle seus gastos de verdade com o Finanvô!\n\nApp brasileiro com IA, importação de extrato bancário e muito mais.\n\nExperimenta grátis — você ganha 30 dias Premium: ${link}`);
+  window.open(`https://wa.me/?text=${texto}`, '_blank');
+};
+
+window.compartilharInstagram = function() {
+  if (!usuarioAtivo) return;
+  copiarLinkIndicacao();
+  alert('Link copiado! Cole na bio ou nos Stories do Instagram 📸');
+};
+
+window.compartilharNativo = function() {
+  if (!usuarioAtivo) return;
+  const link = getLinkIndicacao(usuarioAtivo);
+  if (navigator.share) {
+    navigator.share({
+      title: 'Finanvô — Controle Financeiro',
+      text: 'Use meu link e ganhe 30 dias Premium grátis!',
+      url: link
+    });
+  } else {
+    copiarLinkIndicacao();
+    alert('Link copiado para a área de transferência!');
+  }
+};
+
+// Verificar se usuário veio via link de indicação e registrar
+(function verificarIndicacao() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      localStorage.setItem('finRefCode', ref);
+    }
+  } catch(e) {}
+})();
+
+// Após login, registrar indicação se houver código salvo
+async function registrarIndicacaoSeExistir(uid, email, nome) {
+  try {
+    const ref = localStorage.getItem('finRefCode');
+    if (!ref) return;
+
+    const db = firebase.firestore();
+    // Buscar quem tem esse código
+    const snap = await db.collection('users').get();
+    for (const doc of snap.docs) {
+      const docUid = doc.id;
+      if (gerarCodigoIndicacao(docUid) === ref && docUid !== uid) {
+        // Encontrou o indicador — adicionar indicação
+        const dados = doc.data() || {};
+        const indicacoes = dados.indicacoes || [];
+        const jaExiste = indicacoes.some(i => i.uid === uid);
+        if (!jaExiste) {
+          indicacoes.push({
+            uid, email: email || '', nome: nome || 'Usuário',
+            data: new Date().toLocaleDateString('pt-BR'),
+            ativo: false // ativa quando completar 7 dias
+          });
+          await db.collection('users').doc(docUid).update({ indicacoes });
+
+          // Dar 30 dias ao indicado (novo usuário)
+          await db.collection('users').doc(uid).update({
+            bonusDias: firebase.firestore.FieldValue.increment(30),
+            planoBonus: 'premium',
+            planoBonusExpira: new Date(Date.now() + 30 * 86400000).toISOString()
+          });
+        }
+        break;
+      }
+    }
+    localStorage.removeItem('finRefCode');
+  } catch(e) {
+    console.warn('Indicação registro:', e.message);
+  }
+}
+
+// ══════════════════════════════════════════════════
+// AFILIADOS — VIEW
+// ══════════════════════════════════════════════════
+
+window.iniciarViewAfiliados = function() {
+  // Nada para carregar dinamicamente por enquanto — conteúdo é estático
+  // Futuramente: buscar stats do afiliado na Hotmart via API
+};
+
+window.copiarTexto = function(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const texto = el.innerText || el.textContent;
+  navigator.clipboard.writeText(texto).then(() => {
+    const btn = el.previousElementSibling?.querySelector('button');
+    if (btn) { const orig = btn.textContent; btn.textContent = '✅ Copiado!'; setTimeout(() => btn.textContent = orig, 2000); }
+  }).catch(() => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+  });
+};
+</script>
+<!-- ── Fim Indicação & Afiliados ──────────────────────────────────────── -->
 
 <!-- Crisp Chat Widget -->
 <script type="text/javascript">
