@@ -9591,7 +9591,7 @@ window.renderCfgPlano = function() {
           ['Despesas fixas', 'despesasFixas', planoId === 'gratuito' ? '6 itens' : planoId === 'pro' ? 'Até 16' : planoId === 'familia' ? 'Até 30' : 'Ilimitado'],
           ['Lançamentos', 'lancamentosMes', planoId === 'gratuito' ? '6/mês' : planoId === 'pro' ? '20/mês' : planoId === 'familia' ? '30/mês' : 'Ilimitado'],
           ['Histórico', 'historicoMeses', planoId === 'gratuito' ? '2 meses' : planoId === 'pro' ? '12 meses' : planoId === 'familia' ? '24 meses' : 'Ilimitado'],
-          ['Conta casal', 'contaCasal', plano.features.contaCasal ? (planoId === 'premium' ? 'Até 5 membros' : '2 membros') : null],
+          ['Conta casal', 'contaCasal', plano.features.contaCasal ? (planoId === 'premium' ? 'Até 12 membros' : planoId === 'familia' ? 'Até 6 membros' : '2 membros') : null],
           ['Alertas', 'alertasVencimento', plano.features.alertasVencimento ? '✅' : null],
           ['Exportar PDF', 'exportarPDF', plano.features.exportarPDF ? '✅' : null],
         ].map(([label, feat, val]) => val ? `
