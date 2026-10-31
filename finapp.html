@@ -200,6 +200,12 @@ function renderBannerVencimentos() {
   let el = document.getElementById('dash-notif-venc');
   if (!el) return;
 
+  // Gate: alertas de vencimento requer plano pro ou superior
+  if (window.temFeature && !window.temFeature('alertasVencimento')) {
+    el.innerHTML = '';
+    return;
+  }
+
   const hoje = getVencimentosHoje(0);     // vence hoje
   const amanha = getVencimentosHoje(1);   // vence amanhã
   const em3 = getVencimentosHoje(2).concat(getVencimentosHoje(3)); // próximos 2-3 dias
@@ -3019,8 +3025,13 @@ async function fazerLogin() {
       if (!nome) { loginShakeError('Preencha seu nome.'); btn.disabled=false; mostrarAba('cadastrar'); return; }
       const cred = await fbAuth.createUserWithEmailAndPassword(email, senha);
       await cred.user.updateProfile({ displayName: nome });
-      // Perfil no Firestore
-      await fbDb.collection('users').doc(cred.user.uid).set({ nome, email, criado: new Date().toISOString() });
+      // Perfil no Firestore (codigoIndicacao indexado para busca eficiente)
+      const uid = cred.user.uid;
+      await fbDb.collection('users').doc(uid).set({
+        nome, email,
+        criado: new Date().toISOString(),
+        codigoIndicacao: uid.substring(0, 8).toUpperCase()
+      });
     } else {
       await fbAuth.signInWithEmailAndPassword(email, senha);
     }
@@ -4250,6 +4261,23 @@ function renderRadarMeta(ano) {
   const subDiv = document.getElementById('graf-radar-sub');
   if (!canvas || !legendDiv) return;
 
+  // Gate: radar de metas requer plano família ou premium
+  if (window.temFeature && !window.temFeature('radarMetas')) {
+    canvas.style.display = 'none';
+    const lockEl = document.getElementById('radar-lock') || document.createElement('div');
+    lockEl.id = 'radar-lock';
+    lockEl.onclick = function() { window.mostrarModalUpgrade && window.mostrarModalUpgrade('radarMetas','familia'); };
+    lockEl.style.cssText = 'cursor:pointer;text-align:center;padding:40px 20px;color:var(--fg3);border:2px dashed var(--border);border-radius:12px;margin:16px 0';
+    lockEl.innerHTML = '<div style="font-size:40px;margin-bottom:8px">🔒</div><div style="font-size:15px;font-weight:600;color:var(--fg1);margin-bottom:4px">Radar de Metas — Plano Família</div><div style="font-size:12px;color:var(--accent)">Toque para ver planos e assinar</div>';
+    if (!document.getElementById('radar-lock')) legendDiv.parentNode.insertBefore(lockEl, canvas);
+    legendDiv.innerHTML = '';
+    if (subDiv) subDiv.textContent = '';
+    return;
+  }
+  const radarLock = document.getElementById('radar-lock');
+  if (radarLock) radarLock.remove();
+  canvas.style.display = '';
+
   const mes = mesSelecionado;
   const manuais = (appData.lancamentos || []).filter(l =>
     (l.ano === ano || (!l.ano && ano === anoSelecionado)) && l.mes === mes && (l.tipo === 'saida' || l.tipo === 'divida')
@@ -4409,6 +4437,22 @@ function renderGrafico() {
 
   // ── MODO ANUAL ────────────────────────────────────────────────────
   if (grafModoAtivo === 'anual') {
+    // Verificar se plano permite gráfico anual
+    if (window.temFeature && !window.temFeature('graficosAnual')) {
+      if (ctrl) ctrl.innerHTML = '';
+      if (legDiv) legDiv.innerHTML = '';
+      canvas.style.display = 'none';
+      const lockEl = document.getElementById('graf-anual-lock') || document.createElement('div');
+      lockEl.id = 'graf-anual-lock';
+      lockEl.onclick = function() { window.mostrarModalUpgrade && window.mostrarModalUpgrade('graficosAnual','pro'); };
+      lockEl.style.cssText = 'cursor:pointer;text-align:center;padding:40px 20px;color:var(--fg3);border:2px dashed var(--border);border-radius:12px;margin:16px 0';
+      lockEl.innerHTML = '<div style="font-size:40px;margin-bottom:8px">🔒</div><div style="font-size:15px;font-weight:600;color:var(--fg1);margin-bottom:4px">Gráfico Anual — Plano Básico</div><div style="font-size:12px;color:var(--accent)">Toque para ver planos e assinar</div>';
+      if (!document.getElementById('graf-anual-lock')) canvas.parentNode.insertBefore(lockEl, canvas);
+      return;
+    }
+    const lockRemove = document.getElementById('graf-anual-lock');
+    if (lockRemove) lockRemove.remove();
+    canvas.style.display = '';
     // Controles: seletor de ano
     let anosOpts = '';
     for (let a = ANO_BASE; a <= ANO_MAX; a++)
@@ -7923,6 +7967,21 @@ function navMesDash(dir) {
   if (novoIdx < 0)  { novoIdx = 11; novoAno--; }
   if (novoIdx > 11) { novoIdx = 0;  novoAno++; }
   if (novoAno < ANO_BASE || novoAno > ANO_MAX) return;
+
+  // Gate: verificar limite de histórico por plano
+  const limiteHist = window.getLimit ? window.getLimit('historicoMeses') : 2;
+  if (limiteHist && dir === -1) {
+    const hoje = new Date();
+    const mesAtualIdx = hoje.getMonth();
+    const anoAtual = hoje.getFullYear();
+    // Quantos meses atrás seria o novo mês
+    const mesesAtras = (anoAtual - novoAno) * 12 + (mesAtualIdx - novoIdx);
+    if (mesesAtras > limiteHist) {
+      window.mostrarModalUpgrade && window.mostrarModalUpgrade('historicoMeses', 'pro');
+      return;
+    }
+  }
+
   mesSelecionado = MESES[novoIdx];
   anoSelecionado = novoAno;
   renderDashboard();
@@ -8044,6 +8103,12 @@ function fecharModalExportar() {
 
 function exportarPDF() {
   fecharModalExportar();
+
+  // Gate: exportar PDF/CSV requer plano família ou premium
+  if (window.temFeature && !window.temFeature('exportarPDF')) {
+    window.mostrarModalUpgrade && window.mostrarModalUpgrade('exportarPDF','familia');
+    return;
+  }
 
   // Coleta dados do mês
   const mes = mesSelecionado;
@@ -8944,7 +9009,7 @@ window.entrarFamilia = async function() {
       const limiteMembrosFamilia = window.getLimit ? window.getLimit('membrosFamilia') : 2;
       if (limiteMembrosFamilia !== null && membros.length >= limiteMembrosFamilia) {
         const planoAtual = window.getPlanoAtual ? window.getPlanoAtual() : 'gratuito';
-        const nomesPlanos = { gratuito: 'Teste', pro: 'Finanvô Básico', familia: 'Finanvô Família', premium: 'Finanvô Premium' };
+        const nomesPlanos = { gratuito: 'Gratuito', pro: 'Finanvô Básico', familia: 'Finanvô Família', premium: 'Finanvô Premium' };
         if (erroEl) {
           erroEl.innerHTML = `❌ Esta família atingiu o limite de <strong>${limiteMembrosFamilia} membros</strong> do plano ${nomesPlanos[planoAtual] || planoAtual}. O administrador precisa fazer upgrade para adicionar mais pessoas.`;
           erroEl.style.display = 'block';
@@ -9007,7 +9072,7 @@ function renderCfgFamilia() {
   const temCasal = window.temFeature ? window.temFeature('contaCasal') : false;
   const limMembros = window.getLimit ? window.getLimit('membrosFamilia') : 2;
   const plano = window.getPlanoAtual ? window.getPlanoAtual() : 'gratuito';
-  const nomesPlanos = { gratuito: 'Teste', pro: 'Finanvô Básico', familia: 'Finanvô Família', premium: 'Finanvô Premium' };
+  const nomesPlanos = { gratuito: 'Gratuito', pro: 'Finanvô Básico', familia: 'Finanvô Família', premium: 'Finanvô Premium' };
 
   if (fam) {
     // Está em família — mostrar painel com info de membros
@@ -9139,7 +9204,7 @@ window._inicializarFamilia = inicializarFamilia;
 // ── Definição de planos e limites ────────────────────────────────
 const PLANOS = {
   gratuito: {
-    nome: 'Teste',
+    nome: 'Gratuito',
     cor: '#6b7280',
     emoji: '🆓',
     diasTeste: 7,
@@ -9321,7 +9386,8 @@ window.mostrarModalUpgrade = function(feature, planoNecessario) {
     projecoes: 'Projeções Inteligentes',
     relatorioEmail: 'Relatório por E-mail',
     despesasFixas: 'mais despesas fixas',
-    lancamentos: 'mais lançamentos'
+    lancamentos: 'mais lançamentos',
+    historicoMeses: 'histórico de meses anteriores'
   }[feature] || feature;
 
   // Remove modal anterior se existir
@@ -9337,24 +9403,36 @@ window.mostrarModalUpgrade = function(feature, planoNecessario) {
     <div class="modal" style="max-width:400px;text-align:center">
       <div style="font-size:48px;margin-bottom:8px">${plano.emoji}</div>
       <div class="modal-title" style="font-size:18px">Recurso exclusivo</div>
-      <p style="font-size:13px;color:var(--fg2);margin:8px 0 20px">
+      <p style="font-size:13px;color:var(--fg2);margin:8px 0 16px">
         <strong>${nomeFeature}</strong> está disponível no plano
-        <span style="color:${plano.cor};font-weight:800">${plano.nome}</span>
-        (${plano.preco}).
+        <span style="color:${plano.cor};font-weight:800">${plano.nome}</span>.
       </p>
-      <div style="background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:20px;text-align:left">
+      <div style="background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:16px;text-align:left">
         ${Object.entries(plano.features).filter(([,v])=>v).slice(0,5).map(([k])=>`
           <div style="font-size:12px;color:var(--fg2);padding:3px 0">
             ✅ ${({graficosAnual:'Gráfico anual',radarMetas:'Radar de metas',statusPagamento:'Status de pagamento',exportarPDF:'Exportar PDF/CSV',contaCasal:'Conta casal',alertasVencimento:'Alertas de vencimento',projecoes:'Projeções inteligentes',relatorioEmail:'Relatório por e-mail'})[k]||k}
           </div>`).join('')}
         ${Object.entries(plano.features).filter(([,v])=>v).length > 5 ? `<div style="font-size:11px;color:var(--fg3);margin-top:4px">+ mais recursos...</div>` : ''}
       </div>
+      ${plano.precoAnual ? `
+      <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:10px;padding:10px 14px;margin-bottom:12px;text-align:left">
+        <div style="font-size:11px;color:#16a34a;font-weight:700;margin-bottom:2px">💰 Economize no plano anual</div>
+        <div style="font-size:12px;color:var(--fg2)">
+          <span style="font-weight:700;color:var(--fg1)">${plano.precoAnual}/ano</span>
+          <span style="color:var(--fg3)"> · equivale a ${plano.precoAnualMes}/mês</span>
+        </div>
+      </div>` : ''}
       <a href="${plano.hotmartUrl}" target="_blank" rel="noopener"
-         style="display:block;background:${plano.cor};color:#fff;border-radius:10px;padding:14px;font-weight:700;font-size:15px;text-decoration:none;margin-bottom:10px">
+         style="display:block;background:${plano.cor};color:#fff;border-radius:10px;padding:14px;font-weight:700;font-size:15px;text-decoration:none;margin-bottom:8px">
         🚀 Assinar ${plano.nome} — ${plano.preco}
       </a>
+      ${plano.hotmartUrl ? `
+      <a href="${plano.hotmartUrl}?offer=anual" target="_blank" rel="noopener"
+         style="display:block;background:transparent;color:${plano.cor};border:1.5px solid ${plano.cor};border-radius:10px;padding:10px;font-weight:600;font-size:13px;text-decoration:none;margin-bottom:10px">
+        📅 Ver plano anual (economize até 20%)
+      </a>` : ''}
       <button class="btn btn-ghost" onclick="document.getElementById('modal-upgrade').remove()" style="width:100%;font-size:13px">
-        Continuar no plano gratuito
+        Agora não
       </button>
     </div>`;
   document.body.appendChild(modal);
@@ -9510,9 +9588,9 @@ window.renderCfgPlano = function() {
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         ${[
-          ['Despesas fixas', 'despesasFixas', planoId === 'gratuito' ? '5 itens' : 'Ilimitado'],
-          ['Lançamentos', 'lancamentosMes', planoId === 'gratuito' ? '10/mês' : 'Ilimitado'],
-          ['Histórico', 'historicoMeses', planoId === 'gratuito' ? '1 mês' : planoId === 'pro' ? '12 meses' : 'Ilimitado'],
+          ['Despesas fixas', 'despesasFixas', planoId === 'gratuito' ? '6 itens' : planoId === 'pro' ? 'Até 16' : planoId === 'familia' ? 'Até 30' : 'Ilimitado'],
+          ['Lançamentos', 'lancamentosMes', planoId === 'gratuito' ? '6/mês' : planoId === 'pro' ? '20/mês' : planoId === 'familia' ? '30/mês' : 'Ilimitado'],
+          ['Histórico', 'historicoMeses', planoId === 'gratuito' ? '2 meses' : planoId === 'pro' ? '12 meses' : planoId === 'familia' ? '24 meses' : 'Ilimitado'],
           ['Conta casal', 'contaCasal', plano.features.contaCasal ? (planoId === 'premium' ? 'Até 5 membros' : '2 membros') : null],
           ['Alertas', 'alertasVencimento', plano.features.alertasVencimento ? '✅' : null],
           ['Exportar PDF', 'exportarPDF', plano.features.exportarPDF ? '✅' : null],
@@ -9524,12 +9602,15 @@ window.renderCfgPlano = function() {
       </div>
 
       ${planoId === 'gratuito' ? `
-      <div style="margin-top:14px;padding:12px;background:${PLANOS.pro.cor}11;border:1px solid ${PLANOS.pro.cor}33;border-radius:10px">
-        <div style="font-size:12px;font-weight:700;color:${PLANOS.pro.cor};margin-bottom:6px">⚡ Por que fazer upgrade?</div>
-        <div style="font-size:11px;color:var(--fg2)">Plano Pro por apenas R$12,99/mês — lançamentos ilimitados, gráfico anual, radar de metas e exportação PDF.</div>
-        <button class="btn btn-primary" style="margin-top:10px;width:100%;background:${PLANOS.pro.cor}"
+      <div style="margin-top:14px;padding:14px;background:${PLANOS.pro.cor}11;border:1px solid ${PLANOS.pro.cor}33;border-radius:10px">
+        <div style="font-size:13px;font-weight:700;color:${PLANOS.pro.cor};margin-bottom:6px">⚡ Desbloqueie o controle total</div>
+        <div style="font-size:12px;color:var(--fg2);margin-bottom:10px">
+          Finanvô Básico por apenas <strong>R$12,99/mês</strong> (ou R$149/ano — economize 2 meses).<br>
+          Lançamentos ilimitados, gráfico anual, alertas de vencimento e muito mais.
+        </div>
+        <button class="btn btn-primary" style="margin-top:4px;width:100%;background:${PLANOS.pro.cor};font-size:14px;padding:12px"
                 onclick="mostrarModalUpgrade('upgrade','pro')">
-          Ver planos e preços
+          🚀 Quero o Finanvô Básico
         </button>
       </div>` : ''}
     </div>`;
@@ -10491,11 +10572,11 @@ async function registrarIndicacaoSeExistir(uid, email, nome) {
     if (!ref) return;
 
     const db = firebase.firestore();
-    // Buscar quem tem esse código
-    const snap = await db.collection('users').get();
+    // Buscar por campo indexado (mais eficiente — evita leitura de toda a coleção)
+    const snap = await db.collection('users').where('codigoIndicacao', '==', ref).limit(1).get();
     for (const doc of snap.docs) {
       const docUid = doc.id;
-      if (gerarCodigoIndicacao(docUid) === ref && docUid !== uid) {
+      if (docUid !== uid) {
         // Encontrou o indicador — adicionar indicação
         const dados = doc.data() || {};
         const indicacoes = dados.indicacoes || [];
@@ -10504,7 +10585,7 @@ async function registrarIndicacaoSeExistir(uid, email, nome) {
           indicacoes.push({
             uid, email: email || '', nome: nome || 'Usuário',
             data: new Date().toLocaleDateString('pt-BR'),
-            ativo: false // ativa quando completar 7 dias
+            ativo: true // ativo imediatamente ao se cadastrar
           });
           await db.collection('users').doc(docUid).update({ indicacoes });
 
@@ -10529,8 +10610,14 @@ async function registrarIndicacaoSeExistir(uid, email, nome) {
 // ══════════════════════════════════════════════════
 
 window.iniciarViewAfiliados = function() {
-  // Nada para carregar dinamicamente por enquanto — conteúdo é estático
-  // Futuramente: buscar stats do afiliado na Hotmart via API
+  // Substituir {LINK_AFILIADO} pelo link real de indicação do usuário
+  if (!usuarioAtivo) return;
+  const linkAfil = getLinkIndicacao ? getLinkIndicacao(usuarioAtivo) : '';
+  if (!linkAfil) return;
+  ['afil-whats', 'afil-insta', 'afil-email'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = el.textContent.replace(/\{LINK_AFILIADO\}/g, linkAfil);
+  });
 };
 
 // ══════════════════════════════════════════════════
