@@ -91,7 +91,7 @@
   // ── Service Worker (cache offline) ──────────────────────────────
   if ('serviceWorker' in navigator) {
     const swCode = `
-const CACHE = 'finanvo-v2';
+const CACHE = 'finanvo-v3';
 const SHELL = [self.registration.scope + 'finapp.html'];
 
 self.addEventListener('install', e => {
