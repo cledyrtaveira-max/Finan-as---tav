@@ -91,7 +91,7 @@
   // ── Service Worker (cache offline) ──────────────────────────────
   if ('serviceWorker' in navigator) {
     const swCode = `
-const CACHE = 'finanvo-v3';
+const CACHE = 'finanvo-v4';
 const SHELL = [self.registration.scope + 'finapp.html'];
 
 self.addEventListener('install', e => {
@@ -7913,12 +7913,7 @@ ${lanVariaveis.length > 0 ? `
 
 <button class="print-btn no-print" onclick="window.print()">🖨️ Salvar como PDF</button>
 
-<!-- Crisp Chat Widget -->
-<script type="text/javascript">
-window.$crisp=[];window.CRISP_WEBSITE_ID="76981913-2052-4a13-8705-c2f0f906fc4d";
-(function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();
-</script>
-</body>
+<\/body>
 <\/html>`;
 
   const win = window.open('', '_blank', 'width=850,height=1100');
@@ -9235,3 +9230,12 @@ window.renderConfig = function() {
 })();
 </script>
 <!-- ── Fim Sistema de Planos ─────────────────────────────────────────────── -->
+
+<!-- Crisp Chat Widget -->
+<script type="text/javascript">
+window.$crisp=[];window.CRISP_WEBSITE_ID="76981913-2052-4a13-8705-c2f0f906fc4d";
+(function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();
+</script>
+
+</body>
+</html>
