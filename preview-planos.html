@@ -199,6 +199,21 @@ tr:hover td{background:rgba(255,255,255,.02)}
   .cards{grid-template-columns:1fr}
   .card{max-width:380px;margin:0 auto;width:100%}
 }
+
+.card-muted { opacity: .82; }
+.card-muted:hover { opacity: 1; }
+.card-premium {
+  border-color: var(--premium);
+  background: linear-gradient(170deg,rgba(245,158,11,.08) 0%,var(--surface) 50%);
+  box-shadow: 0 0 0 1px rgba(245,158,11,.2), 0 24px 60px rgba(245,158,11,.1);
+}
+.btn-blue-soft { background: rgba(59,130,246,.15); border: 1.5px solid rgba(59,130,246,.4); color: #93c5fd; }
+.btn-blue-soft:hover { background: rgba(59,130,246,.25); }
+.c-perpessoa {
+  font-size: 12px; font-weight: 700; color: var(--green);
+  background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.2);
+  border-radius: 8px; padding: 6px 10px; margin-bottom: 16px; text-align: center;
+}
 </style>
 </head>
 <body>
@@ -227,7 +242,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 <div class="cards">
 
   <!-- TESTE -->
-  <div class="card">
+  <div class="card card-muted">
     <div class="c-emoji">🆓</div>
     <div class="teste-tag">7 dias grátis</div>
     <div class="c-sub">Teste</div>
@@ -246,15 +261,15 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="f-row ok"><span class="f-ic">✓</span>Acesso completo a tudo</div>
       <div class="f-row ok"><span class="f-ic">✓</span>Todas as features liberadas</div>
       <div class="f-group">Após o teste</div>
-      <div class="f-row dim"><span class="f-ic">·</span>Até 6 despesas fixas</div>
-      <div class="f-row dim"><span class="f-ic">·</span>Até 6 lançamentos/mês</div>
-      <div class="f-row dim"><span class="f-ic">·</span>Histórico de 2 meses</div>
-      <div class="f-row dim"><span class="f-ic">·</span>Suporte por e-mail</div>
+      <div class="f-row dim"><span class="f-ic">✗</span>Só 6 despesas fixas</div>
+      <div class="f-row dim"><span class="f-ic">✗</span>Só 6 lançamentos/mês</div>
+      <div class="f-row dim"><span class="f-ic">✗</span>Histórico apenas 2 meses</div>
+      <div class="f-row dim"><span class="f-ic">✗</span>Sem radar, PDF, projeções...</div>
     </div>
   </div>
 
   <!-- BÁSICO -->
-  <div class="card">
+  <div class="card card-muted">
     <div class="c-emoji">⚡</div>
     <div class="c-sub">Finanvô</div>
     <div class="c-nome">Básico</div>
@@ -264,7 +279,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
     </div>
     <div class="c-anual-info" id="ib"></div>
-    <a href="https://hotmart.com/product/financas-taveira-pro" class="c-btn btn-blue">Assinar Básico</a>
+    <a href="https://hotmart.com/product/financas-taveira-pro" class="c-btn btn-blue-soft">Assinar Básico</a>
     <div class="c-feats">
       <div class="f-group">Limites</div>
       <div class="f-row ok"><span class="f-ic">✓</span>12–16 despesas fixas</div>
@@ -274,10 +289,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="f-row ok"><span class="f-ic">✓</span>Gráfico mensal e anual</div>
       <div class="f-row ok"><span class="f-ic">✓</span>Alertas de vencimento</div>
       <div class="f-row ok"><span class="f-ic">✓</span>Conta casal (2 usuários)</div>
-      <div class="f-row dim"><span class="f-ic">·</span>Radar de metas</div>
-      <div class="f-row dim"><span class="f-ic">·</span>Status de pagamento</div>
-      <div class="f-row dim"><span class="f-ic">·</span>Exportar PDF/CSV</div>
-      <div class="f-row dim"><span class="f-ic">·</span>Projeções inteligentes</div>
+      <div class="f-row dim"><span class="f-ic">✗</span>Sem radar de metas</div>
+      <div class="f-row dim"><span class="f-ic">✗</span>Sem status de pagamento</div>
+      <div class="f-row dim"><span class="f-ic">✗</span>Sem exportar PDF/CSV</div>
+      <div class="f-row dim"><span class="f-ic">✗</span>Sem projeções inteligentes</div>
       <div class="f-group">Suporte</div>
       <div class="f-row ok"><span class="f-ic">✓</span>E-mail</div>
     </div>
@@ -295,7 +310,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
     </div>
     <div class="c-anual-info" id="if"></div>
-    <a href="https://hotmart.com/product/financas-taveira-familia" class="c-btn btn-purple">Assinar Família</a>
+    <div class="c-perpessoa" id="ppf">👤 R$ 3,83 por pessoa/mês (6 pessoas)</div>
+    <a href="https://hotmart.com/product/financas-taveira-familia" class="c-btn btn-purple">Assinar Família →</a>
     <div class="c-feats">
       <div class="f-group">Limites</div>
       <div class="f-row ok"><span class="f-ic">✓</span>17–30 despesas fixas</div>
@@ -308,15 +324,16 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="f-row ok"><span class="f-ic">✓</span>Exportar PDF/CSV</div>
       <div class="f-row ok"><span class="f-ic">✓</span>Alertas de vencimento</div>
       <div class="f-row ok"><span class="f-ic">✓</span>Conta família (6 usuários)</div>
-      <div class="f-row dim"><span class="f-ic">·</span>Projeções inteligentes</div>
-      <div class="f-row dim"><span class="f-ic">·</span>Relatório por e-mail</div>
+      <div class="f-row dim"><span class="f-ic">✗</span>Sem projeções inteligentes</div>
+      <div class="f-row dim"><span class="f-ic">✗</span>Sem relatório por e-mail</div>
       <div class="f-group">Suporte</div>
       <div class="f-row ok"><span class="f-ic">✓</span>E-mail prioritário</div>
     </div>
   </div>
 
   <!-- PREMIUM -->
-  <div class="card">
+  <div class="card card-premium">
+    <div class="popular-tag" style="background:linear-gradient(135deg,#f59e0b,#b45309)">👑 RECOMENDADO</div>
     <div class="c-emoji">👑</div>
     <div class="c-sub">Finanvô</div>
     <div class="c-nome">Premium</div>
@@ -326,19 +343,20 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
     </div>
     <div class="c-anual-info" id="ip"></div>
-    <a href="https://hotmart.com/product/financas-taveira-premium" class="c-btn btn-amber">Assinar Premium</a>
+    <div class="c-perpessoa" id="ppp">👤 R$ 2,75 por pessoa/mês (12 pessoas)</div>
+    <a href="https://hotmart.com/product/financas-taveira-premium" class="c-btn btn-amber">Assinar Premium →</a>
     <div class="c-feats">
       <div class="f-group">Limites</div>
-      <div class="f-row ok"><span class="f-ic">✓</span>Despesas ilimitadas</div>
-      <div class="f-row ok"><span class="f-ic">✓</span>Lançamentos ilimitados</div>
-      <div class="f-row ok"><span class="f-ic">✓</span>Histórico ilimitado</div>
+      <div class="f-row ok"><span class="f-ic">✓</span>Despesas <strong>ilimitadas</strong></div>
+      <div class="f-row ok"><span class="f-ic">✓</span>Lançamentos <strong>ilimitados</strong></div>
+      <div class="f-row ok"><span class="f-ic">✓</span>Histórico <strong>ilimitado</strong></div>
       <div class="f-group">Recursos</div>
       <div class="f-row ok"><span class="f-ic">✓</span>Tudo do plano Família</div>
       <div class="f-row ok"><span class="f-ic">✓</span>Conta família (12 usuários)</div>
       <div class="f-row ok"><span class="f-ic">✓</span>Projeções inteligentes</div>
       <div class="f-row ok"><span class="f-ic">✓</span>Relatório mensal por e-mail</div>
       <div class="f-group">Suporte</div>
-      <div class="f-row ok"><span class="f-ic">✓</span>WhatsApp direto</div>
+      <div class="f-row ok"><span class="f-ic">✓</span><strong>WhatsApp direto</strong></div>
     </div>
   </div>
 
@@ -434,6 +452,11 @@ const dados = {
 
 function switchPeriod(){
   isAnual = !isAnual;
+  // atualiza preço por pessoa
+  const ppf = document.getElementById('ppf');
+  const ppp = document.getElementById('ppp');
+  if(ppf) ppf.textContent = isAnual ? '👤 R$ 3,46 por pessoa/mês (6 pessoas) — anual' : '👤 R$ 3,83 por pessoa/mês (6 pessoas)';
+  if(ppp) ppp.textContent = isAnual ? '👤 R$ 2,42 por pessoa/mês (12 pessoas) — anual' : '👤 R$ 2,75 por pessoa/mês (12 pessoas)';
   document.getElementById('tog').classList.toggle('on', isAnual);
   document.getElementById('lbl-m').classList.toggle('on', !isAnual);
   document.getElementById('lbl-a').classList.toggle('on', isAnual);
