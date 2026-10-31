@@ -7,12 +7,14 @@ export default {
   async fetch(request, env) {
     if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
-    // Verificar token Hotmart
-    const hottok = request.headers.get('X-Hotmart-Hottok') || new URL(request.url).searchParams.get('hottok');
-    if (env.HOTMART_HOTTOK && hottok !== env.HOTMART_HOTTOK) return new Response('Unauthorized', { status: 401 });
-
     let payload;
     try { payload = await request.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
+
+    // Verificar token Hotmart (header, query param ou body)
+    const hottok = request.headers.get('X-Hotmart-Hottok')
+      || new URL(request.url).searchParams.get('hottok')
+      || payload.hottok;
+    if (env.HOTMART_HOTTOK && hottok !== env.HOTMART_HOTTOK) return new Response('Unauthorized', { status: 401 });
 
     const evento = payload.event || payload.data?.event;
     const compra = payload.data?.purchase || payload.purchase;
