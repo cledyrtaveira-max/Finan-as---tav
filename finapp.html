@@ -1976,6 +1976,9 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
       <div class="nav-item" onclick="navTo('afiliados', this)">
         <span class="nav-icon">💸</span> Afiliados
       </div>
+      <div class="nav-item" onclick="navTo('familia', this)">
+        <span class="nav-icon">👨‍👩‍👧</span> Modo Família
+      </div>
     </div>
 
     <div class="sidebar-section">
@@ -2367,10 +2370,52 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
             <div id="ind-lista"></div>
           </div>
 
+          <!-- Pirâmide de níveis -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:16px">
+            <div style="font-size:13px;font-weight:700;color:var(--fg1);margin-bottom:4px">🏆 Pirâmide de recompensas</div>
+            <div style="font-size:11px;color:var(--fg3);margin-bottom:14px">Indicações contabilizadas em até <strong>60 dias</strong> a partir da primeira</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(148,163,184,0.08);border-radius:8px">
+                <div style="font-size:12px;color:var(--fg2)">1–4 indicações</div>
+                <div style="font-size:12px;font-weight:700;color:var(--fg1)">+30 dias cada</div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(148,163,184,0.12);border-radius:8px">
+                <div style="font-size:12px;color:var(--fg2)">5–9 indicações · 🥈 Embaixador Prata</div>
+                <div style="font-size:12px;font-weight:700;color:var(--fg1)">+45 dias cada</div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(245,158,11,0.08);border-radius:8px">
+                <div style="font-size:12px;color:var(--fg2)">10–19 indicações · 🥇 Embaixador Ouro</div>
+                <div style="font-size:12px;font-weight:700;color:#f59e0b">+60 dias cada</div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(139,92,246,0.08);border-radius:8px">
+                <div style="font-size:12px;color:var(--fg2)">20–24 indicações · 💎 Super Embaixador</div>
+                <div style="font-size:12px;font-weight:700;color:#a78bfa">+90 dias + Premium vitalício</div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(135deg,rgba(251,191,36,0.12),rgba(245,158,11,0.08));border:1px solid rgba(251,191,36,0.25);border-radius:8px">
+                <div style="font-size:12px;font-weight:700;color:var(--fg1)">25–30+ indicações · 👑 Lenda Finanvô</div>
+                <div style="font-size:12px;font-weight:800;color:#fbbf24">Premium para sempre!</div>
+              </div>
+            </div>
+          </div>
+
           <!-- Dica -->
           <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--fg2)">
-            💡 <strong>Dica:</strong> Quanto mais você indica, mais dias Premium acumula — podendo usar o app gratuitamente para sempre!
+            💡 <strong>Desafio:</strong> Indique 25–30 pessoas em <strong>60 dias</strong> e garanta o Finanvô Premium para sempre — de graça!
           </div>
+        </div>
+      </div>
+
+      <!-- ══ VIEW: MODO FAMÍLIA ══ -->
+      <div class="view" id="view-familia">
+        <div style="max-width:680px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+            <div style="font-size:28px">👨‍👩‍👧</div>
+            <div>
+              <div style="font-size:18px;font-weight:700;color:var(--fg1)">Modo Casal / Família</div>
+              <div style="font-size:12px;color:var(--fg3)">Orçamento compartilhado — os dois veem e lançam juntos</div>
+            </div>
+          </div>
+          <div id="view-familia-conteudo" style="margin-top:16px"></div>
         </div>
       </div>
 
@@ -3356,6 +3401,7 @@ function navTo(view, el) {
     ia: ['Planejamento','Análise IA'],
     indicacao: ['Comunidade','Indique e Ganhe'],
     afiliados: ['Comunidade','Afiliados'],
+    familia: ['Comunidade','Modo Família'],
     config: ['Sistema','Configurações'],
   };
   document.getElementById('breadcrumb').textContent = (titles[view]||['',''])[0];
@@ -3371,6 +3417,7 @@ function navTo(view, el) {
   if (view === 'ia') iniciarViewIA();
   if (view === 'indicacao') iniciarViewIndicacao();
   if (view === 'afiliados') iniciarViewAfiliados();
+  if (view === 'familia') iniciarViewFamilia();
 }
 
 // ── Bottom nav (mobile) ────────────────────────────────────────────
@@ -10306,12 +10353,14 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(injetarBotaoImpor
 // PROGRAMA DE INDICAÇÃO — PIRÂMIDE DE RECOMPENSAS
 // ══════════════════════════════════════════════════
 
-// Pirâmide: quantas indicações → quantos dias por indicação + bônus
+// Pirâmide: quantas indicações em 60 dias → dias por indicação + bônus
+// Regra: indicações devem ocorrer dentro de 60 dias do início
 const PIRAMIDE_INDICACAO = [
-  { min: 1,  max: 2,  diasPorInd: 30,  badge: null,            bonus: null },
-  { min: 3,  max: 5,  diasPorInd: 45,  badge: 'Embaixador 🥈', bonus: null },
-  { min: 6,  max: 11, diasPorInd: 60,  badge: 'Embaixador 🥇', bonus: 'premium_vitalicio_nivel' },
-  { min: 12, max: 999,diasPorInd: 999, badge: 'Lenda 👑',       bonus: 'premium_para_sempre' },
+  { min: 1,  max: 4,  diasPorInd: 30,  badge: null,                    bonus: null,                   prazo: 60 },
+  { min: 5,  max: 9,  diasPorInd: 45,  badge: 'Embaixador Prata 🥈',   bonus: null,                   prazo: 60 },
+  { min: 10, max: 19, diasPorInd: 60,  badge: 'Embaixador Ouro 🥇',    bonus: null,                   prazo: 60 },
+  { min: 20, max: 24, diasPorInd: 90,  badge: 'Super Embaixador 💎',   bonus: 'premium_vitalicio',    prazo: 60 },
+  { min: 25, max: 999,diasPorInd: 999, badge: 'Lenda Finanvô 👑',      bonus: 'premium_para_sempre',  prazo: 60 },
 ];
 
 function getNivelIndicacao(total) {
@@ -10480,6 +10529,165 @@ async function registrarIndicacaoSeExistir(uid, email, nome) {
 window.iniciarViewAfiliados = function() {
   // Nada para carregar dinamicamente por enquanto — conteúdo é estático
   // Futuramente: buscar stats do afiliado na Hotmart via API
+};
+
+// ══════════════════════════════════════════════════
+// MODO FAMÍLIA — VIEW DEDICADA
+// ══════════════════════════════════════════════════
+
+window.iniciarViewFamilia = async function() {
+  const el = document.getElementById('view-familia-conteudo');
+  if (!el) return;
+
+  const plano = window.getPlanoAtual ? window.getPlanoAtual() : 'gratuito';
+  const temCasal = window.temFeature ? window.temFeature('contaCasal') : (plano === 'premium' || plano === 'familia' || plano === 'pro');
+  const fam = typeof getFamiliaCodigo === 'function' ? getFamiliaCodigo() : null;
+
+  // Usuário não tem acesso ao modo família
+  if (!temCasal && !fam) {
+    el.innerHTML = `
+      <div style="text-align:center;padding:32px 20px;background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(79,70,229,.05));border:1px solid rgba(139,92,246,.3);border-radius:16px">
+        <div style="font-size:48px;margin-bottom:12px">👨‍👩‍👧</div>
+        <div style="font-size:17px;font-weight:700;color:var(--fg1);margin-bottom:8px">Modo Família</div>
+        <p style="font-size:13px;color:var(--fg2);margin:0 0 6px;max-width:380px;margin:0 auto 16px">
+          Compartilhe o orçamento com seu parceiro(a). Os dois lançam despesas e veem o mesmo dashboard — em tempo real.
+        </p>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:400px;margin:0 auto 20px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:11px;color:var(--fg2)">
+            <div style="font-size:18px;margin-bottom:4px">🔄</div>Sync em tempo real
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:11px;color:var(--fg2)">
+            <div style="font-size:18px;margin-bottom:4px">📊</div>Dashboard compartilhado
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:11px;color:var(--fg2)">
+            <div style="font-size:18px;margin-bottom:4px">👥</div>Até 2 membros
+          </div>
+        </div>
+        <a href="https://cledyrtaveira-max.github.io/Finan-as---tav/preview-planos.html" target="_blank"
+          style="display:inline-block;padding:12px 28px;background:var(--accent);color:#fff;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none">
+          🚀 Ver planos e ativar →
+        </a>
+        <div style="margin-top:14px;font-size:11px;color:var(--fg3)">Disponível a partir do Finanvô Básico</div>
+      </div>`;
+    return;
+  }
+
+  // Tem acesso mas não está em família ainda
+  if (!fam) {
+    el.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:14px">
+        <div style="font-size:14px;font-weight:700;color:var(--fg1);margin-bottom:6px">Configure seu modo família</div>
+        <p style="font-size:13px;color:var(--fg2);margin:0 0 18px">Crie um orçamento compartilhado ou entre no de seu parceiro(a) com o código dele(a).</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--surface2);border:2px solid var(--accent);border-radius:12px;padding:18px;text-align:center;cursor:pointer" onclick="document.getElementById('modal-criar-familia').classList.remove('hidden')">
+            <div style="font-size:28px;margin-bottom:8px">✨</div>
+            <div style="font-size:13px;font-weight:700;color:var(--fg1);margin-bottom:4px">Criar família</div>
+            <div style="font-size:11px;color:var(--fg3)">Sou o primeiro a configurar</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;cursor:pointer" onclick="abrirEntrarFamilia()">
+            <div style="font-size:28px;margin-bottom:8px">🔗</div>
+            <div style="font-size:13px;font-weight:700;color:var(--fg1);margin-bottom:4px">Entrar com código</div>
+            <div style="font-size:11px;color:var(--fg3)">Parceiro já criou uma família</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:rgba(79,127,255,0.06);border:1px solid rgba(79,127,255,0.15);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--fg2)">
+        💡 <strong>Como funciona:</strong> quem cria a família gera um código de 8 letras. O(a) parceiro(a) entra com esse código e os dois passam a compartilhar o mesmo orçamento automaticamente.
+      </div>`;
+    return;
+  }
+
+  // Está em família — mostrar painel completo
+  el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--fg3);font-size:13px">Carregando dados da família...</div>`;
+
+  try {
+    // Buscar membros da família
+    const db = firebase.firestore();
+    const famDoc = await db.collection('familias').doc(fam).get();
+    const famData = famDoc.exists ? famDoc.data() : {};
+    const membros = famData.membros || [];
+
+    // Buscar resumo financeiro do mês atual
+    const hoje = new Date();
+    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+    const anoAtual = String(hoje.getFullYear());
+
+    let totalEntradas = 0, totalSaidas = 0, numLanc = 0;
+    try {
+      const lancSnap = await db.collection('familias').doc(fam).collection('lancamentos').get();
+      lancSnap.forEach(doc => {
+        const d = doc.data();
+        const [dano, dmes] = (d.data || '').split('-');
+        if (dmes === mesAtual && dano === anoAtual) {
+          if (d.tipo === 'entrada') totalEntradas += Number(d.valor) || 0;
+          else totalSaidas += Number(d.valor) || 0;
+          numLanc++;
+        }
+      });
+    } catch(e) {}
+
+    const saldo = totalEntradas - totalSaidas;
+
+    el.innerHTML = `
+      <!-- Banner família ativa -->
+      <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:14px;padding:18px 20px;margin-bottom:14px;color:#fff">
+        <div style="font-size:12px;opacity:.75;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Família ativa</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:22px;font-weight:800;letter-spacing:3px">${fam}</div>
+            <div style="font-size:11px;opacity:.7;margin-top:2px">${membros.length || 1} membro(s) conectado(s)</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button onclick="copiarCodigoFamilia()" style="padding:7px 14px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.35);color:#fff;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600">📋 Copiar código</button>
+            <button onclick="sairFamilia()" style="padding:7px 14px;background:rgba(255,80,80,0.25);border:1px solid rgba(255,80,80,0.4);color:#fca5a5;border-radius:8px;font-size:12px;cursor:pointer">Sair</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumo do mês compartilhado -->
+      <div style="font-size:13px;font-weight:700;color:var(--fg1);margin-bottom:10px">📊 Resumo do mês (${mesAtual}/${anoAtual})</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:10px;color:var(--fg3);margin-bottom:4px;text-transform:uppercase">Entradas</div>
+          <div style="font-size:18px;font-weight:800;color:#22c55e">R$ ${totalEntradas.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:10px;color:var(--fg3);margin-bottom:4px;text-transform:uppercase">Saídas</div>
+          <div style="font-size:18px;font-weight:800;color:#f87171">R$ ${totalSaidas.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid ${saldo >= 0 ? 'rgba(34,197,94,0.3)' : 'rgba(248,113,113,0.3)'};border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:10px;color:var(--fg3);margin-bottom:4px;text-transform:uppercase">Saldo</div>
+          <div style="font-size:18px;font-weight:800;color:${saldo >= 0 ? '#22c55e' : '#f87171'}">R$ ${Math.abs(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+        </div>
+      </div>
+
+      <!-- Membros -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--fg1);margin-bottom:12px">👥 Membros da família</div>
+        ${membros.length > 0 ? membros.map(m => `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700">
+              ${(m.nome || 'U')[0].toUpperCase()}
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--fg1)">${m.nome || 'Membro'}</div>
+              <div style="font-size:11px;color:var(--fg3)">${m.email || ''}</div>
+            </div>
+            ${m.uid === usuarioAtivo ? '<div style="margin-left:auto;font-size:11px;color:var(--accent);font-weight:600">Você</div>' : ''}
+          </div>`).join('') : `
+          <div style="text-align:center;padding:12px;font-size:12px;color:var(--fg3)">
+            Compartilhe o código <strong>${fam}</strong> com seu parceiro(a) para ele(a) entrar!
+          </div>`}
+      </div>
+
+      <!-- Dica -->
+      <div style="background:rgba(79,127,255,0.06);border:1px solid rgba(79,127,255,0.15);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--fg2)">
+        💡 Todos os lançamentos feitos por qualquer membro aparecem automaticamente para todos. Use a tela de Lançamentos normalmente — ela já está compartilhada!
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--fg3);font-size:13px">Erro ao carregar dados da família. Tente novamente.</div>`;
+    console.warn('Família view:', e.message);
+  }
 };
 
 window.copiarTexto = function(id) {
