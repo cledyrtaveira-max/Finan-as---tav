@@ -8061,16 +8061,16 @@ let obDespesasSelecionadas = [];
 
 // Despesas sugeridas para novo usuário
 const DESPESAS_SUGERIDAS = [
-  { desc: 'Aluguel / Financiamento', cat: 'Moradia', val: 1500 },
-  { desc: 'Água', cat: 'Moradia', val: 80 },
-  { desc: 'Luz', cat: 'Moradia', val: 150 },
-  { desc: 'Internet', cat: 'Moradia', val: 120 },
-  { desc: 'Telefone', cat: 'Telefonia', val: 100 },
-  { desc: 'Supermercado', cat: 'Alimentação', val: 800 },
-  { desc: 'Escola / Faculdade', cat: 'Educação', val: 500 },
-  { desc: 'Plano de saúde', cat: 'Saúde', val: 400 },
-  { desc: 'Combustível / Transporte', cat: 'Transporte', val: 300 },
-  { desc: 'Streaming (Netflix etc)', cat: 'Lazer', val: 80 },
+  { desc: 'Aluguel / Financiamento', cat: 'Moradia', val: 0 },
+  { desc: 'Água', cat: 'Moradia', val: 0 },
+  { desc: 'Luz', cat: 'Moradia', val: 0 },
+  { desc: 'Internet', cat: 'Moradia', val: 0 },
+  { desc: 'Telefone', cat: 'Telefonia', val: 0 },
+  { desc: 'Supermercado', cat: 'Alimentação', val: 0 },
+  { desc: 'Escola / Faculdade', cat: 'Educação', val: 0 },
+  { desc: 'Plano de saúde', cat: 'Saúde', val: 0 },
+  { desc: 'Combustível / Transporte', cat: 'Transporte', val: 0 },
+  { desc: 'Streaming (Netflix etc)', cat: 'Lazer', val: 0 },
 ];
 
 function obRender() {
@@ -8125,7 +8125,12 @@ function obRender() {
           <label class="ob-despesa-item" style="cursor:pointer">
             <input type="checkbox" value="${i}" ${obDespesasSelecionadas.includes(i)?'checked':''}>
             <span class="ob-despesa-desc">${d.desc}</span>
-            <span class="ob-despesa-val">R$ ${d.val.toLocaleString('pt-BR')}</span>
+            <span class="ob-despesa-val" style="display:flex;align-items:center;gap:2px">
+              <span style="font-size:11px;color:var(--fg3)">R$</span>
+              <input type="number" class="ob-val-input" data-idx="${i}" value="" placeholder="0"
+                min="0" step="1" onclick="event.stopPropagation()"
+                style="width:64px;background:transparent;border:none;border-bottom:1px solid var(--fg3);color:var(--accent);font-size:13px;font-weight:600;text-align:right;outline:none;padding:0 2px">
+            </span>
           </label>
         `).join('')}
       </div>
@@ -8164,7 +8169,9 @@ window.obFinalizar = function() {
     if (!appCfg.extras) appCfg.extras = [];
     despSel.forEach(i => {
       const d = DESPESAS_SUGERIDAS[i];
-      appCfg.extras.push({ desc: d.desc, cat: d.cat, tipo: 'saida', val: d.val, mes: 'Todos', id: Date.now() + i });
+      const inputEl = document.querySelector(`.ob-val-input[data-idx="${i}"]`);
+      const val = inputEl ? (parseFloat(inputEl.value) || 0) : 0;
+      appCfg.extras.push({ desc: d.desc, cat: d.cat, tipo: 'saida', val, mes: 'Todos', id: Date.now() + i });
     });
   }
 
