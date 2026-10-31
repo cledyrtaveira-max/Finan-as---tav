@@ -2783,6 +2783,8 @@ fbAuth.onAuthStateChanged(async function(user) {
     document.getElementById('sidebar-role').textContent = 'Finanvô · Sair 🔒';
     iniciarSync();
     renderDashboard();
+    // Verificar se há plano pendente (compra no Hotmart antes de criar conta)
+    verificarPlanoPendente(user.email);
   } else {
     // Deslogado
     logado = false;
@@ -8234,6 +8236,44 @@ window.iniciarSync = function() {
 
 })();
 // ── Fim Onboarding ────────────────────────────────────────────────
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PLANO PENDENTE — verifica compra Hotmart antes de criar conta
+     ══════════════════════════════════════════════════════════════ -->
+<script>
+async function verificarPlanoPendente(email) {
+  if (!email || !usuarioAtivo) return;
+  try {
+    const key = email.replace(/[.@]/g, '_');
+    const snap = await fbDb.collection('planos_pendentes').doc(key).get();
+    if (!snap.exists) return;
+    const data = snap.data();
+    if (!data || !data.plano || data.plano === 'gratuito') return;
+
+    // Aplicar plano pendente ao usuário
+    await fbDb.collection('users').doc(usuarioAtivo).set({
+      plano: data.plano,
+      planoAtualizadoEm: data.planoAtualizadoEm || new Date().toISOString(),
+      planoOrigemHotmart: true
+    }, { merge: true });
+
+    // Remover pendente
+    await fbDb.collection('planos_pendentes').doc(key).delete();
+
+    // Atualizar config local
+    if (appCfg) {
+      appCfg.plano = data.plano;
+      salvarConfig();
+    }
+
+    const nomesPlanos = { pro: 'Finanvô Básico', familia: 'Finanvô Família', premium: 'Finanvô Premium' };
+    mostrarToast(`🎉 Plano ${nomesPlanos[data.plano] || data.plano} ativado! Bem-vindo ao Finanvô!`);
+    console.log('Plano pendente aplicado:', data.plano);
+  } catch(e) {
+    console.warn('Erro ao verificar plano pendente:', e.message);
+  }
+}
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════
