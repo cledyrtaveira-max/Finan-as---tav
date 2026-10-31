@@ -1962,6 +1962,9 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
         <div class="nav-item" onclick="navTo('estrategia', this)">
           <span class="nav-icon">🎯</span> Estratégia
         </div>
+        <div class="nav-item" onclick="navTo('ia', this)">
+          <span class="nav-icon">🤖</span> Análise IA
+        </div>
       </div>
     </div>
 
@@ -2268,6 +2271,28 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
         </div>
         <div id="est-lista"></div>
 
+      </div>
+
+      <!-- ══ VIEW: ANÁLISE IA ══ -->
+      <div class="view" id="view-ia">
+        <div style="max-width:680px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+            <div style="font-size:28px">🤖</div>
+            <div>
+              <div style="font-size:18px;font-weight:700;color:var(--fg1)">Análise Inteligente</div>
+              <div style="font-size:12px;color:var(--fg3)">IA analisa seus dados e dá insights personalizados</div>
+            </div>
+          </div>
+          <div id="ia-periodo-sel" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+            <select id="ia-mes" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--fg1);font-size:13px;font-weight:600"></select>
+            <select id="ia-ano" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--fg1);font-size:13px;font-weight:600"></select>
+            <button onclick="rodarAnaliseIA()" id="ia-btn"
+              style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">
+              ✨ Analisar
+            </button>
+          </div>
+          <div id="ia-resultado"></div>
+        </div>
       </div>
 
       <!-- ══ VIEW: CONFIGURAÇÕES ══ -->
@@ -3097,10 +3122,11 @@ function navTo(view, el) {
     grafico: ['Controle','Gráficos'],
     dividas: ['Planejamento','Dívidas'],
     estrategia: ['Planejamento','Estratégia'],
+    ia: ['Planejamento','Análise IA'],
     config: ['Sistema','Configurações'],
   };
-  document.getElementById('breadcrumb').textContent = titles[view][0];
-  document.getElementById('page-title').textContent = titles[view][1];
+  document.getElementById('breadcrumb').textContent = (titles[view]||['',''])[0];
+  document.getElementById('page-title').textContent = (titles[view]||['',view])[1];
 
   if (view === 'mensal') renderMensal();
   if (view === 'lancamentos') renderLancamentos();
@@ -3109,6 +3135,7 @@ function navTo(view, el) {
   if (view === 'grafico') renderGrafico();
   if (view === 'dividas') renderDividas();
   if (view === 'estrategia') renderEstrategia();
+  if (view === 'ia') iniciarViewIA();
 }
 
 // ── Bottom nav (mobile) ────────────────────────────────────────────
@@ -9237,6 +9264,193 @@ window.renderConfig = function() {
 })();
 </script>
 <!-- ── Fim Sistema de Planos ─────────────────────────────────────────────── -->
+
+<!-- ── Análise IA ──────────────────────────────────────────────────────────── -->
+<script>
+(function() {
+
+const IA_WORKER_URL = 'https://finanvo-ia.cledyrtaveira.workers.dev';
+const MESES_IA = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+window.iniciarViewIA = function() {
+  // Preenche selects de mês/ano
+  const selMes = document.getElementById('ia-mes');
+  const selAno = document.getElementById('ia-ano');
+  if (!selMes || !selAno) return;
+
+  selMes.innerHTML = MESES_IA.map((m,i) => `<option value="${m}" ${m === mesSelecionado ? 'selected' : ''}>${m}</option>`).join('');
+
+  const anoAtual = new Date().getFullYear();
+  selAno.innerHTML = '';
+  for (let a = anoAtual; a >= anoAtual - 3; a--) {
+    selAno.innerHTML += `<option value="${a}" ${a === anoSelecionado ? 'selected' : ''}>${a}</option>`;
+  }
+};
+
+window.rodarAnaliseIA = function() {
+  const mes = document.getElementById('ia-mes')?.value || mesSelecionado;
+  const ano = parseInt(document.getElementById('ia-ano')?.value || anoSelecionado);
+  const btn = document.getElementById('ia-btn');
+  const resultado = document.getElementById('ia-resultado');
+  if (!resultado) return;
+
+  // Coleta dados do mês selecionado
+  const dadosMes = coletarDadosMesIA(mes, ano);
+
+  // Mostra loading
+  resultado.innerHTML = `
+    <div style="text-align:center;padding:40px 20px">
+      <div style="font-size:36px;animation:spin 1s linear infinite;display:inline-block">⚙️</div>
+      <div style="margin-top:12px;font-size:14px;color:var(--fg3)">Analisando seus dados...</div>
+    </div>
+    <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>
+  `;
+  if (btn) btn.disabled = true;
+
+  // Verifica se é plano pago (IA disponível para pro/premium/familia)
+  const planoAtual = (typeof getUserPlano === 'function') ? getUserPlano() : (appCfg?.plano || 'gratuito');
+  const planosPremium = ['pro','premium','familia'];
+
+  if (!planosPremium.includes(planoAtual)) {
+    // Usa análise local (sem Worker) para plano gratuito
+    const analise = analisarLocalIA(dadosMes);
+    setTimeout(() => {
+      renderAnaliseIA(analise, mes, ano, true);
+      if (btn) btn.disabled = false;
+    }, 600);
+    return;
+  }
+
+  // Chama Worker com IA real
+  fetch(IA_WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...dadosMes, mes, ano, plano: planoAtual })
+  })
+  .then(r => r.json())
+  .then(analise => {
+    renderAnaliseIA(analise, mes, ano, false);
+  })
+  .catch(() => {
+    // Fallback local se Worker falhar
+    const analise = analisarLocalIA(dadosMes);
+    renderAnaliseIA(analise, mes, ano, true);
+  })
+  .finally(() => { if (btn) btn.disabled = false; });
+};
+
+function coletarDadosMesIA(mes, ano) {
+  // Usa as mesmas funções de cálculo do app
+  const base = (window.DESPESAS_BASE || []).filter(d => {
+    const dmA = d.mesAtivo || d.mes;
+    return dmA === 'Todos' || dmA === mes;
+  });
+  const extras = (appCfg?.extras || []).filter(e => e.mes === 'Todos' || e.mes === mes);
+  const lancMes = (appData?.lancamentos || []).filter(l => l.mes === mes && l.ano === ano);
+
+  const entradas = [...base, ...extras].filter(d => d.tipo === 'entrada').reduce((s,d) => s+d.val, 0)
+    + lancMes.filter(l => l.tipo === 'entrada').reduce((s,l) => s+l.val, 0);
+  const saidas = [...base, ...extras].filter(d => d.tipo === 'saida').reduce((s,d) => s+d.val, 0)
+    + lancMes.filter(l => l.tipo === 'saida').reduce((s,l) => s+l.val, 0);
+  const saldo = entradas - saidas;
+
+  // Agrupa por categoria
+  const catMap = {};
+  [...base, ...extras, ...lancMes].forEach(l => {
+    if (l.tipo !== 'saida') return;
+    const c = l.cat || 'Outros';
+    catMap[c] = (catMap[c] || 0) + l.val;
+  });
+  const categorias = Object.entries(catMap).map(([nome, val]) => ({ nome, val }));
+
+  return { entradas, saidas, saldo, categorias, lancamentos: lancMes.length };
+}
+
+function analisarLocalIA({ entradas = 0, saidas = 0, saldo = 0, categorias = [] }) {
+  const pct = entradas > 0 ? Math.round((saidas / entradas) * 100) : 0;
+  let semaforo = pct <= 65 ? 'verde' : pct <= 85 ? 'amarelo' : 'vermelho';
+  const cats = [...categorias].sort((a,b) => b.val - a.val);
+  const top = cats[0];
+
+  const insights = [];
+  if (top) insights.push(`Maior gasto: ${top.nome} (R$${top.val.toFixed(2)})`);
+  if (pct > 0) insights.push(`Você usou ${pct}% da sua renda este mês`);
+  if (saldo > 0) insights.push(`Sobrou R$${saldo.toFixed(2)} — ótima oportunidade de guardar`);
+  else if (saldo < 0) insights.push(`Déficit de R$${Math.abs(saldo).toFixed(2)} — revise os gastos`);
+  if (cats.length > 1) insights.push(`${cats.length} categorias de gasto registradas`);
+
+  return {
+    semaforo,
+    titulo: semaforo === 'verde' ? 'Mês equilibrado! 🟢' : semaforo === 'amarelo' ? 'Atenção com os gastos 🟡' : 'Mês no vermelho! 🔴',
+    resumo: `Entradas de R$${entradas.toFixed(2)} e saídas de R$${saidas.toFixed(2)}, resultado ${saldo >= 0 ? 'positivo' : 'negativo'} de R$${Math.abs(saldo).toFixed(2)}.`,
+    insights: insights.slice(0,3),
+    alerta: semaforo === 'vermelho' ? `Gastos ${pct}% da renda — acima do recomendado` : null,
+    dica: semaforo === 'verde' ? 'Tente guardar pelo menos 10% da renda mensalmente.' : 'Identifique e corte um gasto supérfluo no próximo mês.'
+  };
+}
+
+function renderAnaliseIA(a, mes, ano, isLocal) {
+  const resultado = document.getElementById('ia-resultado');
+  if (!resultado) return;
+
+  const cores = { verde: '#4ade80', amarelo: '#facc15', vermelho: '#f87171' };
+  const bgCores = { verde: 'rgba(74,222,128,.1)', amarelo: 'rgba(250,204,21,.1)', vermelho: 'rgba(248,113,113,.1)' };
+  const bdCores = { verde: 'rgba(74,222,128,.3)', amarelo: 'rgba(250,204,21,.3)', vermelho: 'rgba(248,113,113,.3)' };
+  const cor = cores[a.semaforo] || '#4f7fff';
+  const bg  = bgCores[a.semaforo] || 'rgba(79,127,255,.1)';
+  const bd  = bdCores[a.semaforo] || 'rgba(79,127,255,.3)';
+
+  const insightsHTML = (a.insights || []).map(i => `
+    <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:16px;margin-top:1px">💡</span>
+      <span style="font-size:13px;color:var(--fg1)">${i}</span>
+    </div>`).join('');
+
+  resultado.innerHTML = `
+    <!-- Semáforo + título -->
+    <div style="background:${bg};border:1px solid ${bd};border-radius:14px;padding:20px;margin-bottom:16px">
+      <div style="font-size:22px;font-weight:800;color:${cor};margin-bottom:6px">${a.titulo}</div>
+      <div style="font-size:13px;color:var(--fg2);line-height:1.6">${a.resumo}</div>
+    </div>
+
+    <!-- Insights -->
+    ${insightsHTML ? `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--fg3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Insights</div>
+      ${insightsHTML}
+    </div>` : ''}
+
+    <!-- Alerta -->
+    ${a.alerta ? `
+    <div style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:12px;padding:14px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start">
+      <span style="font-size:18px">⚠️</span>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#f87171;margin-bottom:2px">Alerta</div>
+        <div style="font-size:13px;color:var(--fg1)">${a.alerta}</div>
+      </div>
+    </div>` : ''}
+
+    <!-- Dica -->
+    ${a.dica ? `
+    <div style="background:rgba(79,127,255,.08);border:1px solid rgba(79,127,255,.25);border-radius:12px;padding:14px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start">
+      <span style="font-size:18px">🎯</span>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:2px">Dica para o próximo mês</div>
+        <div style="font-size:13px;color:var(--fg1)">${a.dica}</div>
+      </div>
+    </div>` : ''}
+
+    ${isLocal ? `
+    <div style="font-size:11px;color:var(--fg3);text-align:center;padding:8px;background:var(--surface2);border-radius:8px">
+      🤖 Análise gerada localmente — faça upgrade para análise com IA avançada
+    </div>` : `
+    <div style="font-size:11px;color:var(--fg3);text-align:center">✨ Análise gerada por IA — ${mes}/${ano}</div>`}
+  `;
+}
+
+})();
+</script>
+<!-- ── Fim Análise IA ──────────────────────────────────────────────────────── -->
 
 <!-- ── Importação de Extrato Bancário ─────────────────────────────────────── -->
 <script>
