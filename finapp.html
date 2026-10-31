@@ -2711,6 +2711,7 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
 <script>
 // ── Autenticação Firebase ─────────────────────────────────────────
 let usuarioAtivo = null; // UID do Firebase
+window.usuarioEmail = ''; // Email do usuário logado (para checagem de admin)
 let logado = false;
 let _abaAtual = 'entrar';
 
@@ -2795,6 +2796,7 @@ async function enviarRecuperacao() {
 fbAuth.onAuthStateChanged(async function(user) {
   if (user) {
     usuarioAtivo = user.uid;
+    window.usuarioEmail = user.email || '';
     logado = true;
     document.getElementById('login-screen').classList.add('hidden');
     // Monta nome/iniciais do sidebar
@@ -2814,6 +2816,7 @@ fbAuth.onAuthStateChanged(async function(user) {
     // Deslogado
     logado = false;
     usuarioAtivo = null;
+    window.usuarioEmail = '';
     document.getElementById('login-screen').classList.remove('hidden');
     document.getElementById('login-password').value = '';
     loginClearError();
@@ -8995,7 +8998,7 @@ window.prazoAssinarAtivo = function() {
 window.getPlanoAtual = function() {
   try {
     // Dono/admin vitalício sempre tem premium ilimitado
-    if (usuarioAtivo && ADMINS_VITALICIOS.includes(usuarioAtivo)) return 'premium';
+    if (window.usuarioEmail && ADMINS_VITALICIOS.includes(window.usuarioEmail)) return 'premium';
     // Primeiro tenta Firestore (definido pelo webhook Hotmart)
     if (appCfg && appCfg.plano && PLANOS[appCfg.plano]) return appCfg.plano;
   } catch(e) {}
