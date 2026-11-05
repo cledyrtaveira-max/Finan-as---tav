@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Finanvô — Controle financeiro familiar, simples e poderoso</title>
+<meta name="description" content="Finanvô ajuda sua família a controlar despesas, metas e dívidas em um só lugar. Gratuito, sem instalar nada.">
+<meta property="og:title" content="Finanvô — Controle financeiro familiar">
+<meta property="og:description" content="Painel completo para organizar as finanças da família. Gratuito e funciona offline.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://appfinanvo.com.br/">
+<meta property="og:image" content="https://appfinanvo.com.br/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://appfinanvo.com.br/icon-512.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTQiIGZpbGw9IiM0ZjdmZmYiLz48cG9seWxpbmUgcG9pbnRzPSIyMCw0MCAzMiwyMiA0NCw0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48bGluZSB4MT0iMTkiIHkxPSI0NCIgeDI9IjQ1IiB5Mj0iNDQiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjciLz48L3N2Zz4=">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<style>
+:root {
+  --bg:  #090c14;
+  --bg2: #0f1420;
+  --bg3: #161c2e;
+  --fg1: #f0f4ff;
+  --fg2: #a8b8d8;
+  --fg3: #5a6a8a;
+  --accent: #4f7fff;
+  --accent2: #7c3aed;
+  --green: #22c55e;
+  --orange: #f97316;
+  --border: rgba(255,255,255,0.07);
+  --grd: linear-gradient(135deg, #4f7fff 0%, #7c3aed 100%);
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--fg1); line-height: 1.6; font-size: 16px; }
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; display: block; }
+
+.container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* ── NAV ── */
+header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(9,12,20,0.9); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; max-width: 1080px; margin: 0 auto; }
+.logo { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
+.logo span { background: var(--grd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.nav-links { display: flex; align-items: center; gap: 28px; }
+.nav-links a { font-size: 14px; font-weight: 500; color: var(--fg2); transition: color .2s; }
+.nav-links a:hover { color: var(--fg1); }
+.btn-nav {
+  background: var(--grd) !important; color: #fff !important;
+  padding: 9px 22px; border-radius: 10px; font-weight: 700 !important; font-size: 14px;
+  transition: opacity .2s;
+}
+.btn-nav:hover { opacity: .85; }
+@media (max-width: 640px) { .nav-links { display: none; } }
+
+/* ── HERO ── */
+.hero {
+  padding: 140px 24px 80px;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 90% 55% at 50% 0%, rgba(79,127,255,0.14), transparent);
+  pointer-events: none;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(79,127,255,0.12); border: 1px solid rgba(79,127,255,0.3);
+  border-radius: 999px; padding: 5px 16px; font-size: 12px; font-weight: 700;
+  color: #7aadff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 24px;
+}
+.hero h1 {
+  font-size: clamp(36px, 6vw, 66px);
+  font-weight: 900; line-height: 1.08; letter-spacing: -1.5px;
+  margin-bottom: 20px; max-width: 820px; margin-left: auto; margin-right: auto;
+}
+.hero h1 em { font-style: normal; background: var(--grd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero p { font-size: 18px; color: var(--fg2); max-width: 520px; margin: 0 auto 36px; line-height: 1.75; }
+.hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--grd); color: #fff;
+  padding: 15px 32px; border-radius: 12px; font-weight: 800; font-size: 16px;
+  transition: transform .2s, box-shadow .2s;
+  box-shadow: 0 4px 24px rgba(79,127,255,0.35);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(79,127,255,0.5); }
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.05); color: var(--fg1);
+  border: 1px solid var(--border); padding: 15px 32px;
+  border-radius: 12px; font-weight: 600; font-size: 16px; transition: background .2s;
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.09); }
+.hero-trust { font-size: 13px; color: var(--fg3); margin-top: 12px; }
+.hero-trust span { color: var(--green); margin-right: 4px; }
+
+/* ── APP MOCKUP ── */
+.mockup-wrap {
+  max-width: 820px; margin: 56px auto 0;
+  border-radius: 20px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03);
+  background: var(--bg3);
+}
+.mockup-bar {
+  display: flex; align-items: center; gap: 7px; padding: 12px 16px;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot.r { background: #ff5f56; } .dot.y { background: #febc2e; } .dot.g { background: #27c93f; }
+.mockup-url { flex: 1; text-align: center; font-size: 12px; color: var(--fg3); }
+.mockup-body { padding: 24px; }
+/* KPI row */
+.kpi-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
+.kpi { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.kpi-label { font-size: 11px; color: var(--fg3); margin-bottom: 4px; }
+.kpi-val { font-size: 18px; font-weight: 800; }
+.kpi-val.g { color: #4ade80; } .kpi-val.r { color: #f87171; } .kpi-val.b { color: #60a5fa; }
+/* semaforo */
+.sem-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.sem { flex: 1; border-radius: 8px; padding: 10px 14px; font-size: 12px; font-weight: 600; }
+.sem.ok { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: #4ade80; }
+.sem.att { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); color: #fbbf24; }
+.sem.pago { background: rgba(79,127,255,0.1); border: 1px solid rgba(79,127,255,0.25); color: #7aadff; }
+/* bars */
+.bar-list { display: flex; flex-direction: column; gap: 8px; }
+.bar-item { display: flex; flex-direction: column; gap: 4px; }
+.bar-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--fg2); }
+.bar-track { height: 6px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; }
+
+/* ── LOGOS ── */
+.logos-strip { padding: 40px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.logos-label { text-align: center; font-size: 12px; font-weight: 700; color: var(--fg3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; }
+.logos-row { display: flex; justify-content: center; align-items: center; gap: 36px; flex-wrap: wrap; }
+.logos-row span { font-size: 14px; font-weight: 700; color: var(--fg3); letter-spacing: 0.5px; }
+
+/* ── SECTION HEADER ── */
+.sec-hd { text-align: center; margin-bottom: 56px; }
+.eyebrow { display: inline-block; font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+.sec-hd h2 { font-size: clamp(28px, 4vw, 44px); font-weight: 900; letter-spacing: -0.8px; margin-bottom: 14px; }
+.sec-hd p { font-size: 17px; color: var(--fg2); max-width: 520px; margin: 0 auto; line-height: 1.7; }
+
+/* ── FEATURES GRID ── */
+.feat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
+.feat-card {
+  background: var(--bg2); padding: 32px 28px;
+  border: none; transition: background .2s;
+}
+.feat-card:hover { background: var(--bg3); }
+.feat-icon { font-size: 32px; margin-bottom: 14px; }
+.feat-card h3 { font-size: 17px; font-weight: 800; margin-bottom: 8px; }
+.feat-card p { font-size: 14px; color: var(--fg2); line-height: 1.65; }
+@media (max-width: 768px) { .feat-grid { grid-template-columns: 1fr; } }
+
+/* ── COMO FUNCIONA ── */
+.steps-list { display: grid; grid-template-columns: repeat(3,1fr); gap: 32px; counter-reset: step; }
+.step-item { position: relative; padding-left: 0; text-align: center; }
+.step-num {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--grd); color: #fff;
+  font-size: 20px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.step-item h3 { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+.step-item p { font-size: 14px; color: var(--fg2); line-height: 1.65; }
+@media (max-width: 768px) { .steps-list { grid-template-columns: 1fr; } }
+
+/* ── PLANOS ── */
+.planos-wrap { background: var(--bg2); border-radius: 24px; padding: 48px 32px; }
+.preco-toggle { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 40px; }
+.preco-toggle span { font-size: 14px; font-weight: 600; color: var(--fg3); transition: .2s; }
+.preco-toggle span.ativo { color: var(--fg1); }
+.toggle-switch { position: relative; width: 48px; height: 26px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 26px; cursor: pointer; transition: .3s; }
+.toggle-slider::before { content: ''; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .3s; }
+.toggle-switch input:checked + .toggle-slider { background: var(--grd); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+.desconto-badge { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; }
+.planos-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+.plano-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px 20px;
+  display: flex; flex-direction: column;
+  transition: transform .2s, box-shadow .2s;
+}
+.plano-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,.35); }
+.plano-card.destaque {
+  background: linear-gradient(160deg, #1a1f35, #131828);
+  border-color: rgba(249,115,22,0.4);
+  box-shadow: 0 0 0 1px rgba(249,115,22,0.15);
+}
+.plano-card.destaque2 {
+  background: linear-gradient(160deg, #1a1535, #130e28);
+  border-color: rgba(167,139,250,0.4);
+}
+.plano-badge {
+  background: linear-gradient(90deg,#ea580c,#f97316);
+  color: #fff; font-size: 10px; font-weight: 800;
+  padding: 3px 10px; border-radius: 999px;
+  display: inline-block; margin-bottom: 12px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.plano-nome { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.plano-preco { display: flex; align-items: baseline; gap: 4px; margin-bottom: 2px; }
+.plano-preco .val { font-size: 30px; font-weight: 900; }
+.plano-preco .period { font-size: 13px; color: var(--fg3); }
+.plano-preco-riscado { font-size: 12px; color: var(--fg3); text-decoration: line-through; min-height: 16px; }
+.plano-preco-anual { font-size: 12px; color: var(--fg3); margin-bottom: 20px; min-height: 18px; }
+.plano-cta {
+  display: block; text-align: center; padding: 11px 16px;
+  border-radius: 10px; font-size: 14px; font-weight: 700;
+  transition: .2s; margin-bottom: 20px;
+}
+.plano-cta.outline { border: 1px solid var(--border); color: var(--fg2); }
+.plano-cta.outline:hover { background: rgba(255,255,255,0.05); }
+.plano-cta.laranja { background: linear-gradient(135deg,#ea580c,#f97316); color: #fff; box-shadow: 0 4px 16px rgba(249,115,22,0.3); }
+.plano-cta.laranja:hover { opacity: .9; }
+.plano-cta.roxo { background: linear-gradient(135deg,#7c3aed,#a855f7); color: #fff; box-shadow: 0 4px 16px rgba(124,58,237,0.3); }
+.plano-cta.roxo:hover { opacity: .9; }
+.plano-cta.azul { background: var(--grd); color: #fff; box-shadow: 0 4px 16px rgba(79,127,255,0.3); }
+.plano-cta.azul:hover { opacity: .9; }
+.plano-icons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.plano-icon-pill { background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; font-size: 11px; color: var(--fg2); }
+.plano-feats { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+.plano-feats li { font-size: 13px; color: var(--fg2); display: flex; align-items: flex-start; gap: 7px; }
+.plano-feats li.off { opacity: .45; }
+.ck { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+@media (max-width: 900px) { .planos-grid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 540px) { .planos-grid { grid-template-columns: 1fr; } .planos-wrap { padding: 32px 16px; } }
+
+/* ── PLANOS BOX (cards + tabela integrada) ── */
+.planos-box{border:1px solid var(--border);border-radius:22px;overflow:hidden;background:var(--bg2);box-shadow:0 0 60px rgba(79,127,255,.05)}
+.cards-row{display:grid;grid-template-columns:25% repeat(4,18.75%);align-items:stretch;border-bottom:2px solid var(--border)}
+.cards-label{padding:16px 20px;display:flex;align-items:center;justify-content:center;text-align:center}
+.fnv-card{display:flex;flex-direction:column;border-left:1px solid var(--border);padding:48px 18px 20px;position:relative}
+.fnv-card.fnv-familia{background:linear-gradient(170deg,rgba(249,115,22,.08),transparent 55%);border-top:2px solid rgba(249,115,22,.5)}
+.fnv-card.fnv-premium{background:linear-gradient(170deg,rgba(167,139,250,.08),transparent 55%);border-top:2px solid rgba(167,139,250,.4)}
+.fnv-badge-pop{position:absolute;top:0;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#ea580c,#f97316);color:#fff;font-size:9px;font-weight:800;padding:3px 10px;border-radius:0 0 8px 8px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.fnv-tbl{width:100%;border-collapse:collapse;table-layout:fixed}
+.fnv-tbl colgroup col:first-child{width:25%}
+.fnv-tbl colgroup col{width:18.75%}
+.fnv-tbl td{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;vertical-align:middle}
+.fnv-feat{padding-left:20px;color:var(--fg2);text-align:left}
+.fnv-chk{text-align:center;border-left:1px solid var(--border);font-size:13px}
+.fnv-chk.y{color:#4ade80}
+.fnv-chk.n{color:var(--fg3);opacity:.4}
+.fnv-group-row td{background:rgba(0,0,0,.3);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;padding:7px 0 7px 20px;color:var(--fg3)}
+.fnv-group-row.fnv-basico  td{color:#818cf8}
+.fnv-group-row.fnv-familia td{color:#f97316}
+.fnv-group-row.fnv-premium td{color:#a78bfa}
+@media(max-width:860px){.cards-row{grid-template-columns:1fr}.cards-label{display:none}.fnv-card{border-left:none;border-top:1px solid var(--border)}.fnv-tbl{display:none}}
+
+/* ── SEM ASTERISCO ── */
+.sem-asterisco {
+  margin-top: 40px; padding: 36px 32px;
+  border: 1px solid rgba(79,127,255,0.2); border-radius: 16px;
+  background: rgba(79,127,255,0.04);
+  text-align: center;
+}
+.sem-asterisco h3 { font-size: 26px; font-weight: 900; margin-bottom: 8px; }
+.sem-asterisco p { color: var(--fg2); font-size: 15px; margin-bottom: 24px; }
+.sem-feat-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 24px; margin-bottom: 28px; }
+.sem-feat-row span { font-size: 14px; color: var(--fg2); display: flex; align-items: center; gap: 6px; }
+.sem-feat-row span::before { content: '✓'; color: var(--green); font-weight: 700; }
+
+/* ── DEPOIMENTOS ── */
+.depos-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.depo-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 24px;
+}
+.depo-stars { color: #fbbf24; font-size: 14px; margin-bottom: 12px; }
+.depo-text { font-size: 14px; color: var(--fg2); line-height: 1.7; margin-bottom: 16px; }
+.depo-author { display: flex; align-items: center; gap: 10px; }
+.depo-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: #fff; flex-shrink: 0; }
+.depo-name { font-size: 13px; font-weight: 700; }
+.depo-role { font-size: 12px; color: var(--fg3); }
+@media (max-width: 768px) { .depos-grid { grid-template-columns: 1fr; } }
+
+/* ── FAQ ── */
+.faq-list { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 2px; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); }
+.faq-item { background: var(--bg2); border-bottom: 1px solid var(--border); }
+.faq-item:last-child { border-bottom: none; }
+.faq-q {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 24px; background: none; border: none; cursor: pointer;
+  color: var(--fg1); font-size: 15px; font-weight: 600; text-align: left; gap: 16px;
+  transition: background .15s;
+}
+.faq-q:hover { background: rgba(255,255,255,0.03); }
+.faq-icon { font-size: 18px; color: var(--accent); flex-shrink: 0; transition: transform .2s; }
+.faq-a { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+.faq-a-inner { padding: 0 24px 18px; font-size: 14px; color: var(--fg2); line-height: 1.75; }
+.faq-item.open .faq-icon { transform: rotate(45deg); }
+.faq-item.open .faq-a { max-height: 300px; }
+
+/* ── CTA FINAL ── */
+.cta-final {
+  padding: 80px 24px;
+  background: linear-gradient(135deg, rgba(79,127,255,0.08), rgba(124,58,237,0.08));
+  border-top: 1px solid var(--border); text-align: center;
+}
+.cta-final h2 { font-size: clamp(28px, 4vw, 48px); font-weight: 900; letter-spacing: -0.8px; margin-bottom: 14px; }
+.cta-final p { font-size: 17px; color: var(--fg2); margin-bottom: 36px; max-width: 480px; margin-left: auto; margin-right: auto; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--bg2); border-top: 1px solid var(--border);
+  padding: 48px 24px 32px;
+}
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; max-width: 1080px; margin: 0 auto 40px; }
+.footer-brand .logo { font-size: 20px; margin-bottom: 10px; }
+.footer-brand p { font-size: 13px; color: var(--fg3); line-height: 1.65; max-width: 220px; }
+.footer-col h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--fg3); margin-bottom: 14px; }
+.footer-col a { display: block; font-size: 14px; color: var(--fg2); margin-bottom: 8px; transition: color .2s; }
+.footer-col a:hover { color: var(--fg1); }
+.footer-bottom { max-width: 1080px; margin: 0 auto; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.footer-bottom p { font-size: 13px; color: var(--fg3); }
+.footer-social { display: flex; gap: 14px; }
+.footer-social a { font-size: 18px; opacity: .5; transition: opacity .2s; }
+.footer-social a:hover { opacity: 1; }
+@media (max-width: 768px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .footer-grid { grid-template-columns: 1fr; } .footer-bottom { flex-direction: column; align-items: flex-start; } }
+
+/* compare table */
+.compare-wrap { overflow-x: auto; border-radius: 16px; border: 1px solid var(--border); }
+.compare-table { width: 100%; border-collapse: collapse; min-width: 580px; }
+.compare-table th, .compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
+.compare-table th { background: var(--bg2); font-size: 12px; font-weight: 700; }
+.compare-table td:first-child { color: var(--fg2); }
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
+.chk-yes { color: #4ade80; font-weight: 700; }
+.chk-no { color: var(--fg3); }
+.plan-th { text-align: center; padding: 4px 0; }
+.unlock-row td { background: var(--bg3) !important; }
+.col-free, .col-basic, .col-familia, .col-premium { text-align: center; }
+
+section { padding: 80px 0; }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<header>
+  <nav>
+    <div class="logo"><span>Finanvô</span></div>
+    <div class="nav-links">
+      <a href="#recursos">Recursos</a>
+      <a href="#planos">Planos</a>
+      <a href="#faq">FAQ</a>
+      <a href="finapp.html" class="btn-nav">Entrar no app →</a>
+    </div>
+  </nav>
+</header>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-badge">💰 Controle financeiro familiar</div>
+  <h1>Suas finanças organizadas.<br><em>De verdade. Sem complicação.</em></h1>
+  <p>Dashboard, metas, semáforo financeiro e IA para analisar seus gastos — tudo num só lugar, funciona offline e instala no celular.</p>
+  <div class="hero-btns">
+    <a href="finapp.html" class="btn-primary">Começar grátis → </a>
+    <a href="#planos" class="btn-secondary">Ver planos</a>
+  </div>
+  <p class="hero-trust"><span>✓</span> Gratuito para sempre &nbsp;·&nbsp; <span>✓</span> Sem cartão de crédito &nbsp;·&nbsp; <span>✓</span> Cancele quando quiser</p>
+
+  <!-- App mockup -->
+  <div class="mockup-wrap" style="margin-top:56px">
+    <div class="mockup-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <div class="mockup-url">🔒 appfinanvo.com.br/finapp.html</div>
+    </div>
+    <div class="mockup-body">
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-label">Saldo do mês</div><div class="kpi-val g">+R$1.240</div></div>
+        <div class="kpi"><div class="kpi-label">Despesas</div><div class="kpi-val r">R$3.860</div></div>
+        <div class="kpi"><div class="kpi-label">Receitas</div><div class="kpi-val b">R$5.100</div></div>
+      </div>
+      <div class="sem-row">
+        <div class="sem ok">✅ Alimentação — dentro do limite</div>
+        <div class="sem att">⚠️ Lazer — 85% do limite</div>
+        <div class="sem pago">📌 Aluguel — pago</div>
+      </div>
+      <div class="bar-list">
+        <div class="bar-item">
+          <div class="bar-info"><span>🏠 Moradia</span><span>R$1.800 / R$2.000</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:90%;background:linear-gradient(90deg,#f59e0b,#ef4444)"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-info"><span>🍔 Alimentação</span><span>R$680 / R$900</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:75%;background:linear-gradient(90deg,#4f7fff,#22c55e)"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-info"><span>🚗 Transporte</span><span>R$320 / R$500</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:64%;background:linear-gradient(90deg,#4f7fff,#22c55e)"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── LOGOS ── -->
+<div class="logos-strip">
+  <div class="container">
+    <p class="logos-label">Funciona com as ferramentas que você já usa</p>
+    <div class="logos-row">
+      <span>🔥 Hotmart</span>
+      <span>☁️ Firebase</span>
+      <span>🤖 Llama 3.1 IA</span>
+      <span>📱 PWA</span>
+      <span>🔒 Google Auth</span>
+      <span>📄 PDF Export</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── RECURSOS ── -->
+<section id="recursos">
+  <div class="container">
+    <div class="sec-hd">
+      <div class="eyebrow">✦ Recursos</div>
+      <h2>Tudo que a família precisa</h2>
+      <p>De despesas fixas ao relatório do mês — sem planilhas nem complicação.</p>
+    </div>
+
+    <!-- Filtros -->
+    <div class="rec-filtros">
+      <button class="rec-filtro active" onclick="fnvFiltroRec('todos',this)">Todos</button>
+      <button class="rec-filtro" onclick="fnvFiltroRec('controle',this)">Controle</button>
+      <button class="rec-filtro" onclick="fnvFiltroRec('relatorios',this)">Relatórios</button>
+      <button class="rec-filtro" onclick="fnvFiltroRec('familia',this)">Família</button>
+    </div>
+
+    <!-- Cards -->
+    <div class="rec-grid">
+
+      <!-- Dashboard -->
+      <div class="rec-card" data-cat="controle">
+        <div class="rec-preview rec-prev-dashboard">
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:6px">Novembro</div>
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <div style="width:18px;height:18px;border-radius:50%;background:#22c55e"></div>
+            <div style="width:18px;height:18px;border-radius:50%;background:#f59e0b"></div>
+            <div style="width:18px;height:18px;border-radius:50%;background:#ef4444"></div>
+          </div>
+          <div style="font-size:22px;font-weight:800;color:#4ade80">R$ 1.240</div>
+          <div style="font-size:11px;color:#4ade80;margin-top:2px">sobrou este mês ✓</div>
+        </div>
+        <div class="rec-body">
+          <div class="rec-title">🖥️ Dashboard em tempo real</div>
+          <p class="rec-desc">Semáforo financeiro que mostra instantaneamente se você está no verde, amarelo ou vermelho — com saldo, entradas e saídas do mês.</p>
+          <ul class="rec-bullets">
+            <li>Atualiza automaticamente a cada lançamento</li>
+            <li>Histórico dos últimos 12 meses em gráfico</li>
+            <li>Alertas quando se aproxima do limite</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Metas -->
+      <div class="rec-card" data-cat="controle">
+        <div class="rec-preview">
+          <div style="display:flex;flex-direction:column;gap:7px;width:100%">
+            <div class="rec-barra-row"><span>Alimentação</span><div class="rec-barra"><div style="width:72%;background:#4ade80"></div></div><span>72%</span></div>
+            <div class="rec-barra-row"><span>Lazer</span><div class="rec-barra"><div style="width:95%;background:#ef4444"></div></div><span style="color:#ef4444">95%</span></div>
+            <div class="rec-barra-row"><span>Moradia</span><div class="rec-barra"><div style="width:45%;background:#4ade80"></div></div><span>45%</span></div>
+            <div class="rec-barra-row"><span>Transporte</span><div class="rec-barra"><div style="width:61%;background:#f59e0b"></div></div><span>61%</span></div>
+          </div>
+        </div>
+        <div class="rec-body">
+          <div class="rec-title">🎯 Metas por categoria <span class="rec-novo">NOVO</span></div>
+          <p class="rec-desc">Defina um limite mensal para cada categoria e veja em tempo real quanto já foi gasto — com alerta visual quando estiver perto do limite.</p>
+          <ul class="rec-bullets">
+            <li>Barra de progresso por categoria</li>
+            <li>Alerta em vermelho ao ultrapassar</li>
+            <li>Comparativo com o mês anterior</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- PDF -->
+      <div class="rec-card" data-cat="relatorios">
+        <div class="rec-preview" style="justify-content:center">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;text-align:center">
+            <div style="font-size:10px;color:#94a3b8;letter-spacing:1px;margin-bottom:4px">RELATÓRIO</div>
+            <div style="font-size:14px;font-weight:700;margin-bottom:8px">Novembro<br>2026</div>
+            <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(239,68,68,.15);color:#f87171;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700">🔴 PDF</div>
+          </div>
+        </div>
+        <div class="rec-body">
+          <div class="rec-title">📄 Relatório PDF mensal <span class="rec-novo">NOVO</span></div>
+          <p class="rec-desc">Gere um relatório completo do mês com KPIs, gráfico de pizza por categoria e lista de lançamentos — salve ou imprima com um toque.</p>
+          <ul class="rec-bullets">
+            <li>KPIs: entradas, saídas, saldo e economia</li>
+            <li>Gráfico de categorias e top gastos</li>
+            <li>Funciona offline após abrir o app</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Despesas fixas -->
+      <div class="rec-card" data-cat="controle">
+        <div class="rec-preview">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;width:100%">
+            <div class="rec-tag-item">Aluguel<br><span style="color:#4ade80">✓</span></div>
+            <div class="rec-tag-item">Internet<br><span style="color:#4ade80">✓</span></div>
+            <div class="rec-tag-item">Água<br><span style="color:#4ade80">✓</span></div>
+            <div class="rec-tag-item">Energia<br><span style="color:#4ade80">✓</span></div>
+            <div class="rec-tag-item">Netflix<br><span style="color:#4ade80">✓</span></div>
+            <div class="rec-tag-item" style="border-color:rgba(239,68,68,.4)">Plano<br><span style="color:#ef4444">!</span></div>
+            <div class="rec-tag-item">Gympass<br><span style="color:#4ade80">✓</span></div>
+            <div class="rec-tag-item">Seguro<br><span style="color:#4ade80">✓</span></div>
+          </div>
+        </div>
+        <div class="rec-body">
+          <div class="rec-title">🏦 Despesas fixas e dívidas</div>
+          <p class="rec-desc">Cadastre aluguel, assinaturas e parcelas uma só vez. O app lança automaticamente todo mês — sem você precisar lembrar.</p>
+          <ul class="rec-bullets">
+            <li>Lançamento automático todo mês</li>
+            <li>Controle de dívidas com parcelas</li>
+            <li>Visão de tudo que ainda falta pagar</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Multi-usuário -->
+      <div class="rec-card" data-cat="familia">
+        <div class="rec-preview" style="justify-content:center;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:-4px">
+            <div class="rec-avatar">👩</div>
+            <div class="rec-avatar" style="margin-left:-8px">👨</div>
+            <div class="rec-avatar" style="margin-left:-8px">👧</div>
+            <div class="rec-avatar" style="margin-left:-8px">👦</div>
+          </div>
+          <div style="font-size:12px;color:#94a3b8;text-align:center">4 membros · dados isolados<br>sincronizados na nuvem ☁️</div>
+        </div>
+        <div class="rec-body">
+          <div class="rec-title">👨‍👩‍👧 Multi-usuário com login</div>
+          <p class="rec-desc">Cada membro da família tem sua própria conta com dados completamente separados — mas todos no mesmo app, sincronizados em tempo real.</p>
+          <ul class="rec-bullets">
+            <li>Login com e-mail ou Google</li>
+            <li>Dados isolados por usuário</li>
+            <li>Sincronização automática na nuvem</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- PWA -->
+      <div class="rec-card" data-cat="familia">
+        <div class="rec-preview" style="justify-content:center;flex-direction:column;gap:8px">
+          <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#4f7fff,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:24px">📱</div>
+          <div style="text-align:center">
+            <div style="font-size:22px;font-weight:800">Instala em<br><span style="color:#4f7fff">3s</span></div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:2px">sem App Store</div>
+          </div>
+        </div>
+        <div class="rec-body">
+          <div class="rec-title">📲 Instala como app (PWA)</div>
+          <p class="rec-desc">Adicione o Finanvô direto na tela inicial do seu celular. Abre como app nativo, funciona offline e não ocupa espaço de armazenamento.</p>
+          <ul class="rec-bullets">
+            <li>Funciona sem internet (offline)</li>
+            <li>Sem passar pela App Store</li>
+            <li>Notificações push disponíveis</li>
+          </ul>
+        </div>
+      </div>
+
+    </div><!-- /rec-grid -->
+  </div>
+</section>
+
+<style>
+.rec-filtros{display:flex;gap:8px;justify-content:center;margin-bottom:36px;flex-wrap:wrap}
+.rec-filtro{padding:8px 20px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--fg2);font-size:14px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit}
+.rec-filtro:hover{border-color:var(--accent);color:var(--fg1)}
+.rec-filtro.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.rec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.rec-card{background:var(--bg2);border:1px solid var(--border);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:.2s}
+.rec-card:hover{border-color:rgba(79,127,255,.35);transform:translateY(-2px)}
+.rec-card.hidden{display:none}
+.rec-preview{background:var(--bg3);padding:20px;min-height:120px;display:flex;align-items:center;border-bottom:1px solid var(--border)}
+.rec-body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:8px}
+.rec-title{font-size:15px;font-weight:700;color:var(--fg1);display:flex;align-items:center;gap:6px}
+.rec-desc{font-size:13px;color:var(--fg2);line-height:1.6}
+.rec-bullets{list-style:none;padding:0;margin:4px 0 0;display:flex;flex-direction:column;gap:4px}
+.rec-bullets li{font-size:12px;color:var(--fg3);padding-left:14px;position:relative}
+.rec-bullets li::before{content:"·";position:absolute;left:0;color:var(--accent)}
+.rec-novo{font-size:9px;font-weight:800;background:rgba(79,127,255,.2);color:#818cf8;padding:2px 6px;border-radius:4px;letter-spacing:.5px}
+.rec-barra-row{display:flex;align-items:center;gap:6px;font-size:11px;color:#94a3b8}
+.rec-barra-row span:first-child{width:72px;flex-shrink:0}
+.rec-barra-row span:last-child{width:28px;flex-shrink:0;text-align:right}
+.rec-barra{flex:1;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.rec-barra div{height:100%;border-radius:3px;transition:.4s}
+.rec-tag-item{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:5px;text-align:center;font-size:10px;color:var(--fg2);line-height:1.4}
+.rec-avatar{width:34px;height:34px;border-radius:50%;background:var(--bg3);border:2px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:18px}
+@media(max-width:860px){.rec-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:540px){.rec-grid{grid-template-columns:1fr}}
+</style>
+
+<script>
+function fnvFiltroRec(cat, btn) {
+  document.querySelectorAll('.rec-filtro').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.rec-card').forEach(c => {
+    if (cat === 'todos' || c.dataset.cat === cat) c.classList.remove('hidden');
+    else c.classList.add('hidden');
+  });
+}
+</script>
+
+<!-- ── COMO FUNCIONA ── -->
+<section style="background: var(--bg2)">
+  <div class="container">
+    <div class="sec-hd">
+      <div class="eyebrow">Como funciona</div>
+      <h2>Em 3 minutos você já está<br>controlando suas finanças</h2>
+    </div>
+    <div class="steps-list">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <h3>Crie sua conta</h3>
+        <p>Entre com Google ou e-mail. Rápido, seguro e gratuito. Sem cartão de crédito.</p>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <h3>Configure suas despesas</h3>
+        <p>O onboarding guiado sugere as categorias mais comuns. Ajuste os valores da sua realidade.</p>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <h3>Acompanhe o mês</h3>
+        <p>Lance entradas e saídas, veja o semáforo em tempo real e receba alertas de vencimento.</p>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:48px">
+      <a href="finapp.html" class="btn-primary" style="font-size:17px;padding:16px 40px">Começar agora — grátis →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── PLANOS ── -->
+<section id="planos">
+  <div class="container">
+    <div class="sec-hd">
+      <div class="eyebrow">✦ Planos Finanvô</div>
+      <h2>Simples, transparente,<br>sem surpresas</h2>
+      <p>Comece grátis. Faça upgrade quando sua vida financeira pedir mais.</p>
+    </div>
+    <div class="planos-wrap">
+      <!-- Toggle -->
+      <div class="preco-toggle">
+        <span class="ativo" id="lbl-mensal">Mensal</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-anual" onchange="fnvToggleAnual(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span id="lbl-anual">Anual</span>
+        <span class="desconto-badge">-15% off</span>
+      </div>
+
+      <!-- Box integrado: cards + tabela -->
+      <div class="planos-box">
+        <div class="cards-row">
+          <div class="cards-label"><span style="font-size:clamp(18px,2vw,26px);font-weight:900;letter-spacing:-0.5px;color:var(--fg1);line-height:1.2">Funcionalidade<br>de cada plano</span></div>
+
+          <!-- Grátis -->
+          <div class="fnv-card">
+            <div class="plano-nome" style="color:#64748b">Grátis</div>
+            <div class="plano-preco-riscado">&nbsp;</div>
+            <div class="plano-preco"><div class="val">R$0</div><div class="period">/mês</div></div>
+            <div class="plano-preco-anual">para sempre</div>
+            <a href="finapp.html" class="plano-cta outline">Começar grátis →</a>
+            <div class="plano-icons"><div class="plano-icon-pill">📱 PWA</div><div class="plano-icon-pill">☁️ Nuvem</div></div>
+          </div>
+
+          <!-- Básico -->
+          <div class="fnv-card">
+            <div class="plano-nome" style="color:#818cf8">Básico</div>
+            <div class="plano-preco-riscado" id="riscado-basico">&nbsp;</div>
+            <div class="plano-preco"><div class="val" id="val-basico">R$12,99</div><div class="period">/mês</div></div>
+            <div class="plano-preco-anual" id="anual-basico">ou R$149/ano</div>
+            <a href="https://go.hotmart.com/U108262502C" target="_blank" class="plano-cta azul">Testar 7 dias grátis</a>
+            <div class="plano-icons"><div class="plano-icon-pill">📊 Gráficos</div><div class="plano-icon-pill">🎯 Metas</div><div class="plano-icon-pill">📄 PDF</div></div>
+          </div>
+
+          <!-- Família -->
+          <div class="fnv-card fnv-familia">
+            <div class="fnv-badge-pop">⭐ Mais popular</div>
+            <div class="plano-nome" style="color:#f97316">Família</div>
+            <div class="plano-preco-riscado" id="riscado-familia">&nbsp;</div>
+            <div class="plano-preco"><div class="val" id="val-familia">R$22,99</div><div class="period">/mês</div></div>
+            <div class="plano-preco-anual" id="anual-familia">ou R$249/ano</div>
+            <a href="https://go.hotmart.com/U108265754P" target="_blank" class="plano-cta laranja">Testar 7 dias grátis</a>
+            <div class="plano-icons"><div class="plano-icon-pill">👨‍👩‍👧 6 usuários</div><div class="plano-icon-pill">🔔 Lembretes</div><div class="plano-icon-pill">💬 WhatsApp</div></div>
+          </div>
+
+          <!-- Premium -->
+          <div class="fnv-card fnv-premium">
+            <div class="plano-nome" style="color:#a78bfa">Premium</div>
+            <div class="plano-preco-riscado" id="riscado-premium">&nbsp;</div>
+            <div class="plano-preco"><div class="val" id="val-premium">R$32,99</div><div class="period">/mês</div></div>
+            <div class="plano-preco-anual" id="anual-premium">ou R$349/ano</div>
+            <a href="https://go.hotmart.com/A108265910E" target="_blank" class="plano-cta roxo">Testar 7 dias grátis</a>
+            <div class="plano-icons"><div class="plano-icon-pill">🤖 IA</div><div class="plano-icon-pill">📈 Projeções</div><div class="plano-icon-pill">📥 OFX/CSV</div></div>
+          </div>
+        </div>
+
+        <!-- Tabela de features -->
+        <table class="fnv-tbl">
+          <colgroup><col style="width:25%"><col style="width:18.75%"><col style="width:18.75%"><col style="width:18.75%"><col style="width:18.75%"></colgroup>
+          <tbody>
+            <tr class="fnv-group-row"><td colspan="5">📊 Controle básico — disponível em todos os planos</td></tr>
+            <tr><td class="fnv-feat">Dashboard semáforo financeiro</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Lançamento de despesas e receitas</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Despesas fixas e recorrentes</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Sincronização na nuvem em tempo real</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">PWA — instala no celular sem app store</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Histórico dos últimos 3 meses</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr class="fnv-group-row fnv-basico"><td colspan="5">🔓 Desbloqueado no Básico</td></tr>
+            <tr><td class="fnv-feat">Gráficos histórico 12 meses</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Metas de gastos por categoria</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Relatório PDF mensal completo</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Categorias personalizadas ilimitadas</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Suporte por e-mail</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr class="fnv-group-row fnv-familia"><td colspan="5">🔓 Desbloqueado no Família</td></tr>
+            <tr><td class="fnv-feat">Até 6 usuários na mesma conta</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Orçamento compartilhado entre membros</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Lembretes automáticos de contas a pagar</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Notificações push no celular</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Suporte por WhatsApp</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td><td class="fnv-chk y">✓</td></tr>
+            <tr class="fnv-group-row fnv-premium"><td colspan="5">🔓 Desbloqueado no Premium</td></tr>
+            <tr><td class="fnv-feat">Análise de gastos com Inteligência Artificial</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Importação de extrato OFX / CSV</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Projeções e tendências financeiras</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Dicas personalizadas de economia via IA</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td></tr>
+            <tr><td class="fnv-feat">Suporte VIP com resposta prioritária</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk n">–</td><td class="fnv-chk y">✓</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Gratuito -->
+      <div style="margin-top:14px;text-align:center;padding:13px 20px;background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:14px">
+        <span style="font-size:13px;color:var(--fg2)">✅ <strong style="color:var(--fg1)">Gratuito.</strong> — Sem cartão de crédito para começar. Cancele quando quiser, sem burocracia.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── DEPOIMENTOS ── -->
+<section style="background:var(--bg2)">
+  <div class="container">
+    <div class="sec-hd">
+      <div class="eyebrow">Depoimentos</div>
+      <h2>Quem usa, não quer largar</h2>
+    </div>
+    <div class="depos-grid">
+      <div class="depo-card">
+        <div class="depo-stars">★★★★★</div>
+        <p class="depo-text">"Finalmente um app que mostra tudo numa tela só. O semáforo é genial — eu sei na hora se posso gastar ou não. Uso todos os dias."</p>
+        <div class="depo-author">
+          <div class="depo-avatar" style="background:linear-gradient(135deg,#4f7fff,#7c3aed)">M</div>
+          <div><div class="depo-name">Mariana S.</div><div class="depo-role">Plano Família · São Paulo</div></div>
+        </div>
+      </div>
+      <div class="depo-card">
+        <div class="depo-stars">★★★★★</div>
+        <p class="depo-text">"Já tentei vários apps de finanças e esse é o único que a minha esposa também consegue usar sem pedir ajuda. Interface muito limpa."</p>
+        <div class="depo-author">
+          <div class="depo-avatar" style="background:linear-gradient(135deg,#f97316,#ef4444)">R</div>
+          <div><div class="depo-name">Ricardo P.</div><div class="depo-role">Plano Premium · Curitiba</div></div>
+        </div>
+      </div>
+      <div class="depo-card">
+        <div class="depo-stars">★★★★★</div>
+        <p class="depo-text">"A análise com IA me mostrou que eu gastava R$400/mês a mais em delivery do que achava. Economizei R$1.200 em 3 meses."</p>
+        <div class="depo-author">
+          <div class="depo-avatar" style="background:linear-gradient(135deg,#22c55e,#059669)">A</div>
+          <div><div class="depo-name">Ana L.</div><div class="depo-role">Plano Premium · Belo Horizonte</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ── -->
+<section id="faq">
+  <div class="container">
+    <div class="sec-hd">
+      <div class="eyebrow">Dúvidas frequentes</div>
+      <h2>Perguntas frequentes</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>Preciso de cartão de crédito para testar?</span>
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Não. O plano gratuito não exige cartão e não tem limite de tempo. Para os planos pagos, o teste de 7 dias também é gratuito — você só é cobrado após os 7 dias se decidir continuar.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>Posso cancelar quando quiser?</span>
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Sim. Cancele com um clique, sem burocracia. Seus dados ficam disponíveis até o fim do período pago, e você pode continuar usando o plano gratuito depois.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>Como funciona o plano Família?</span>
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Até 6 pessoas podem usar a mesma conta com seus próprios acessos. Cada um lança seus gastos e todos veem o painel consolidado da família. Ideal para casais e famílias que querem ter controle juntos.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>Meus dados ficam seguros?</span>
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Seus dados são armazenados no Firebase (Google), com criptografia em trânsito e em repouso. Nenhum dado financeiro seu é compartilhado com terceiros. A autenticação usa o próprio Google Auth.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>O app funciona sem internet?</span>
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Sim. O Finanvô é um PWA (Progressive Web App) e funciona offline. Você lança gastos mesmo sem conexão e eles sincronizam automaticamente quando a internet voltar.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>Posso instalar no celular sem a Play Store?</span>
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Sim. Abra o app no Chrome e toque em "Adicionar à tela inicial". O Finanvô é instalado como um app nativo, sem precisar de loja de aplicativos. Funciona no Android e no iPhone.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>Como funciona a análise com IA?</span>
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">A IA analisa seus lançamentos do mês e identifica padrões de gastos, categorias que estão acima da média e oportunidades de economia. Disponível nos planos Premium. Rodamos o modelo Llama 3.1 no Cloudflare.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>O pagamento é feito como?</span>
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Pelo Hotmart — plataforma segura e confiável usada por milhares de produtos digitais no Brasil. Aceitamos cartão de crédito, boleto e PIX.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA FINAL ── -->
+<div class="cta-final">
+  <div class="container">
+    <h2>Comece a controlar suas finanças<br>ainda hoje</h2>
+    <p>Gratuito, sem cartão de crédito, sem asterisco. Instala no celular em segundos.</p>
+    <a href="finapp.html" class="btn-primary" style="font-size:17px;padding:16px 44px">Começar agora — grátis →</a>
+    <p style="margin-top:16px;font-size:13px;color:var(--fg3)">🔒 Pagamento seguro via Hotmart · Cancele quando quiser · Seus dados são sempre seus</p>
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="logo" style="margin-bottom:10px"><span>Finanvô</span></div>
+      <p>Controle financeiro familiar simples, poderoso e gratuito. Sem asterisco.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Produto</h4>
+      <a href="#recursos">Recursos</a>
+      <a href="#planos">Planos</a>
+      <a href="finapp.html">Entrar no app</a>
+    </div>
+    <div class="footer-col">
+      <h4>Empresa</h4>
+      <a href="#faq">FAQ</a>
+      <a href="politica.html">Política de Privacidade</a>
+      <a href="termos.html">Termos de Serviço</a>
+    </div>
+    <div class="footer-col">
+      <h4>Contato</h4>
+      <a href="mailto:cledyrtaveira@gmail.com">E-mail</a>
+      <a href="https://go.hotmart.com/U108262502C" target="_blank">Comprar via Hotmart</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 Finanvô · Todos os direitos reservados</p>
+    <div class="footer-social">
+      <a href="#">📸</a>
+      <a href="#">💼</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Toggle planos mensal/anual
+(function(){
+  const planos = {
+    basico:  { mensal: 12.99, anual: 149 },
+    familia: { mensal: 22.99, anual: 249 },
+    premium: { mensal: 32.99, anual: 349 },
+  };
+  window.fnvToggleAnual = function(anual) {
+    document.getElementById('lbl-mensal').classList.toggle('ativo', !anual);
+    document.getElementById('lbl-anual').classList.toggle('ativo', anual);
+    Object.entries(planos).forEach(([k, v]) => {
+      const mensal = anual ? (v.anual / 12) : v.mensal;
+      const riscado = anual ? `R$${v.mensal.toFixed(2).replace('.',',')}` : '';
+      const anualText = anual ? `R$${v.anual}/ano` : `ou R$${v.anual}/ano`;
+      const el = document.getElementById('val-' + k);
+      if (el) el.textContent = `R$${mensal.toFixed(2).replace('.',',')}`;
+      const ris = document.getElementById('riscado-' + k);
+      if (ris) ris.textContent = riscado;
+      const anu = document.getElementById('anual-' + k);
+      if (anu) anu.textContent = anualText;
+    });
+  };
+})();
+
+// Alinha botões dos cards de planos na mesma altura
+function fnvAlignButtons(){
+  const btns = document.querySelectorAll('.fnv-card .plano-cta');
+  if(!btns.length) return;
+  btns.forEach(b => b.style.marginTop='');
+  let maxTop = 0;
+  btns.forEach(b => {
+    const diff = b.getBoundingClientRect().top - b.closest('.fnv-card').getBoundingClientRect().top;
+    if(diff > maxTop) maxTop = diff;
+  });
+  btns.forEach(b => {
+    const diff = maxTop - (b.getBoundingClientRect().top - b.closest('.fnv-card').getBoundingClientRect().top);
+    if(diff > 0) b.style.marginTop = diff + 'px';
+  });
+}
+document.addEventListener('DOMContentLoaded', fnvAlignButtons);
+window.addEventListener('resize', fnvAlignButtons);
+
+// FAQ accordion
+function toggleFaq(btn) {
+  const item = btn.closest('.faq-item');
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+
+// Header scroll effect
+window.addEventListener('scroll', () => {
+  document.querySelector('header').style.borderBottomColor =
+    window.scrollY > 10 ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.07)';
+});
+</script>
+</body>
+</html>

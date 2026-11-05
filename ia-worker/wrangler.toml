@@ -1,0 +1,7 @@
+name = "finanvo-ia"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Workers AI binding (gratuito até 10.000 req/dia)
+[ai]
+binding = "AI"

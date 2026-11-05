@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4f7fff"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="gicon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f7fff"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fundo -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Linha de gradiente decorativa -->
+  <rect x="0" y="0" width="1200" height="3" fill="url(#accent)"/>
+
+  <!-- Ícone logo -->
+  <rect x="80" y="220" width="96" height="96" rx="22" fill="url(#gicon)"/>
+  <polyline points="105,280 128,250 151,280" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="103" y1="288" x2="153" y2="288" stroke="white" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- Nome do app -->
+  <text x="196" y="286" font-family="Inter, system-ui, sans-serif" font-size="64" font-weight="900" fill="white" letter-spacing="-2">Finan</text>
+  <text x="196" y="286" font-family="Inter, system-ui, sans-serif" font-size="64" font-weight="900" fill="url(#accent)" letter-spacing="-2">
+    <tspan x="430" y="286">vô</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="80" y="342" font-family="Inter, system-ui, sans-serif" font-size="22" fill="#a8b8d8" letter-spacing=".2">Controle financeiro familiar · simples e gratuito</text>
+
+  <!-- Cards de preview -->
+  <rect x="80" y="390" width="200" height="72" rx="12" fill="#1e2537" opacity="0.8"/>
+  <text x="100" y="422" font-family="Inter, sans-serif" font-size="11" fill="#64748b" text-transform="uppercase" letter-spacing="1">Saldo do mês</text>
+  <text x="100" y="448" font-family="Inter, sans-serif" font-size="20" font-weight="800" fill="#4ade80">+R$ 1.240</text>
+
+  <rect x="300" y="390" width="200" height="72" rx="12" fill="#1e2537" opacity="0.8"/>
+  <text x="320" y="422" font-family="Inter, sans-serif" font-size="11" fill="#64748b" letter-spacing="1">Despesas</text>
+  <text x="320" y="448" font-family="Inter, sans-serif" font-size="20" font-weight="800" fill="#f87171">-R$ 3.860</text>
+
+  <rect x="520" y="390" width="200" height="72" rx="12" fill="#1e2537" opacity="0.8"/>
+  <text x="540" y="422" font-family="Inter, sans-serif" font-size="11" fill="#64748b" letter-spacing="1">Meta atingida</text>
+  <text x="540" y="448" font-family="Inter, sans-serif" font-size="20" font-weight="800" fill="#818cf8">78%</text>
+
+  <!-- URL do app (lado direito) -->
+  <text x="1120" y="580" font-family="Inter, sans-serif" font-size="16" fill="#64748b" text-anchor="end">finanvo.com.br</text>
+</svg>

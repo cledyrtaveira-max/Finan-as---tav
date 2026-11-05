@@ -1,0 +1,165 @@
+/**
+ * Finanvô — Cloudflare Worker
+ * Recebe webhooks do Hotmart e atualiza o plano no Firebase Firestore
+ */
+
+export default {
+  async fetch(request, env) {
+    if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+
+    let payload;
+    try { payload = await request.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
+
+    // Verificar token Hotmart (header, query param ou body)
+    const hottok = request.headers.get('X-Hotmart-Hottok')
+      || new URL(request.url).searchParams.get('hottok')
+      || payload.hottok;
+    if (env.HOTMART_HOTTOK && hottok !== env.HOTMART_HOTTOK) return new Response('Unauthorized', { status: 401 });
+
+    const evento = payload.event || payload.data?.event;
+    const compra = payload.data?.purchase || payload.purchase;
+    const produto = payload.data?.product || payload.product;
+    const comprador = payload.data?.buyer || payload.buyer;
+    const email = comprador?.email;
+
+    if (!email || !evento) return new Response('OK', { status: 200 });
+
+    const ATIVAR   = ['PURCHASE_APPROVED','PURCHASE_COMPLETE','SUBSCRIPTION_REACTIVATED','PURCHASE_REACTIVATED'];
+    const CANCELAR = ['PURCHASE_CANCELED','PURCHASE_REFUNDED','SUBSCRIPTION_CANCELLATION','PURCHASE_CHARGEBACK'];
+
+    // Detectar plano pelo ID do produto (mais confiável que pelo nome)
+    const MAPA_PRODUTO = {
+      'U108262502C': 'pro',      // Básico
+      'U108265754P': 'familia',  // Família
+      'A108265910E': 'premium'   // Premium
+    };
+    const prodId = String(produto?.id || produto?.ucode || '');
+    let plano = MAPA_PRODUTO[prodId] || null;
+
+    // Fallback pelo nome (cuidado: checar basic/pro ANTES de famil para evitar
+    // que "Básico — Controle Financeiro Familiar" seja classificado como família)
+    if (!plano) {
+      const nome = (produto?.name || '').toLowerCase();
+      if (nome.includes('premium'))                                        plano = 'premium';
+      else if (nome.includes('basic') || nome.includes('básic') || nome.includes('pro')) plano = 'pro';
+      else if (nome.includes('famil'))                                     plano = 'familia';
+    }
+
+    if (!plano && !CANCELAR.includes(evento)) return new Response('OK - produto não mapeado', { status: 200 });
+
+    try {
+      if (ATIVAR.includes(evento))   await setPlano(env, email, plano, compra);
+      if (CANCELAR.includes(evento)) await setPlano(env, email, 'gratuito', compra);
+    } catch(e) {
+      console.error(e.message);
+      return new Response('Erro: ' + e.message, { status: 500 });
+    }
+
+    return new Response('OK', { status: 200 });
+  }
+};
+
+async function setPlano(env, email, plano, compra) {
+  const token = await getToken(env);
+  // Buscar UID pelo email
+  const r1 = await fetch(`https://identitytoolkit.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/accounts:lookup`, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: [email] })
+  });
+  const d1 = await r1.json();
+  const uid = d1.users?.[0]?.localId;
+
+  // Calcular data de expiração do plano
+  const planoExpira = calcularExpiracao(plano, compra);
+
+  const fields = {
+    plano:             { stringValue: plano },
+    planoAtualizadoEm: { stringValue: new Date().toISOString() },
+    planoExpira:       planoExpira ? { stringValue: planoExpira } : { nullValue: null }
+  };
+
+  const maskFields = ['plano', 'planoAtualizadoEm', 'planoExpira'];
+  const maskQuery  = maskFields.map(f => `updateMask.fieldPaths=${f}`).join('&');
+
+  if (uid) {
+    // Usuário já tem conta — atualiza direto
+    await fetch(`https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${uid}?${maskQuery}`, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields })
+    });
+  } else {
+    // Usuário ainda não criou conta — salva como pendente
+    const key = email.replace(/[.@]/g, '_');
+    await fetch(`https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/planos_pendentes/${key}`, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { ...fields, email: { stringValue: email } } })
+    });
+  }
+}
+
+/**
+ * Calcula a data de expiração do plano com base nos dados da compra Hotmart.
+ *
+ * Prioridade:
+ *  1. compra.date_next_charge  — próxima cobrança (assinaturas recorrentes)
+ *  2. compra.recurrency_period — período em meses + data da compra
+ *  3. Fallback: +31 dias a partir de agora (plano vitalício ou dado ausente)
+ *
+ * Para plano == 'gratuito' (cancelamento), retorna null (sem expiração).
+ */
+function calcularExpiracao(plano, compra) {
+  if (plano === 'gratuito') return null;
+
+  // 1) Próxima cobrança já conhecida pela Hotmart
+  const nextCharge = compra?.date_next_charge;
+  if (nextCharge) {
+    // Pode vir como timestamp ms ou ISO string
+    const d = typeof nextCharge === 'number'
+      ? new Date(nextCharge)
+      : new Date(nextCharge);
+    if (!isNaN(d.getTime())) return d.toISOString();
+  }
+
+  // 2) Calcular a partir da data da compra + período de recorrência
+  const recurrencyPeriod = compra?.recurrency_period; // em meses (ex: 1, 3, 12)
+  const orderDateRaw = compra?.order_date || compra?.approved_date;
+  if (recurrencyPeriod && orderDateRaw) {
+    const base = typeof orderDateRaw === 'number'
+      ? new Date(orderDateRaw)
+      : new Date(orderDateRaw);
+    if (!isNaN(base.getTime())) {
+      base.setMonth(base.getMonth() + Number(recurrencyPeriod));
+      return base.toISOString();
+    }
+  }
+
+  // 3) Fallback: 31 dias a partir de agora
+  const fallback = new Date();
+  fallback.setDate(fallback.getDate() + 31);
+  return fallback.toISOString();
+}
+
+async function getToken(env) {
+  const now = Math.floor(Date.now() / 1000);
+  const b64 = o => btoa(JSON.stringify(o)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const sig = b64({ alg:'RS256', typ:'JWT' }) + '.' + b64({
+    iss: env.FIREBASE_CLIENT_EMAIL, sub: env.FIREBASE_CLIENT_EMAIL,
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now, exp: now + 3600,
+    scope: 'https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/identitytoolkit'
+  });
+  const pem = env.FIREBASE_PRIVATE_KEY.replace(/\\n/g,'\n');
+  const raw = Uint8Array.from(atob(pem.replace(/-----[^-]+-----|[\n\r]/g,'')), c=>c.charCodeAt(0));
+  const key = await crypto.subtle.importKey('pkcs8', raw.buffer, { name:'RSASSA-PKCS1-v1_5', hash:'SHA-256' }, false, ['sign']);
+  const signed = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(sig));
+  const jwt = sig + '.' + btoa(String.fromCharCode(...new Uint8Array(signed))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const tr = await (await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
+  })).json();
+  if (!tr.access_token) throw new Error('Token falhou: ' + JSON.stringify(tr));
+  return tr.access_token;
+}

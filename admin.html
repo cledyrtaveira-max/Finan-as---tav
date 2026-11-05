@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Finanvô — Admin</title>
+<style>
+:root {
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1e2432;
+  --border:rgba(255,255,255,.08); --accent:#6c63ff;
+  --fg1:#e2e8f0; --fg2:#94a3b8; --fg3:#64748b;
+  --green:#22c55e; --yellow:#f59e0b; --red:#ef4444; --blue:#3b82f6;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--fg1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;}
+
+/* ── OVERLAYS ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.overlay.hidden{display:none;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:36px;width:100%;max-width:380px;text-align:center;}
+.modal h2{font-size:18px;font-weight:800;margin-bottom:8px;}
+.modal p{font-size:13px;color:var(--fg2);margin-bottom:24px;}
+.pin-dots{display:flex;justify-content:center;gap:12px;margin-bottom:24px;}
+.pin-dot{width:14px;height:14px;border-radius:50%;background:var(--border);transition:.2s;}
+.pin-dot.filled{background:var(--accent);}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.pin-btn{padding:16px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--fg1);font-size:18px;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit;}
+.pin-btn:hover{background:rgba(108,99,255,.2);border-color:var(--accent);}
+.pin-btn.del{font-size:14px;color:var(--fg3);}
+.pin-err{color:var(--red);font-size:13px;min-height:18px;margin-top:8px;}
+
+/* ── LOGIN ── */
+#login-screen{
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  background:#080b12; overflow:hidden; position:relative;
+}
+#login-screen::before{
+  content:''; position:absolute; inset:0;
+  background-image:url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjgwMCIgdmlld0JveD0iMCAwIDEyMDAgODAwIj4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgLmdyaWQgeyBzdHJva2U6IHJnYmEoNzksMTI3LDI1NSwwLjA2KTsgc3Ryb2tlLXdpZHRoOiAxOyBmaWxsOiBub25lOyB9CiAgICAgIC5saW5lMSB7IHN0cm9rZTogcmdiYSg3OSwxMjcsMjU1LDAuNCk7IHN0cm9rZS13aWR0aDogMjsgZmlsbDogbm9uZTsgc3Ryb2tlLWxpbmVjYXA6IHJvdW5kOyBzdHJva2UtbGluZWpvaW46IHJvdW5kOyB9CiAgICAgIC5saW5lMiB7IHN0cm9rZTogcmdiYSg1MiwyMTEsMTUzLDAuMjUpOyBzdHJva2Utd2lkdGg6IDEuNTsgZmlsbDogbm9uZTsgc3Ryb2tlLWxpbmVjYXA6IHJvdW5kOyB9CiAgICAgIC5maWxsMSB7IGZpbGw6IHVybCgjZ3JhZDEpOyB9CiAgICAgIC5iYXIgeyBmaWxsOiByZ2JhKDc5LDEyNywyNTUsMC4wOSk7IH0KICAgICAgLmJhcjIgeyBmaWxsOiByZ2JhKDUyLDIxMSwxNTMsMC4wNyk7IH0KICAgICAgLmRvdCB7IGZpbGw6IHJnYmEoNzksMTI3LDI1NSwwLjcpOyB9CiAgICAgIC5kb3QyIHsgZmlsbDogcmdiYSg1MiwyMTEsMTUzLDAuNik7IH0KICAgICAgLnN5bSB7IGZvbnQtZmFtaWx5OiBtb25vc3BhY2U7IGZpbGw6IHJnYmEoNzksMTI3LDI1NSwwLjE1KTsgZm9udC1zaXplOiAxNHB4OyB9CiAgICAgIC5zeW0yIHsgZm9udC1mYW1pbHk6IG1vbm9zcGFjZTsgZmlsbDogcmdiYSg1MiwyMTEsMTUzLDAuMSk7IGZvbnQtc2l6ZTogMTJweDsgfQogICAgICBAa2V5ZnJhbWVzIGRyaWZ0IHsgMCV7dHJhbnNmb3JtOnRyYW5zbGF0ZVkoMCl9IDEwMCV7dHJhbnNmb3JtOnRyYW5zbGF0ZVkoLTgwMHB4KX0gfQogICAgICBAa2V5ZnJhbWVzIHB1bHNlIHsgMCUsMTAwJXtvcGFjaXR5OjAuNX0gNTAle29wYWNpdHk6MX0gfQogICAgICBAa2V5ZnJhbWVzIHdhdmUgeyAwJXt0cmFuc2Zvcm06dHJhbnNsYXRlWCgwKX0gMTAwJXt0cmFuc2Zvcm06dHJhbnNsYXRlWCgtNjAwcHgpfSB9CiAgICAgIC5wMXthbmltYXRpb246ZHJpZnQgMThzIGxpbmVhciBpbmZpbml0ZTsgfQogICAgICAucDJ7YW5pbWF0aW9uOmRyaWZ0IDI1cyBsaW5lYXIgaW5maW5pdGUgM3M7IH0KICAgICAgLnAze2FuaW1hdGlvbjpkcmlmdCAyMHMgbGluZWFyIGluZmluaXRlIDhzOyB9CiAgICAgIC5wNHthbmltYXRpb246ZHJpZnQgMzBzIGxpbmVhciBpbmZpbml0ZSAxczsgfQogICAgICAucDV7YW5pbWF0aW9uOmRyaWZ0IDIycyBsaW5lYXIgaW5maW5pdGUgMTJzOyB9CiAgICAgIC5nbG93e2FuaW1hdGlvbjpwdWxzZSA0cyBlYXNlLWluLW91dCBpbmZpbml0ZTt9CiAgICAgIC5zbGlkZXthbmltYXRpb246d2F2ZSAxMnMgbGluZWFyIGluZmluaXRlO30KICAgIDwvc3R5bGU+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQxIiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9InJnYmEoNzksMTI3LDI1NSwwLjEyKSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9InJnYmEoNzksMTI3LDI1NSwwKSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZDIiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0icmdiYSg1MiwyMTEsMTUzLDAuMDgpIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0icmdiYSg1MiwyMTEsMTUzLDApIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KCiAgPCEtLSBHcmFkZSB2ZXJ0aWNhbCAtLT4KICA8bGluZSBjbGFzcz0iZ3JpZCIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjgwMCIvPgogIDxsaW5lIGNsYXNzPSJncmlkIiB4MT0iMTAwIiB5MT0iMCIgeDI9IjEwMCIgeTI9IjgwMCIvPgogIDxsaW5lIGNsYXNzPSJncmlkIiB4MT0iMjAwIiB5MT0iMCIgeDI9IjIwMCIgeTI9IjgwMCIvPgogIDxsaW5lIGNsYXNzPSJncmlkIiB4MT0iMzAwIiB5MT0iMCIgeDI9IjMwMCIgeTI9IjgwMCIvPgogIDxsaW5lIGNsYXNzPSJncmlkIiB4MT0iNDAwIiB5MT0iMCIgeDI9IjQwMCIgeTI9IjgwMCIvPgogIDxsaW5lIGNsYXNzPSJncmlkIiB4MT0iNTAwIiB5MT0iMCIgeDI9IjUwMCIgeTI9IjgwMCIvPgogIDxsaW5lIGNsYXNzPSJncmlkIiB4MT0iNjAwIiB5MT0iMCIgeDI9IjYwMCIgeTI9IjgwMCIvPgogIDxsaW5lIGNsYXNzPSJncmlkIiB4MT0iNzAwIiB5MT0iMCIgeDI9IjcwMCIgeTI9IjgwMCIvPgogIDxsaW5lIGNsYXNzPSJncmlkIiB4MT0iODAwIiB5MT0iMCIgeDI9IjgwMCIgeTI9IjgwMCIvPgogIDxsaW5lIGNsYXNzPSJncmlkIiB4MT0iOTAwIiB5MT0iMCIgeDI9IjkwMCIgeTI9IjgwMCIvPgogIDxsaW5lIGNsYXNzPSJncmlkIiB4MT0iMTAwMCIgeTE9IjAiIHgyPSIxMDAwIiB5Mj0iODAwIi8+CiAgPGxpbmUgY2xhc3M9ImdyaWQiIHgxPSIxMTAwIiB5MT0iMCIgeDI9IjExMDAiIHkyPSI4MDAiLz4KICA8bGluZSBjbGFzcz0iZ3JpZCIgeDE9IjEyMDAiIHkxPSIwIiB4Mj0iMTIwMCIgeTI9IjgwMCIvPgogIDwhLS0gR3JhZGUgaG9yaXpvbnRhbCAtLT4KICA8bGluZSBjbGFzcz0iZ3JpZCIgeDE9IjAiIHkxPSIxMDAiIHgyPSIxMjAwIiB5Mj0iMTAwIi8+CiAgPGxpbmUgY2xhc3M9ImdyaWQiIHgxPSIwIiB5MT0iMjAwIiB4Mj0iMTIwMCIgeTI9IjIwMCIvPgogIDxsaW5lIGNsYXNzPSJncmlkIiB4MT0iMCIgeTE9IjMwMCIgeDI9IjEyMDAiIHkyPSIzMDAiLz4KICA8bGluZSBjbGFzcz0iZ3JpZCIgeDE9IjAiIHkxPSI0MDAiIHgyPSIxMjAwIiB5Mj0iNDAwIi8+CiAgPGxpbmUgY2xhc3M9ImdyaWQiIHgxPSIwIiB5MT0iNTAwIiB4Mj0iMTIwMCIgeTI9IjUwMCIvPgogIDxsaW5lIGNsYXNzPSJncmlkIiB4MT0iMCIgeTE9IjYwMCIgeDI9IjEyMDAiIHkyPSI2MDAiLz4KICA8bGluZSBjbGFzcz0iZ3JpZCIgeDE9IjAiIHkxPSI3MDAiIHgyPSIxMjAwIiB5Mj0iNzAwIi8+CgogIDwhLS0gQmFycmFzIGRlIHZvbHVtZSBubyBmdW5kbyAtLT4KICA8cmVjdCBjbGFzcz0iYmFyIiB4PSIyMCIgeT0iNzAwIiB3aWR0aD0iMTgiIGhlaWdodD0iODAiLz4KICA8cmVjdCBjbGFzcz0iYmFyMiIgeD0iNjAiIHk9IjcyMCIgd2lkdGg9IjE4IiBoZWlnaHQ9IjYwIi8+CiAgPHJlY3QgY2xhc3M9ImJhciIgeD0iMTAwIiB5PSI2OTAiIHdpZHRoPSIxOCIgaGVpZ2h0PSI5MCIvPgogIDxyZWN0IGNsYXNzPSJiYXIyIiB4PSIxNDAiIHk9IjczMCIgd2lkdGg9IjE4IiBoZWlnaHQ9IjUwIi8+CiAgPHJlY3QgY2xhc3M9ImJhciIgeD0iMTgwIiB5PSI3MTAiIHdpZHRoPSIxOCIgaGVpZ2h0PSI3MCIvPgogIDxyZWN0IGNsYXNzPSJiYXIyIiB4PSIyMjAiIHk9IjY4MCIgd2lkdGg9IjE4IiBoZWlnaHQ9IjEwMCIvPgogIDxyZWN0IGNsYXNzPSJiYXIiIHg9IjI2MCIgeT0iNzIwIiB3aWR0aD0iMTgiIGhlaWdodD0iNjAiLz4KICA8cmVjdCBjbGFzcz0iYmFyMiIgeD0iMzAwIiB5PSI3MDAiIHdpZHRoPSIxOCIgaGVpZ2h0PSI4MCIvPgogIDxyZWN0IGNsYXNzPSJiYXIiIHg9IjM0MCIgeT0iNzQwIiB3aWR0aD0iMTgiIGhlaWdodD0iNDAiLz4KICA8cmVjdCBjbGFzcz0iYmFyMiIgeD0iMzgwIiB5PSI2OTUiIHdpZHRoPSIxOCIgaGVpZ2h0PSI4NSIvPgogIDxyZWN0IGNsYXNzPSJiYXIiIHg9IjQyMCIgeT0iNzE1IiB3aWR0aD0iMTgiIGhlaWdodD0iNjUiLz4KICA8cmVjdCBjbGFzcz0iYmFyMiIgeD0iNDYwIiB5PSI3MDUiIHdpZHRoPSIxOCIgaGVpZ2h0PSI3NSIvPgogIDxyZWN0IGNsYXNzPSJiYXIiIHg9IjUwMCIgeT0iNzI1IiB3aWR0aD0iMTgiIGhlaWdodD0iNTUiLz4KICA8cmVjdCBjbGFzcz0iYmFyMiIgeD0iNTQwIiB5PSI2ODUiIHdpZHRoPSIxOCIgaGVpZ2h0PSI5NSIvPgogIDxyZWN0IGNsYXNzPSJiYXIiIHg9IjU4MCIgeT0iNzEwIiB3aWR0aD0iMTgiIGhlaWdodD0iNzAiLz4KICA8cmVjdCBjbGFzcz0iYmFyMiIgeD0iNjIwIiB5PSI3MDAiIHdpZHRoPSIxOCIgaGVpZ2h0PSI4MCIvPgogIDxyZWN0IGNsYXNzPSJiYXIiIHg9IjY2MCIgeT0iNzMwIiB3aWR0aD0iMTgiIGhlaWdodD0iNTAiLz4KICA8cmVjdCBjbGFzcz0iYmFyMiIgeD0iNzAwIiB5PSI2OTUiIHdpZHRoPSIxOCIgaGVpZ2h0PSI4NSIvPgogIDxyZWN0IGNsYXNzPSJiYXIiIHg9Ijc0MCIgeT0iNzE1IiB3aWR0aD0iMTgiIGhlaWdodD0iNjUiLz4KICA8cmVjdCBjbGFzcz0iYmFyMiIgeD0iNzgwIiB5PSI3MDUiIHdpZHRoPSIxOCIgaGVpZ2h0PSI3NSIvPgogIDxyZWN0IGNsYXNzPSJiYXIiIHg9IjgyMCIgeT0iNjkwIiB3aWR0aD0iMTgiIGhlaWdodD0iOTAiLz4KICA8cmVjdCBjbGFzcz0iYmFyMiIgeD0iODYwIiB5PSI3MjAiIHdpZHRoPSIxOCIgaGVpZ2h0PSI2MCIvPgogIDxyZWN0IGNsYXNzPSJiYXIiIHg9IjkwMCIgeT0iNzAwIiB3aWR0aD0iMTgiIGhlaWdodD0iODAiLz4KICA8cmVjdCBjbGFzcz0iYmFyMiIgeD0iOTQwIiB5PSI3NDAiIHdpZHRoPSIxOCIgaGVpZ2h0PSI0MCIvPgogIDxyZWN0IGNsYXNzPSJiYXIiIHg9Ijk4MCIgeT0iNzEwIiB3aWR0aD0iMTgiIGhlaWdodD0iNzAiLz4KICA8cmVjdCBjbGFzcz0iYmFyMiIgeD0iMTAyMCIgeT0iNjgwIiB3aWR0aD0iMTgiIGhlaWdodD0iMTAwIi8+CiAgPHJlY3QgY2xhc3M9ImJhciIgeD0iMTA2MCIgeT0iNzI1IiB3aWR0aD0iMTgiIGhlaWdodD0iNTUiLz4KICA8cmVjdCBjbGFzcz0iYmFyMiIgeD0iMTEwMCIgeT0iNjk1IiB3aWR0aD0iMTgiIGhlaWdodD0iODUiLz4KICA8cmVjdCBjbGFzcz0iYmFyIiB4PSIxMTQwIiB5PSI3MTUiIHdpZHRoPSIxOCIgaGVpZ2h0PSI2NSIvPgoKICA8IS0tIExpbmhhIGRlIHByZcOnbyAyICh2ZXJkZSAtIG3DqWRpYSBtw7N2ZWwpIGNvbSBmaWxsIC0tPgogIDxwYXRoIGNsYXNzPSJmaWxsMSIgZmlsbD0idXJsKCNncmFkMikiIGQ9Ik0wLDU4MCBMODAsNTQwIEwxNjAsNTYwIEwyNDAsNTEwIEwzMjAsNTMwIEw0MDAsNDkwIEw0ODAsNTEwIEw1NjAsNDgwIEw2NDAsNTAwIEw3MjAsNDYwIEw4MDAsNDgwIEw4ODANNDQwIEw5NjAsNDYwIEwxMDQwLDQyMCBMMTEyMCw0NDAgTDEyMDAsNDAwIEwxMjAwLDgwMCBMMCw4MDAgWiIvPgogIDxwYXRoIGNsYXNzPSJsaW5lMiIgZD0iTTAsNTgwIEw4MCw1NDAgTDE2MCw1NjAgTDI0MCw1MTAgTDMyMCw1MzAgTDQwMCw0OTAgTDQ4MCw1MTAgTDU2MCw0ODAgTDY0MCw1MDAgTDcyMCw0NjAgTDgwMCw0ODAgTDg4MCw0NDAgTDk2MCw0NjAgTDEwNDAsNDIwIEwxMTIwLDQ0MCBMMTIwMCw0MDAiLz4KCiAgPCEtLSBMaW5oYSBkZSBwcmXDp28gcHJpbmNpcGFsIChhenVsKSBjb20gZmlsbCAtLT4KICA8cGF0aCBjbGFzcz0iZmlsbDEiIGQ9Ik0wLDQ1MCBMODAsMzgwIEwxNjAsNDIwIEwyNDAsMzUwIEwzMjAsMzkwIEw0MDAsMzIwIEw0ODAsMzYwIEw1NjAsMzAwIEw2NDAsMzQwIEw3MjAsMjgwIEw4MDAsMzEwIEw4ODAsMjYwIEw5NjAsMjkwIEwxMDQwLDIzMCBMMTEyMCwyNzAgTDEyMDAsMjEwIEwxMjAwLDgwMCBMMCw4MDAgWiIvPgogIDxwYXRoIGNsYXNzPSJsaW5lMSIgZD0iTTAsNDUwIEw4MCwzODAgTDE2MCw0MjAgTDI0MCwzNTAgTDMyMCwzOTAgTDQwMCwzMjAgTDQ4MCwzNjAgTDU2MCwzMDAgTDY0MCwzNDAgTDcyMCwyODAgTDgwMCwzMTAgTDg4MCwyNjAgTDk2MCwyOTAgTDEwNDAsMjMwIEwxMTIwLDI3MCBMMTIwMCwyMTAiLz4KCiAgPCEtLSBQb250b3MgZGUgZGVzdGFxdWUgLS0+CiAgPGNpcmNsZSBjbGFzcz0iZG90IGdsb3ciIGN4PSI0MDAiIGN5PSIzMjAiIHI9IjQiLz4KICA8Y2lyY2xlIGNsYXNzPSJkb3QgZ2xvdyIgY3g9IjcyMCIgY3k9IjI4MCIgcj0iNCIvPgogIDxjaXJjbGUgY2xhc3M9ImRvdCBnbG93IiBjeD0iMTA0MCIgY3k9IjIzMCIgcj0iNCIvPgogIDxjaXJjbGUgY2xhc3M9ImRvdDIgZ2xvdyIgY3g9IjU2MCIgY3k9IjMwMCIgcj0iMyIvPgogIDxjaXJjbGUgY2xhc3M9ImRvdDIgZ2xvdyIgY3g9Ijg4MCIgY3k9IjI2MCIgcj0iMyIvPgoKICA8IS0tIFPDrW1ib2xvcyBmaW5hbmNlaXJvcyBmbHV0dWFudGVzIC0tPgogIDx0ZXh0IGNsYXNzPSJzeW0gcDEiIHg9IjUwIiB5PSI3NTAiPlIkPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJzeW0gcDIiIHg9IjIwMCIgeT0iNzgwIj7ilrI8L3RleHQ+CiAgPHRleHQgY2xhc3M9InN5bSBwMyIgeD0iMzUwIiB5PSI3NjAiPiU8L3RleHQ+CiAgPHRleHQgY2xhc3M9InN5bSBwNCIgeD0iNTAwIiB5PSI3NDAiPiQ8L3RleHQ+CiAgPHRleHQgY2xhc3M9InN5bSBwNSIgeD0iNjUwIiB5PSI3NzAiPuKWvDwvdGV4dD4KICA8dGV4dCBjbGFzcz0ic3ltMiBwMiIgeD0iODAwIiB5PSI3NTUiPlIkPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJzeW0yIHAxIiB4PSI5NTAiIHk9Ijc4MCI+4payPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJzeW0gcDMiIHg9IjExMDAiIHk9Ijc1MCI+JTwvdGV4dD4KICA8dGV4dCBjbGFzcz0ic3ltMiBwNCIgeD0iMTMwIiB5PSI2MjAiPiQ8L3RleHQ+CiAgPHRleHQgY2xhc3M9InN5bSBwNSIgeD0iNDMwIiB5PSI2NDAiPlIkPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJzeW0yIHAxIiB4PSI3NTAiIHk9IjYxMCI+4payPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJzeW0gcDIiIHg9IjEwNTAiIHk9IjYzMCI+JTwvdGV4dD4KPC9zdmc+');
+  background-size:cover; background-position:center; opacity:1; z-index:0;
+}
+#login-screen::after{
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse at 15% 60%,rgba(79,127,255,.12) 0%,transparent 55%),radial-gradient(ellipse at 85% 25%,rgba(52,211,153,.07) 0%,transparent 45%),radial-gradient(ellipse at 55% 85%,rgba(168,85,247,.07) 0%,transparent 45%);
+  pointer-events:none; animation:loginGlow 6s ease-in-out infinite alternate;
+}
+@keyframes loginGlow{from{opacity:.6}to{opacity:1}}
+.login-box{
+  background:rgba(14,18,30,.92); border:1px solid rgba(79,127,255,.18); border-radius:22px;
+  padding:36px 30px 28px; width:min(340px,calc(100vw - 32px)); text-align:center;
+  position:relative; z-index:1;
+  box-shadow:0 0 0 1px rgba(255,255,255,.04),0 28px 60px rgba(0,0,0,.65),0 0 50px rgba(79,127,255,.07);
+  backdrop-filter:blur(24px);
+}
+.login-logo{
+  width:58px; height:58px; border-radius:16px;
+  background:linear-gradient(135deg,#4f7fff 0%,#7c3aed 100%);
+  display:flex; align-items:center; justify-content:center;
+  font-size:26px; font-weight:900; color:#fff; margin:0 auto 12px;
+  box-shadow:0 8px 28px rgba(79,127,255,.42); letter-spacing:-1px;
+}
+.login-eyebrow{font-size:10px;font-weight:700;letter-spacing:2.5px;color:rgba(79,127,255,.75);text-transform:uppercase;margin-bottom:4px;}
+.login-box h1{font-size:20px;font-weight:800;color:#e8ecf4;margin-bottom:3px;letter-spacing:-.3px;}
+.login-box p{font-size:11.5px;color:#404968;margin-bottom:24px;}
+.login-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;background:linear-gradient(135deg,#4f7fff,#7c3aed);color:#fff;font-size:14px;font-weight:700;font-family:inherit;transition:opacity .2s;box-shadow:0 4px 20px rgba(79,127,255,.35);}
+.login-btn:hover{opacity:.88;}
+.login-err{color:#f87171;font-size:13px;margin-top:14px;min-height:20px;}
+
+/* ── HEADER ── */
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.header-left{display:flex;align-items:center;gap:12px;}
+.header-logo{font-size:20px;font-weight:900;}
+.header-badge{background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--accent);}
+.header-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--fg2);}
+.header-user img{width:30px;height:30px;border-radius:50%;}
+.icon-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--fg2);font-size:12px;padding:5px 12px;cursor:pointer;font-family:inherit;transition:.2s;}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent);}
+.icon-btn.danger:hover{border-color:var(--red);color:var(--red);}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;padding:0 24px;background:var(--bg2);border-bottom:1px solid var(--border);}
+.tab{padding:12px 16px;font-size:13px;font-weight:600;color:var(--fg3);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ── MAIN ── */
+main{max-width:1100px;margin:0 auto;padding:28px 20px;}
+.section-title{font-size:12px;font-weight:700;color:var(--fg3);text-transform:uppercase;letter-spacing:1px;margin:28px 0 12px;}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:5px;}
+.kpi-label{font-size:11px;color:var(--fg3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.kpi-val{font-size:34px;font-weight:900;line-height:1;}
+.kpi-sub{font-size:12px;color:var(--fg2);}
+
+/* ── BARS ── */
+.planos-bar{display:flex;flex-direction:column;gap:10px;}
+.plano-row{display:flex;align-items:center;gap:12px;}
+.plano-row-label{width:76px;font-size:13px;font-weight:600;flex-shrink:0;}
+.plano-row-bar{flex:1;height:9px;background:var(--bg3);border-radius:10px;overflow:hidden;}
+.plano-row-fill{height:100%;border-radius:10px;transition:width .6s cubic-bezier(.4,0,.2,1);}
+.plano-row-count{font-size:13px;font-weight:700;width:36px;text-align:right;flex-shrink:0;}
+
+/* ── CHART ── */
+.chart-bars{display:flex;align-items:flex-end;gap:4px;height:110px;margin-top:12px;}
+.chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.chart-bar{width:100%;border-radius:4px 4px 0 0;background:var(--accent);min-height:4px;transition:height .4s;}
+.chart-bar-label{font-size:9px;color:var(--fg3);white-space:nowrap;}
+.chart-bar-val{font-size:10px;font-weight:700;color:var(--fg2);}
+
+/* ── TABELAS ── */
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--fg3);text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border);background:var(--bg3);}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:rgba(255,255,255,.025);}
+tbody td{padding:11px 14px;color:var(--fg2);vertical-align:middle;}
+
+/* ── SEARCH ── */
+.search-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.search-input{flex:1;min-width:200px;padding:9px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;color:var(--fg1);font-size:13px;font-family:inherit;outline:none;transition:.2s;}
+.search-input:focus{border-color:var(--accent);}
+select.search-input{cursor:pointer;}
+
+/* ── BADGES ── */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge-gratis{background:rgba(100,116,139,.2);color:#94a3b8;}
+.badge-basico{background:rgba(99,102,241,.2);color:#818cf8;}
+.badge-familia{background:rgba(249,115,22,.2);color:#fb923c;}
+.badge-premium{background:rgba(168,85,247,.2);color:#c084fc;}
+.badge-vitalicio{background:linear-gradient(90deg,rgba(234,179,8,.2),rgba(249,115,22,.2));color:#fbbf24;border:1px solid rgba(234,179,8,.3);}
+.badge-bloqueado{background:rgba(239,68,68,.2);color:#f87171;}
+
+/* ── ACTION BTNS ── */
+.act-btn{padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--fg2);font-size:11px;cursor:pointer;font-family:inherit;transition:.2s;white-space:nowrap;}
+.act-btn:hover{border-color:var(--accent);color:var(--accent);}
+.act-btn.red:hover{border-color:var(--red);color:var(--red);}
+.act-btn.green:hover{border-color:var(--green);color:var(--green);}
+
+/* ── MISC ── */
+.empty{text-align:center;padding:36px;color:var(--fg3);font-size:14px;}
+.loading{text-align:center;padding:36px;color:var(--fg3);}
+.spinner{display:inline-block;width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px 24px;}
+
+/* ── NOTIF TOAST ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1e2432;border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:13px;color:var(--fg1);z-index:300;transition:transform .3s;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+#toast.show{transform:translateX(-50%) translateY(0);}
+
+#app{display:none;}
+</style>
+</head>
+<body>
+
+<!-- PIN OVERLAY -->
+<div class="overlay" id="pin-overlay">
+  <div class="modal">
+    <div style="font-size:32px;margin-bottom:12px">🔐</div>
+    <h2>Código de acesso</h2>
+    <p>Digite o PIN de 4 dígitos para continuar</p>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pin-btn" onclick="fnvPin('1')">1</button>
+      <button class="pin-btn" onclick="fnvPin('2')">2</button>
+      <button class="pin-btn" onclick="fnvPin('3')">3</button>
+      <button class="pin-btn" onclick="fnvPin('4')">4</button>
+      <button class="pin-btn" onclick="fnvPin('5')">5</button>
+      <button class="pin-btn" onclick="fnvPin('6')">6</button>
+      <button class="pin-btn" onclick="fnvPin('7')">7</button>
+      <button class="pin-btn" onclick="fnvPin('8')">8</button>
+      <button class="pin-btn" onclick="fnvPin('9')">9</button>
+      <button class="pin-btn" onclick="fnvPin('0')" style="grid-column:2">0</button>
+      <button class="pin-btn del" onclick="fnvPinDel()">⌫</button>
+    </div>
+    <div class="pin-err" id="pin-err"></div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">💰</div>
+    <h1>Finanvô Admin</h1>
+    <p>Acesso restrito ao administrador</p>
+    <button class="login-btn" onclick="fnvLogin()">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12.545 10.239v3.821h5.445c-.712 2.315-2.647 3.972-5.445 3.972a6.033 6.033 0 110-12.064c1.498 0 2.866.549 3.921 1.453l2.814-2.814A9.969 9.969 0 0012.545 2C7.021 2 2.543 6.477 2.543 12s4.478 10 10.002 10c8.396 0 10.249-7.85 9.426-11.748l-9.426-.013z"/></svg>
+      Entrar com Google
+    </button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="header-left">
+      <div class="header-logo">💰 Finanvô</div>
+      <div class="header-badge">Admin</div>
+    </div>
+    <div class="header-user">
+      <img id="user-photo" src="" alt="" onerror="this.style.display='none'">
+      <span id="user-name"></span>
+      <button class="icon-btn" onclick="fnvLoadDash()">↻ Atualizar</button>
+      <button class="icon-btn danger" onclick="fnvSignOut()">Sair</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="fnvTab('visao-geral',this)">📊 Visão Geral</div>
+    <div class="tab" onclick="fnvTab('usuarios',this)">👤 Usuários</div>
+    <div class="tab" onclick="fnvTab('financeiro',this)">💰 Financeiro</div>
+    <div class="tab" onclick="fnvTab('perfil-base',this)">🎯 Perfil Base</div>
+    <div class="tab" onclick="fnvTab('chatbot',this)">💬 Chatbot</div>
+    <div class="tab" onclick="fnvTab('config',this)">⚙️ Config</div>
+  </div>
+
+  <main>
+    <div id="dash-loading" class="loading"><div class="spinner"></div><br><br>Carregando dados...</div>
+    <div id="dash-content" style="display:none">
+
+      <!-- ── VISÃO GERAL ── -->
+      <div class="tab-panel active" id="panel-visao-geral">
+
+        <div class="section-title" style="margin-top:0">KPIs</div>
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi-label">Total usuários</div>
+            <div class="kpi-val" id="kpi-total" style="color:var(--accent)">–</div>
+            <div class="kpi-sub" id="kpi-total-sub"></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Planos pagos</div>
+            <div class="kpi-val" id="kpi-pagos" style="color:var(--green)">–</div>
+            <div class="kpi-sub" id="kpi-pagos-sub"></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Receita estimada/mês</div>
+            <div class="kpi-val" id="kpi-receita" style="color:var(--yellow);font-size:26px">–</div>
+            <div class="kpi-sub">baseado nos planos ativos</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Novos hoje</div>
+            <div class="kpi-val" id="kpi-hoje" style="color:var(--blue)">–</div>
+            <div class="kpi-sub">últimas 24h</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Perguntas chatbot</div>
+            <div class="kpi-val" id="kpi-chat" style="color:#a78bfa">–</div>
+            <div class="kpi-sub">total de interações</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Usuários bloqueados</div>
+            <div class="kpi-val" id="kpi-bloqueados" style="color:var(--red)">–</div>
+            <div class="kpi-sub">acesso suspenso</div>
+          </div>
+        </div>
+
+        <div class="section-title">Distribuição por Plano</div>
+        <div class="card">
+          <div class="planos-bar" id="planos-bar"></div>
+        </div>
+
+        <div class="section-title">Novos Cadastros — Últimos 14 dias</div>
+        <div class="card">
+          <div style="font-size:13px;color:var(--fg2)">Usuários cadastrados por dia</div>
+          <div class="chart-bars" id="chart-bars"></div>
+        </div>
+
+      </div><!-- /visao-geral -->
+
+      <!-- ── USUÁRIOS ── -->
+      <div class="tab-panel" id="panel-usuarios">
+        <div class="section-title" style="margin-top:0">Gestão de Usuários</div>
+        <div class="search-row">
+          <input class="search-input" id="busca-usuario" placeholder="🔍 Buscar por nome ou email..." oninput="fnvFiltrarUsuarios()">
+          <select class="search-input" id="filtro-plano" onchange="fnvFiltrarUsuarios()" style="max-width:160px">
+            <option value="">Todos os planos</option>
+            <option value="gratuito">Grátis</option>
+            <option value="pro">Básico</option>
+            <option value="familia">Família</option>
+            <option value="premium">Premium</option>
+            <option value="bloqueado">Bloqueados</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Usuário</th>
+                <th>Acesso</th>
+                <th>Plano</th>
+                <th>Valor/mês</th>
+                <th>Cadastro Nº</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="usuarios-body"><tr><td colspan="6" class="empty">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+        <div style="font-size:12px;color:var(--fg3);margin-top:10px;text-align:center" id="usuarios-count"></div>
+      </div>
+
+      <!-- ── CHATBOT ── -->
+      <div class="tab-panel" id="panel-chatbot">
+        <div class="section-title" style="margin-top:0;display:flex;align-items:center;justify-content:space-between">
+          <span>Últimas Perguntas</span>
+          <button class="act-btn red" onclick="fnvLimparLogsAntigos()">🗑️ Limpar logs antigos (+30d)</button>
+        </div>
+        <div class="search-row">
+          <input class="search-input" id="busca-chat" placeholder="🔍 Filtrar perguntas..." oninput="fnvFiltrarChat()">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pergunta</th>
+                <th>Resposta da IA</th>
+                <th>Usuário</th>
+                <th>Quando</th>
+              </tr>
+            </thead>
+            <tbody id="chat-logs-body"><tr><td colspan="4" class="empty">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── FINANCEIRO ── -->
+      <div class="tab-panel" id="panel-financeiro">
+        <div class="section-title" style="margin-top:0">💰 Simulador de Receita</div>
+        <p style="font-size:13px;color:var(--fg2);margin:0 0 20px">Custos, comissões e lucro líquido por plano</p>
+
+        <!-- Toggle mensal/anual + slider -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+          <div style="display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+            <button id="sim-btn-mensal" onclick="fnvSimToggle('mensal')" style="padding:7px 18px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--surface);color:var(--fg2);transition:.2s">Mensal</button>
+            <button id="sim-btn-anual" onclick="fnvSimToggle('anual')" style="padding:7px 18px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--accent);color:#fff;transition:.2s">Anual</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:200px">
+            <span style="font-size:13px;color:var(--fg2);white-space:nowrap">Nº de assinantes:</span>
+            <input type="range" id="sim-slider" min="1" max="500" value="47"
+              oninput="document.getElementById('sim-slider-val').textContent=this.value;fnvRenderSim()"
+              style="flex:1;accent-color:var(--accent)">
+            <span id="sim-slider-val" style="font-size:16px;font-weight:800;color:var(--accent);min-width:40px;text-align:right">47</span>
+          </div>
+        </div>
+
+        <!-- Cards por plano -->
+        <div id="sim-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px"></div>
+
+        <!-- Totais consolidados -->
+        <div id="sim-totais" style="margin-top:20px;padding:16px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:14px">
+          <div style="font-size:13px;font-weight:700;color:var(--fg2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">Consolidado todos os planos</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px" id="sim-totais-grid"></div>
+        </div>
+
+        <!-- Notificação Push -->
+        <div style="margin-top:24px;padding:16px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:14px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">🔔 Notificação Push (gratuito)</div>
+          <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">Envia push para o celular de todos os usuários que ativaram notificações no app</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <input type="text" id="push-titulo" placeholder="Título (ex: 🎉 Novidade no Finanvô!)" class="search-input" style="max-width:100%">
+            <textarea id="push-corpo" rows="2" placeholder="Mensagem (ex: Confira o novo relatório mensal disponível agora)"
+              style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--fg1);font-size:13px;resize:vertical;outline:none"></textarea>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+            <span id="push-contagem" style="font-size:12px;color:var(--fg3)">Carregando...</span>
+            <button class="icon-btn" onclick="fnvEnviarPush()" style="margin-left:auto">🔔 Enviar Push</button>
+          </div>
+          <div id="push-status" style="font-size:12px;margin-top:8px;min-height:16px"></div>
+          <div style="margin-top:12px;padding:10px;background:rgba(79,127,255,.06);border-radius:8px;font-size:11px;color:var(--fg3)">
+            ⚙️ Requer <strong>FCM Server Key</strong> configurada na aba Config. <a href="https://console.firebase.google.com/project/finanvo-4e9e0/settings/cloudmessaging" target="_blank" style="color:var(--accent)">Obter no Firebase Console →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PERFIL BASE ── -->
+      <div class="tab-panel" id="panel-perfil-base">
+        <div class="section-title" style="margin-top:0">🎯 Perfil da Base de Usuários</div>
+        <p style="font-size:13px;color:var(--fg2);margin:0 0 20px">Dados coletados dos usuários (WhatsApp, nascimento, grupos de despesas)</p>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+
+          <!-- Faixa etária -->
+          <div class="card">
+            <div style="font-size:14px;font-weight:700;margin-bottom:14px">🎂 Faixa Etária</div>
+            <div id="pb-idade-chart"></div>
+            <div style="margin-top:10px;font-size:11px;color:var(--fg3)" id="pb-idade-obs"></div>
+          </div>
+
+          <!-- Perfil familiar -->
+          <div class="card">
+            <div style="font-size:14px;font-weight:700;margin-bottom:14px">👨‍👩‍👧 Perfil Familiar</div>
+            <div id="pb-familia-chart"></div>
+          </div>
+
+          <!-- WhatsApp cadastrado -->
+          <div class="card">
+            <div style="font-size:14px;font-weight:700;margin-bottom:14px">📱 WhatsApp Cadastrado</div>
+            <div id="pb-wpp-chart"></div>
+            <div style="margin-top:10px" id="pb-wpp-obs"></div>
+          </div>
+
+        </div>
+
+        <!-- Top categorias de despesa -->
+        <div class="card" style="margin-top:16px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:14px">📊 Top Grupos de Despesa (onboarding)</div>
+          <div id="pb-grupos-chart"></div>
+        </div>
+
+        <!-- Planos por perfil -->
+        <div class="card" style="margin-top:16px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:14px">💳 Distribuição de Planos por Faixa Etária</div>
+          <div id="pb-plano-faixa"></div>
+        </div>
+
+        <div style="margin-top:16px;padding:12px 16px;background:rgba(79,127,255,.06);border-radius:10px;font-size:12px;color:var(--fg3)">
+          ℹ️ Dados de faixa etária e WhatsApp aparecem somente para usuários que preencheram os dados em <strong>Configurações → Dados pessoais</strong> no app.
+        </div>
+      </div>
+
+      <!-- ── CONFIG ── -->
+      <div class="tab-panel" id="panel-config">
+        <div class="section-title" style="margin-top:0">Segurança</div>
+        <div class="card" style="max-width:420px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:6px">PIN de acesso</div>
+          <div style="font-size:13px;color:var(--fg2);margin-bottom:16px">Código de 4 dígitos pedido após o login do Google. Padrão: <strong>1234</strong> — troque agora!</div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="password" id="pin-novo" maxlength="4" placeholder="Novo PIN (4 dígitos)" class="search-input" style="max-width:180px" oninput="this.value=this.value.replace(/\D/g,'')">
+            <button class="icon-btn" onclick="fnvSalvarPin()">Salvar PIN</button>
+          </div>
+          <div style="font-size:12px;color:var(--green);margin-top:8px;min-height:18px" id="pin-ok"></div>
+        </div>
+
+        <div class="section-title">🔔 Push Notifications (FCM)</div>
+        <div class="card" style="max-width:500px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">Firebase Cloud Messaging — API v1</div>
+          <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">
+            Cole o JSON da <strong>Service Account</strong>: <a href="https://console.firebase.google.com/project/finanvo-4e9e0/settings/serviceaccounts/adminsdk" target="_blank" style="color:var(--accent)">Firebase Console → Contas de serviço → Gerar nova chave privada →</a>
+          </div>
+          <textarea id="fcm-sa-json" rows="4" placeholder='{"type":"service_account","project_id":"finanvo-4e9e0",...}'
+            style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--fg1);font-size:11px;resize:vertical;outline:none;font-family:monospace"></textarea>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <button class="icon-btn" onclick="fnvSalvarFcmKey()">Salvar Service Account</button>
+            <button class="icon-btn" style="background:var(--surface);color:var(--fg2);border:1px solid var(--border)" onclick="fnvTestarPush()">🧪 Testar push para mim</button>
+          </div>
+          <div id="fcm-ok" style="font-size:12px;color:var(--green);margin-top:8px;min-height:16px"></div>
+        </div>
+
+        <div class="section-title">⭐ Acessos Vitalícios</div>
+        <div class="card" style="max-width:500px">
+          <div style="font-size:13px;color:var(--fg2);margin-bottom:14px">Emails com acesso gratuito permanente (família, testers). Quando quiser cobrar manutenção, defina um valor abaixo.</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 14px;background:var(--bg3);border-radius:10px;flex-wrap:wrap">
+            <span style="font-size:13px;color:var(--fg2)">Taxa de manutenção mensal:</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="color:var(--fg3);font-size:13px">R$</span>
+              <input type="number" id="vit-valor-input" min="0" step="0.01" placeholder="0,00" class="search-input" style="max-width:90px;padding:4px 8px" oninput="fnvSalvarValorVit()">
+            </div>
+            <span id="vit-valor-msg" style="font-size:12px;color:var(--green);min-height:16px"></span>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+            <input type="email" id="vit-email-input" placeholder="email@exemplo.com" class="search-input" style="flex:1;min-width:200px" onkeydown="if(event.key==='Enter')fnvAddVitalicio()">
+            <select id="vit-plano-input" class="search-input" style="max-width:130px">
+              <option value="pro">Básico</option>
+              <option value="familia">Família</option>
+              <option value="premium" selected>Premium</option>
+            </select>
+            <button class="icon-btn" onclick="fnvAddVitalicio()">+ Adicionar</button>
+          </div>
+          <div id="vit-lista" style="display:flex;flex-direction:column;gap:6px;min-height:20px">
+            <div style="color:var(--fg3);font-size:12px">Carregando...</div>
+          </div>
+          <div id="vit-msg" style="font-size:12px;color:var(--green);margin-top:8px;min-height:16px"></div>
+
+          <!-- Botão enviar aviso -->
+          <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:16px">
+            <div style="font-size:13px;font-weight:700;margin-bottom:6px">📣 Aviso de cobrança mensal</div>
+            <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">Envia uma notificação push para todos os acessos cortesia que têm valor definido (R$ > 0), lembrando do pagamento.</div>
+            <button class="icon-btn" onclick="fnvEnviarAvisoCobranca()" id="btn-aviso-cobranca">📲 Enviar aviso agora</button>
+            <div id="aviso-cobranca-msg" style="font-size:12px;color:var(--green);margin-top:8px;min-height:16px"></div>
+          </div>
+        </div>
+
+        <div class="section-title">Informações do Sistema</div>
+        <div class="card" style="max-width:420px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;justify-content:space-between;font-size:13px">
+            <span style="color:var(--fg3)">Projeto Firebase</span>
+            <span>finanvo-4e9e0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px">
+            <span style="color:var(--fg3)">Worker IA</span>
+            <span style="color:var(--green)">● Online</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px">
+            <span style="color:var(--fg3)">Domínio</span>
+            <span>appfinanvo.com.br</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px">
+            <span style="color:var(--fg3)">Hosting</span>
+            <span>GitHub Pages</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /dash-content -->
+  </main>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+const ADMIN_EMAIL = 'cledyrtaveira@gmail.com';
+const PIN_KEY = 'fnv_admin_pin';
+const PIN_OK_KEY = 'fnv_pin_ok';
+const DEFAULT_PIN = '1234';
+
+const PRECOS = { basico: 12.99, familia: 22.99, premium: 32.99 };
+const ADMINS_VITALICIOS = ['cledyrtaveira@gmail.com'];
+
+firebase.initializeApp({
+  apiKey: "AIzaSyCy4hUoPKlAuutoSZhliLetovHr9EK1JvA",
+  authDomain: "finanvo-4e9e0.firebaseapp.com",
+  projectId: "finanvo-4e9e0",
+  storageBucket: "finanvo-4e9e0.firebasestorage.app",
+  messagingSenderId: "953291975001",
+  appId: "1:953291975001:web:a985019f29f0e2f917c448"
+});
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let todosUsuarios = [], todosLogs = [];
+let pinBuffer = '';
+
+// ── PIN ──────────────────────────────────────────────────────────────
+function getPin() { return localStorage.getItem(PIN_KEY) || DEFAULT_PIN; }
+
+window.fnvPin = function(d) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += d;
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('pd'+i).classList.toggle('filled', i < pinBuffer.length);
+  }
+  if (pinBuffer.length === 4) {
+    setTimeout(() => {
+      if (pinBuffer === getPin()) {
+        sessionStorage.setItem(PIN_OK_KEY, '1');
+        document.getElementById('pin-overlay').classList.add('hidden');
+        fnvLoadDash();
+      } else {
+        document.getElementById('pin-err').textContent = 'PIN incorreto. Tente novamente.';
+        pinBuffer = '';
+        for (let i = 0; i < 4; i++) document.getElementById('pd'+i).classList.remove('filled');
+        setTimeout(() => document.getElementById('pin-err').textContent = '', 2000);
+      }
+    }, 150);
+  }
+};
+window.fnvPinDel = function() {
+  if (!pinBuffer.length) return;
+  pinBuffer = pinBuffer.slice(0,-1);
+  for (let i = 0; i < 4; i++) document.getElementById('pd'+i).classList.toggle('filled', i < pinBuffer.length);
+  document.getElementById('pin-err').textContent = '';
+};
+// ── VITALICIOS ────────────────────────────────────────────────────────
+// vitalicios = array de {email, plano}
+let vitalicios = ADMINS_VITALICIOS.map(e => ({ email: e, plano: 'premium' }));
+
+function vitEmails() { return vitalicios.map(v => v.email); }
+
+async function fnvCarregarVitalicios() {
+  try {
+    const doc = await db.collection('admin_config').doc('vitalicios').get();
+    if (doc.exists) {
+      const d = doc.data();
+      // suporta formato antigo (array de strings) e novo (array de objetos)
+      if (d.lista) vitalicios = d.lista;
+      else if (d.emails) vitalicios = d.emails.map(e => ({ email: e, plano: 'premium' }));
+      if (d.valorManutencao !== undefined) {
+        const el = document.getElementById('vit-valor-input');
+        if (el) el.value = d.valorManutencao || '';
+      }
+    }
+  } catch(e) {}
+  fnvRenderVitalicios();
+}
+
+const VIT_PLANO_LABEL = { gratuito:'Grátis', pro:'Básico', familia:'Família', premium:'Premium' };
+const VIT_PLANO_COR   = { gratuito:'#94a3b8', pro:'#818cf8', familia:'#f97316', premium:'#a78bfa' };
+
+function fnvRenderVitalicios() {
+  const el = document.getElementById('vit-lista');
+  if (!vitalicios.length) { el.innerHTML = '<div style="color:var(--fg3);font-size:12px">Nenhum acesso cortesia cadastrado.</div>'; return; }
+  const hoje = new Date().getDate();
+  el.innerHTML = vitalicios.map((v, i) => {
+    const isDono = v.email === 'cledyrtaveira@gmail.com';
+    const cor = VIT_PLANO_COR[v.plano] || '#a78bfa';
+    const selectOpts = ['pro','familia','premium'].map(p =>
+      `<option value="${p}" ${v.plano===p?'selected':''}>${VIT_PLANO_LABEL[p]}</option>`).join('');
+    const diaVenc = v.diaVencimento || '';
+    const diasRestantes = diaVenc ? (() => {
+      const d = parseInt(diaVenc);
+      let diff = d - hoje;
+      if (diff < 0) diff += 30; // próximo mês
+      return diff;
+    })() : null;
+    const alertaVenc = diasRestantes !== null && diasRestantes <= 5
+      ? `<span style="font-size:10px;background:rgba(239,68,68,.15);color:#f87171;border-radius:4px;padding:2px 6px">⚠️ vence em ${diasRestantes}d</span>`
+      : diasRestantes !== null
+        ? `<span style="font-size:10px;color:var(--fg3)">vence dia ${diaVenc}</span>`
+        : '';
+    return `<div style="display:flex;align-items:center;gap:8px;background:var(--bg3);border-radius:8px;padding:8px 12px;font-size:13px;flex-wrap:wrap">
+      <span style="flex:1;min-width:130px">${v.email}</span>
+      ${isDono
+        ? `<span style="font-size:11px;padding:2px 8px;border-radius:6px;background:rgba(234,179,8,.15);color:#fbbf24">⭐ dono</span>`
+        : `<select onchange="fnvAlterarPlanoVit(${i},this.value)" style="background:var(--bg2);border:1px solid var(--border);color:${cor};border-radius:6px;padding:3px 6px;font-size:12px;cursor:pointer">${selectOpts}</select>
+           <input type="number" min="1" max="28" value="${diaVenc}" placeholder="dia" title="Dia de vencimento (1–28)"
+             style="width:48px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:3px 5px;color:var(--fg1);font-size:12px;text-align:center"
+             onchange="fnvAlterarDiaVit(${i},this.value)">
+           ${alertaVenc}
+           <button onclick="fnvRemoverVitalicio(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:0 4px">✕</button>`
+      }
+    </div>`;
+  }).join('');
+}
+
+async function fnvSalvarVitalicios() {
+  const valorEl = document.getElementById('vit-valor-input');
+  const valor = valorEl ? parseFloat(valorEl.value) || 0 : 0;
+  await db.collection('admin_config').doc('vitalicios').set({ lista: vitalicios, valorManutencao: valor }, { merge: true });
+}
+
+window.fnvSalvarValorVit = async function() {
+  clearTimeout(window._vitValorTimer);
+  window._vitValorTimer = setTimeout(async () => {
+    try {
+      const valor = parseFloat(document.getElementById('vit-valor-input').value) || 0;
+      await db.collection('admin_config').doc('vitalicios').set({ valorManutencao: valor }, { merge: true });
+      const msg = document.getElementById('vit-valor-msg');
+      msg.textContent = valor > 0 ? `✓ R$ ${valor.toFixed(2).replace('.',',')} salvo` : '✓ Gratuito (R$0)';
+      setTimeout(() => msg.textContent = '', 3000);
+    } catch(e) { toast('Erro: ' + e.message, true); }
+  }, 800);
+};
+
+window.fnvAlterarDiaVit = async function(idx, dia) {
+  const d = parseInt(dia);
+  if (!d || d < 1 || d > 28) { toast('Dia inválido (1–28)', true); return; }
+  vitalicios[idx].diaVencimento = d;
+  try {
+    await fnvSalvarVitalicios();
+    fnvRenderVitalicios();
+    document.getElementById('vit-msg').textContent = `✓ Vencimento dia ${d} salvo`;
+    setTimeout(() => document.getElementById('vit-msg').textContent = '', 3000);
+  } catch(e) { toast('Erro: ' + e.message, true); }
+};
+
+window.fnvAlterarPlanoVit = async function(idx, novoPlano) {
+  vitalicios[idx].plano = novoPlano;
+  try {
+    await fnvSalvarVitalicios();
+    document.getElementById('vit-msg').textContent = `✓ Plano atualizado para ${VIT_PLANO_LABEL[novoPlano]}`;
+    setTimeout(() => document.getElementById('vit-msg').textContent = '', 3000);
+  } catch(e) { toast('Erro: ' + e.message, true); }
+};
+
+window.fnvAddVitalicio = async function() {
+  const emailInput = document.getElementById('vit-email-input');
+  const planoInput = document.getElementById('vit-plano-input');
+  const email = emailInput.value.trim().toLowerCase();
+  const plano = planoInput.value;
+  if (!email || !email.includes('@')) { toast('Email inválido', true); return; }
+  if (vitEmails().includes(email)) { toast('Email já está na lista', true); return; }
+  vitalicios.push({ email, plano });
+  try {
+    await fnvSalvarVitalicios();
+    emailInput.value = '';
+    fnvRenderVitalicios();
+    document.getElementById('vit-msg').textContent = `✓ ${email} adicionado com plano ${VIT_PLANO_LABEL[plano]}!`;
+    setTimeout(() => document.getElementById('vit-msg').textContent = '', 3000);
+  } catch(e) { vitalicios.pop(); toast('Erro: ' + e.message, true); }
+};
+
+window.fnvRemoverVitalicio = async function(idx) {
+  const email = vitalicios[idx].email;
+  if (!confirm(`Remover acesso cortesia de ${email}?`)) return;
+  vitalicios.splice(idx, 1);
+  try {
+    await fnvSalvarVitalicios();
+    fnvRenderVitalicios();
+    document.getElementById('vit-msg').textContent = `✓ ${email} removido.`;
+    setTimeout(() => document.getElementById('vit-msg').textContent = '', 3000);
+  } catch(e) { toast('Erro: ' + e.message, true); }
+};
+
+window.fnvSalvarPin = function() {
+  const v = document.getElementById('pin-novo').value;
+  if (v.length !== 4) { toast('PIN precisa ter 4 dígitos', true); return; }
+  localStorage.setItem(PIN_KEY, v);
+  document.getElementById('pin-ok').textContent = '✓ PIN salvo com sucesso!';
+  document.getElementById('pin-novo').value = '';
+  setTimeout(() => document.getElementById('pin-ok').textContent = '', 3000);
+};
+
+// ── SIMULADOR FINANCEIRO ─────────────────────────────────────────────
+const CUSTOS_FIXOS = {
+  dominio: 40.00,       // R$ domínio/ano rateado
+  iaFirebase: 0.00,     // IA/Firebase/Hosting (Cloudflare/GitHub = grátis)
+};
+const HOTMART_TAXA = 0.099; // 9,9%
+const HOTMART_FIXO = 2.49;  // R$ por transação
+const AFILIADO_PCT = 0.05;  // 5%
+
+const PLANOS_SIM = [
+  { id:'basico',  label:'PRO',     cor:'#4f7fff', mensal:12.99, anual:149 },
+  { id:'familia', label:'FAMÍLIA', cor:'#a855f7', mensal:22.99, anual:249 },
+  { id:'premium', label:'PREMIUM', cor:'#f59e0b', mensal:32.99, anual:349 },
+];
+
+let simModo = 'anual'; // mensal ou anual
+
+window.fnvSimToggle = function(modo) {
+  simModo = modo;
+  document.getElementById('sim-btn-mensal').style.background = modo==='mensal' ? 'var(--accent)' : 'var(--surface)';
+  document.getElementById('sim-btn-mensal').style.color = modo==='mensal' ? '#fff' : 'var(--fg2)';
+  document.getElementById('sim-btn-anual').style.background = modo==='anual' ? 'var(--accent)' : 'var(--surface)';
+  document.getElementById('sim-btn-anual').style.color = modo==='anual' ? '#fff' : 'var(--fg2)';
+  fnvRenderSim();
+};
+
+function brl(v) { return 'R$ ' + v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+
+window.fnvRenderSim = function() {
+  const n = parseInt(document.getElementById('sim-slider')?.value || 47);
+  const cards = document.getElementById('sim-cards');
+  const totGrid = document.getElementById('sim-totais-grid');
+  if (!cards) return;
+
+  // Conta usuários reais por plano
+  const contagem = { basico: 0, familia: 0, premium: 0 };
+  todosUsuarios.forEach(u => {
+    const p = (u.plano||'').toLowerCase();
+    if (p==='basico'||p==='pro') contagem.basico++;
+    else if (p==='familia') contagem.familia++;
+    else if (p==='premium') contagem.premium++;
+  });
+  const totalReal = contagem.basico + contagem.familia + contagem.premium;
+
+  let totalReceita=0, totalLucro=0, totalHotmart=0;
+
+  cards.innerHTML = PLANOS_SIM.map(p => {
+    const preco = simModo==='anual' ? p.anual : p.mensal;
+    // Usa contagem real se houver dados, senão distribui o slider
+    const nPlano = totalReal > 0
+      ? (p.id==='basico' ? contagem.basico : p.id==='familia' ? contagem.familia : contagem.premium)
+      : Math.round(n * (p.id==='basico' ? 0.4 : p.id==='familia' ? 0.35 : 0.25));
+
+    const receita = preco * nPlano;
+    const hotmart = (receita * HOTMART_TAXA) + (HOTMART_FIXO * nPlano);
+    const afiliado = receita * AFILIADO_PCT;
+    const dominioR = nPlano > 0 ? CUSTOS_FIXOS.dominio * (nPlano/Math.max(n,1)) : 0;
+    const lucro = receita - hotmart - afiliado - dominioR - CUSTOS_FIXOS.iaFirebase;
+    const margem = receita > 0 ? Math.round((lucro/receita)*100) : 0;
+
+    totalReceita += receita;
+    totalLucro += lucro;
+    totalHotmart += hotmart;
+
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:18px 16px">
+      <div style="font-size:10px;font-weight:800;letter-spacing:2px;color:${p.cor};margin-bottom:4px">${p.label}</div>
+      <div style="font-size:28px;font-weight:900;color:var(--fg1);line-height:1">${brl(preco)}</div>
+      <div style="font-size:11px;color:var(--fg3);margin-bottom:14px">/${simModo==='anual'?'ano':'mês'} · ${nPlano} assinante${nPlano!==1?'s':''}</div>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:12px">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--fg2)">Receita bruta</span><span style="font-weight:700">${brl(receita)}</span></div>
+        <div style="height:1px;background:var(--border)"></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--fg3)">Hotmart (9,9%+R$${HOTMART_FIXO})</span><span style="color:#f87171">- ${brl(hotmart)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--fg3)">Afiliado (5%)</span><span style="color:#f87171">- ${brl(afiliado)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--fg3)">Domínio (rateado)</span><span style="color:#f87171">- ${brl(dominioR)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--fg3)">IA / Firebase / Hosting</span><span style="color:var(--green)">${brl(CUSTOS_FIXOS.iaFirebase)}</span></div>
+        <div style="height:1px;background:var(--border)"></div>
+        <div style="display:flex;justify-content:space-between;font-weight:800;font-size:13px">
+          <span style="color:var(--fg1)">LUCRO LÍQUIDO</span>
+          <span style="color:${lucro>=0?'var(--green)':'var(--red)'}">${brl(lucro)}</span>
+        </div>
+        <div style="font-size:10px;color:var(--fg3);">${margem}% margem</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  if (totGrid) {
+    const margemTotal = totalReceita > 0 ? Math.round((totalLucro/totalReceita)*100) : 0;
+    totGrid.innerHTML = [
+      {label:'Receita Total', val:brl(totalReceita), cor:'var(--fg1)'},
+      {label:'Total Hotmart', val:brl(totalHotmart), cor:'#f87171'},
+      {label:'Lucro Líquido', val:brl(totalLucro), cor:totalLucro>=0?'var(--green)':'var(--red)'},
+      {label:'Margem Média', val:margemTotal+'%', cor:'var(--accent)'},
+    ].map(k=>`<div style="text-align:center;padding:10px;background:var(--surface);border-radius:10px">
+      <div style="font-size:11px;color:var(--fg3);margin-bottom:4px">${k.label}</div>
+      <div style="font-size:18px;font-weight:800;color:${k.cor}">${k.val}</div>
+    </div>`).join('');
+  }
+
+  // Atualizar contagem push
+  const comPush = todosUsuarios.filter(u => u.fcmToken).length;
+  const pushEl = document.getElementById('push-contagem');
+  if (pushEl) pushEl.textContent = `${comPush} dispositivo${comPush!==1?'s':''} com push ativado`;
+};
+
+// ── NOTIFICAÇÃO WHATSAPP MANUAL ──────────────────────────────────────
+const ZAPI_KEY = 'fnv_zapi_config';
+
+window.fnvEnviarWppManual = async function() {
+  const msg = document.getElementById('wpp-mensagem')?.value.trim();
+  const statusEl = document.getElementById('wpp-status');
+  if (!msg) { toast('⚠️ Digite uma mensagem', true); return; }
+
+  const cfg = JSON.parse(localStorage.getItem(ZAPI_KEY)||'{}');
+  if (!cfg.instanceId || !cfg.token) {
+    statusEl.innerHTML = `<span style="color:var(--red)">⚠️ Configure o Z-API primeiro na aba Config.</span>`;
+    return;
+  }
+
+  const comWpp = todosUsuarios.filter(u => u.whatsapp);
+  if (!comWpp.length) { statusEl.textContent = '⚠️ Nenhum usuário com WhatsApp cadastrado.'; return; }
+
+  statusEl.textContent = `Enviando para ${comWpp.length} usuário(s)...`;
+  let ok=0, erro=0;
+
+  for (const u of comWpp) {
+    const phone = (u.whatsapp||'').replace(/\D/g,'');
+    if (!phone) { erro++; continue; }
+    try {
+      const r = await fetch(`https://api.z-api.io/instances/${cfg.instanceId}/token/${cfg.token}/send-text`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ phone: '55'+phone, message: msg })
+      });
+      if (r.ok) ok++; else erro++;
+    } catch { erro++; }
+    await new Promise(r=>setTimeout(r,500)); // throttle
+  }
+  statusEl.innerHTML = `<span style="color:var(--green)">✅ Enviado: ${ok}</span> &nbsp; <span style="color:var(--red)">❌ Erro: ${erro}</span>`;
+  toast(`WhatsApp enviado: ${ok} sucesso, ${erro} erro`);
+};
+
+// ── PERFIL BASE (DEMOGRAFIA) ─────────────────────────────────────────
+window.fnvRenderPerfilBase = function() {
+  const usuarios = todosUsuarios;
+
+  // Faixa etária
+  const faixas = { jovem:0, adulto_jovem:0, adulto:0, meia_idade:0, sem_dado:0 };
+  usuarios.forEach(u => {
+    const f = u.faixaEtaria;
+    if (f && faixas[f]!==undefined) faixas[f]++;
+    else faixas.sem_dado++;
+  });
+  const faixaLabels = { jovem:'Jovem (<25)', adulto_jovem:'Adulto Jovem (25-34)', adulto:'Adulto (35-49)', meia_idade:'Meia Idade (50+)', sem_dado:'Sem dado' };
+  const faixaCores = { jovem:'#4f7fff', adulto_jovem:'#a855f7', adulto:'#22c55e', meia_idade:'#f59e0b', sem_dado:'#374151' };
+  const totalComIdade = Object.values(faixas).reduce((a,b)=>a+b,0) - faixas.sem_dado;
+
+  const idadeEl = document.getElementById('pb-idade-chart');
+  if (idadeEl) {
+    idadeEl.innerHTML = Object.entries(faixas).filter(([k])=>k!=='sem_dado').map(([k,v])=>{
+      const pct = totalComIdade > 0 ? Math.round((v/totalComIdade)*100) : 0;
+      return `<div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+          <span style="color:var(--fg2)">${faixaLabels[k]}</span>
+          <span style="font-weight:700;color:${faixaCores[k]}">${v} (${pct}%)</span>
+        </div>
+        <div style="height:8px;background:var(--surface);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${faixaCores[k]};border-radius:4px;transition:.3s"></div>
+        </div>
+      </div>`;
+    }).join('');
+    const obsEl = document.getElementById('pb-idade-obs');
+    if (obsEl) obsEl.textContent = `${totalComIdade} usuário(s) com data de nascimento · ${faixas.sem_dado} sem dado`;
+  }
+
+  // Perfil familiar (grupos do onboarding)
+  const grupos = {};
+  usuarios.forEach(u => {
+    const g = u.gruposSelecionados || u.grupos || [];
+    (Array.isArray(g) ? g : Object.keys(g)).forEach(gr => { grupos[gr] = (grupos[gr]||0)+1; });
+  });
+  const topGrupos = Object.entries(grupos).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const totalU = usuarios.length || 1;
+
+  const famEl = document.getElementById('pb-familia-chart');
+  if (famEl) {
+    // Clasifica perfil por grupos
+    const temFilhos = usuarios.filter(u=>{const g=u.gruposSelecionados||u.grupos||[];return (Array.isArray(g)?g:Object.keys(g)).includes('filhos');}).length;
+    const temAutomovel = usuarios.filter(u=>{const g=u.gruposSelecionados||u.grupos||[];return (Array.isArray(g)?g:Object.keys(g)).includes('automovel');}).length;
+    const temPet = usuarios.filter(u=>{const g=u.gruposSelecionados||u.grupos||[];return (Array.isArray(g)?g:Object.keys(g)).includes('pet');}).length;
+    const temInvest = usuarios.filter(u=>{const g=u.gruposSelecionados||u.grupos||[];return (Array.isArray(g)?g:Object.keys(g)).includes('investimentos');}).length;
+    const perfs = [
+      {label:'👶 Tem filhos', n:temFilhos, cor:'#a855f7'},
+      {label:'🚗 Tem automóvel', n:temAutomovel, cor:'#4f7fff'},
+      {label:'🐾 Tem pet', n:temPet, cor:'#22c55e'},
+      {label:'📈 Investe', n:temInvest, cor:'#f59e0b'},
+    ];
+    famEl.innerHTML = perfs.map(pf=>{
+      const pct = Math.round((pf.n/totalU)*100);
+      return `<div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+          <span style="color:var(--fg2)">${pf.label}</span>
+          <span style="font-weight:700;color:${pf.cor}">${pf.n} (${pct}%)</span>
+        </div>
+        <div style="height:8px;background:var(--surface);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${pf.cor};border-radius:4px;transition:.3s"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // WhatsApp
+  const comWpp = usuarios.filter(u=>u.whatsapp).length;
+  const semWpp = totalU - comWpp;
+  const wppEl = document.getElementById('pb-wpp-chart');
+  if (wppEl) {
+    const pctWpp = Math.round((comWpp/totalU)*100);
+    wppEl.innerHTML = `
+      <div style="text-align:center;margin-bottom:10px">
+        <div style="font-size:36px;font-weight:900;color:${pctWpp>50?'var(--green)':'var(--accent)'};">${pctWpp}%</div>
+        <div style="font-size:12px;color:var(--fg3)">têm WhatsApp cadastrado</div>
+      </div>
+      <div style="height:10px;background:var(--surface);border-radius:5px;overflow:hidden">
+        <div style="height:100%;width:${pctWpp}%;background:var(--green);border-radius:5px;transition:.3s"></div>
+      </div>`;
+    const obsEl = document.getElementById('pb-wpp-obs');
+    if (obsEl) obsEl.innerHTML = `<span style="color:var(--green);font-size:12px">✅ ${comWpp} com WhatsApp</span> &nbsp; <span style="color:var(--fg3);font-size:12px">❌ ${semWpp} sem</span>`;
+  }
+
+  // Top grupos de despesa
+  const gruposEl = document.getElementById('pb-grupos-chart');
+  if (gruposEl && topGrupos.length) {
+    const maxG = topGrupos[0][1] || 1;
+    const cores = ['#4f7fff','#a855f7','#22c55e','#f59e0b','#f87171','#38bdf8','#fb923c','#a3e635'];
+    gruposEl.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">` +
+    topGrupos.map(([k,v],i)=>{
+      const pct = Math.round((v/totalU)*100);
+      const emo = {moradia:'🏠',alimentacao:'🛒',saude:'💊',telefonia:'📱',automovel:'🚗',emprestimos:'🏦',investimentos:'📈',educacao:'📚',lazer:'🎉',filhos:'👶',pet:'🐾',vestuario:'👔',beleza:'💇',doacoes:'🙏',presentes:'🎁',pj:'💼'}[k]||'📌';
+      return `<div style="background:var(--surface);border-radius:8px;padding:10px 12px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+          <span style="color:var(--fg2)">${emo} ${k}</span>
+          <span style="font-weight:700;color:${cores[i%cores.length]}">${pct}%</span>
+        </div>
+        <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${Math.round((v/maxG)*100)}%;background:${cores[i%cores.length]};border-radius:3px"></div>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  } else if (gruposEl) {
+    gruposEl.textContent = 'Dados de onboarding ainda não carregados.';
+  }
+
+  // Planos por faixa etária
+  const pfEl = document.getElementById('pb-plano-faixa');
+  if (pfEl) {
+    const faixasPlano = {};
+    usuarios.forEach(u => {
+      const f = u.faixaEtaria || 'sem_dado';
+      const p = u.plano || 'free';
+      if (!faixasPlano[f]) faixasPlano[f] = { free:0, basico:0, familia:0, premium:0 };
+      faixasPlano[f][p] = (faixasPlano[f][p]||0) + 1;
+    });
+    const faixasOrdem = ['jovem','adulto_jovem','adulto','meia_idade'];
+    const planosCores = { free:'#374151', basico:'#4f7fff', familia:'#a855f7', premium:'#f59e0b' };
+    pfEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">` +
+    faixasOrdem.filter(f=>faixasPlano[f]).map(f => {
+      const data = faixasPlano[f];
+      const tot = Object.values(data).reduce((a,b)=>a+b,0);
+      return `<div>
+        <div style="font-size:12px;color:var(--fg3);margin-bottom:4px">${faixaLabels[f]} (${tot})</div>
+        <div style="display:flex;height:16px;border-radius:8px;overflow:hidden">
+          ${Object.entries(data).map(([p,v])=>v>0?`<div style="width:${Math.round((v/tot)*100)}%;background:${planosCores[p]||'#555'}" title="${p}: ${v}"></div>`:'').join('')}
+        </div>
+      </div>`;
+    }).join('') + `</div><div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">${Object.entries(planosCores).map(([p,c])=>`<span style="font-size:11px;color:var(--fg3)"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:4px"></span>${p}</span>`).join('')}</div>`;
+  }
+};
+
+// ── FCM / PUSH CONFIG ────────────────────────────────────────────────
+const FCM_KEY_STORAGE = 'fnv_fcm_server_key';
+const WORKER_URL = 'https://finanvo-ia.cledyrtaveira.workers.dev';
+const ADMIN_PUSH_KEY = 'finanvo-admin-push-2024';
+
+window.fnvSalvarFcmKey = function() {
+  const json = document.getElementById('fcm-sa-json')?.value.trim();
+  if (!json) { toast('Cole o JSON da Service Account', true); return; }
+  try {
+    const parsed = JSON.parse(json);
+    if (!parsed.client_email || !parsed.private_key) throw new Error('JSON incompleto');
+  } catch(e) { toast('JSON inválido: ' + e.message, true); return; }
+  localStorage.setItem(FCM_KEY_STORAGE, json);
+  document.getElementById('fcm-ok').textContent = '✓ Service Account salva!';
+  setTimeout(() => document.getElementById('fcm-ok').textContent = '', 3000);
+  toast('✅ FCM Service Account configurada!');
+};
+
+window.fnvTestarPush = async function() {
+  const fcmKey = localStorage.getItem(FCM_KEY_STORAGE);
+  if (!fcmKey) { toast('Configure a Service Account primeiro', true); return; }
+  // Pega o token do próprio admin (se tiver)
+  const myUid = auth.currentUser?.uid;
+  if (!myUid) { toast('Faça login primeiro', true); return; }
+  const snap = await db.collection('users').doc(myUid).get();
+  const myToken = snap.data()?.fcmToken;
+  if (!myToken) { toast('Ative as notificações no app primeiro para testar', true); return; }
+  const statusEl = document.getElementById('fcm-ok');
+  statusEl.textContent = 'Enviando teste...';
+  try {
+    const r = await fetch(`${WORKER_URL}/push-notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tokens: [myToken], title: '🧪 Teste Finanvô', body: 'Push funcionando! 🎉', adminKey: ADMIN_PUSH_KEY, serviceAccount: JSON.parse(fcmKey) })
+    });
+    const data = await r.json();
+    statusEl.textContent = data.success ? '✅ Teste enviado com sucesso!' : '❌ Erro ao enviar';
+    setTimeout(() => statusEl.textContent = '', 4000);
+  } catch(e) { statusEl.textContent = 'Erro: ' + e.message; }
+};
+
+window.fnvEnviarPush = async function() {
+  const titulo = document.getElementById('push-titulo')?.value.trim();
+  const corpo  = document.getElementById('push-corpo')?.value.trim();
+  const statusEl = document.getElementById('push-status');
+  if (!titulo) { toast('Digite um título', true); return; }
+  const fcmKey = localStorage.getItem(FCM_KEY_STORAGE);
+  if (!fcmKey) { statusEl.innerHTML = `<span style="color:var(--red)">⚠️ Configure a FCM Server Key na aba Config.</span>`; return; }
+  const tokens = todosUsuarios.filter(u => u.fcmToken).map(u => u.fcmToken);
+  if (!tokens.length) { statusEl.textContent = '⚠️ Nenhum usuário com push ativado ainda.'; return; }
+  statusEl.textContent = `Enviando para ${tokens.length} dispositivo(s)...`;
+  try {
+    const saJson = localStorage.getItem(FCM_KEY_STORAGE);
+    if (!saJson) { statusEl.innerHTML = `<span style="color:var(--red)">⚠️ Configure a Service Account na aba Config.</span>`; return; }
+    const r = await fetch(`${WORKER_URL}/push-notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tokens, title: titulo, body: corpo, adminKey: ADMIN_PUSH_KEY, serviceAccount: JSON.parse(saJson) })
+    });
+    const data = await r.json();
+    statusEl.innerHTML = `<span style="color:var(--green)">✅ Enviado: ${data.success}</span> &nbsp; <span style="color:var(--red)">❌ Erro: ${data.failure}</span>`;
+    toast(`Push enviado: ${data.success} sucesso`);
+  } catch(e) { statusEl.textContent = 'Erro: ' + e.message; }
+};
+
+// ── AVISO DE COBRANÇA MENSAL ─────────────────────────────────────────
+// Verificação automática diária ao abrir o painel
+async function fnvVerificarAvisosDiarios() {
+  const hoje = new Date().getDate();
+  const chave = `fnv_aviso_${new Date().toISOString().slice(0,10)}`; // uma vez por dia
+  if (localStorage.getItem(chave)) return;
+  const fcmKey = localStorage.getItem(FCM_KEY_STORAGE);
+  if (!fcmKey) return;
+
+  const alvo = vitalicios.filter(v => {
+    const u = todosUsuarios.find(x => (x.email||'').toLowerCase() === v.email);
+    if (!u?.fcmToken || !u?.valorPlano || u.valorPlano <= 0) return false;
+    if (!v.diaVencimento) return false;
+    // Calcula dias até o vencimento usando Date objects (correto entre meses)
+    const agora = new Date();
+    const ano = agora.getFullYear(), mes = agora.getMonth();
+    // Próxima data de vencimento (este mês ou próximo)
+    let venc = new Date(ano, mes, v.diaVencimento);
+    if (venc < agora) venc = new Date(ano, mes + 1, v.diaVencimento);
+    const diffMs = venc - agora;
+    const diff = Math.ceil(diffMs / 864e5); // dias restantes
+    return diff >= 0 && diff <= 5;
+  });
+
+  if (!alvo.length) return;
+  localStorage.setItem(chave, '1');
+
+  const PLANO_LABEL = { gratuito:'Grátis', pro:'Básico', familia:'Família', premium:'Premium' };
+  for (const v of alvo) {
+    const u = todosUsuarios.find(x => (x.email||'').toLowerCase() === v.email);
+    const valor = u.valorPlano;
+    const agora2 = new Date(), ano2 = agora2.getFullYear(), mes2 = agora2.getMonth();
+    let venc2 = new Date(ano2, mes2, v.diaVencimento);
+    if (venc2 < agora2) venc2 = new Date(ano2, mes2 + 1, v.diaVencimento);
+    const diff = Math.ceil((venc2 - agora2) / 864e5);
+    const textoAviso = diff === 0
+      ? `Hoje vence sua taxa de manutenção do plano ${PLANO_LABEL[v.plano]}: R$ ${valor.toFixed(2).replace('.',',')} 💳`
+      : `Faltam ${diff} dia(s) para vencer sua taxa do plano ${PLANO_LABEL[v.plano]}: R$ ${valor.toFixed(2).replace('.',',')}`;
+    try {
+      await fetch(`${WORKER_URL}/push-notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tokens: [u.fcmToken],
+          title: `💳 Manutenção Finanvô — dia ${v.diaVencimento}`,
+          body: textoAviso,
+          adminKey: ADMIN_PUSH_KEY,
+          serviceAccount: JSON.parse(fcmKey)
+        })
+      });
+    } catch(e) {}
+  }
+  toast(`✅ Avisos automáticos enviados para ${alvo.length} usuário(s)`);
+}
+
+window.fnvEnviarAvisoCobranca = async function(manual = true) {
+  const fcmKey = localStorage.getItem(FCM_KEY_STORAGE);
+  if (!fcmKey) { toast('Configure a Service Account FCM na aba Config primeiro', true); return; }
+
+  // Manual: envia para todos com valor > 0 (independente do dia)
+  // Automático: só quem está nos 5 dias antes do vencimento
+  const hoje = new Date().getDate();
+  const alvo = vitalicios.filter(v => {
+    const u = todosUsuarios.find(x => (x.email||'').toLowerCase() === v.email);
+    const valor = u?.valorPlano || 0;
+    if (!u?.fcmToken || valor <= 0) return false;
+    if (!manual && v.diaVencimento) {
+      const diff = v.diaVencimento - hoje;
+      return diff >= 0 && diff <= 5;
+    }
+    return true;
+  });
+
+  if (!alvo.length) {
+    toast('Nenhum acesso cortesia com valor definido e push ativo encontrado', true);
+    return;
+  }
+
+  const btn = document.getElementById('btn-aviso-cobranca');
+  const msgEl = document.getElementById('aviso-cobranca-msg');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  msgEl.textContent = '';
+
+  const mes = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  let sucessos = 0, erros = 0;
+
+  for (const v of alvo) {
+    const u = todosUsuarios.find(x => (x.email||'').toLowerCase() === v.email);
+    const valor = u?.valorPlano || 0;
+    const PLANO_LABEL = { gratuito:'Grátis', pro:'Básico', familia:'Família', premium:'Premium' };
+    const planoLabel = PLANO_LABEL[v.plano] || v.plano;
+    try {
+      const r = await fetch(`${WORKER_URL}/push-notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tokens: [u.fcmToken],
+          title: `💳 Manutenção Finanvô — ${mes}`,
+          body: `Olá! Sua taxa de manutenção do plano ${planoLabel} é R$ ${valor.toFixed(2).replace('.',',')}. Obrigado pelo apoio! 🙏`,
+          adminKey: ADMIN_PUSH_KEY,
+          serviceAccount: JSON.parse(fcmKey)
+        })
+      });
+      const data = await r.json();
+      if (data.success > 0) sucessos++; else erros++;
+    } catch(e) { erros++; }
+  }
+
+  btn.disabled = false;
+  btn.textContent = '📲 Enviar aviso agora';
+  msgEl.textContent = `✅ Enviado para ${sucessos} usuário(s)${erros ? ` · ${erros} erro(s)` : ''}`;
+  setTimeout(() => msgEl.textContent = '', 6000);
+  toast(`Aviso enviado: ${sucessos} sucesso${erros ? `, ${erros} erro` : ''}`);
+};
+
+// ── AUTH ─────────────────────────────────────────────────────────────
+auth.onAuthStateChanged(user => {
+  if (!user) { showLogin(); return; }
+  if (user.email !== ADMIN_EMAIL) {
+    auth.signOut();
+    document.getElementById('login-err').textContent = '⚠️ Acesso permitido apenas ao administrador.';
+    showLogin(); return;
+  }
+  showApp(user);
+  // Sempre pede PIN ao entrar (remove sessão anterior)
+  sessionStorage.removeItem(PIN_OK_KEY);
+  document.getElementById('pin-overlay').classList.remove('hidden');
+});
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+function showApp(user) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-name').textContent = user.displayName || user.email;
+  if (user.photoURL) document.getElementById('user-photo').src = user.photoURL;
+}
+window.fnvLogin = async function() {
+  const btn = document.querySelector('.login-btn');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  document.getElementById('login-err').textContent = '';
+  try {
+    await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  } catch(e) {
+    document.getElementById('login-err').textContent = 'Erro: ' + e.message;
+    btn.disabled = false; btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12.545 10.239v3.821h5.445c-.712 2.315-2.647 3.972-5.445 3.972a6.033 6.033 0 110-12.064c1.498 0 2.866.549 3.921 1.453l2.814-2.814A9.969 9.969 0 0012.545 2C7.021 2 2.543 6.477 2.543 12s4.478 10 10.002 10c8.396 0 10.249-7.85 9.426-11.748l-9.426-.013z"/></svg> Entrar com Google`;
+  }
+};
+window.fnvSignOut = () => { sessionStorage.removeItem(PIN_OK_KEY); auth.signOut(); };
+
+// ── TABS ─────────────────────────────────────────────────────────────
+window.fnvTab = function(id, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+id).classList.add('active');
+};
+
+// ── LOAD DASH ────────────────────────────────────────────────────────
+window.fnvLoadDash = async function() {
+  document.getElementById('dash-loading').style.display = 'block';
+  document.getElementById('dash-content').style.display = 'none';
+  try {
+    await Promise.all([loadUsuarios(), loadChatLogs(), fnvCarregarVitalicios()]);
+    fnvVerificarAvisosDiarios(); // dispara avisos automáticos se necessário
+    document.getElementById('dash-loading').style.display = 'none';
+    document.getElementById('dash-content').style.display = 'block';
+    fnvRenderSim();
+    fnvRenderPerfilBase();
+    // Preencher FCM SA se já salva
+    const savedFcmKey = localStorage.getItem(FCM_KEY_STORAGE);
+    if (savedFcmKey) { const el = document.getElementById('fcm-sa-json'); if(el) el.value = savedFcmKey; }
+  } catch(e) {
+    document.getElementById('dash-loading').innerHTML = `<div style="color:var(--red)">Erro: ${e.message}</div>`;
+  }
+};
+
+async function loadUsuarios() {
+  const snap = await db.collection('users').get();
+  todosUsuarios = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  const agora = Date.now(), dia = 86400000;
+  const hoje = todosUsuarios.filter(u => {
+    const ts = u.criadoEm?.toMillis?.() || u.createdAt?.toMillis?.() || 0;
+    return agora - ts < dia;
+  }).length;
+
+  const contPlanos = { gratuito:0, pro:0, familia:0, premium:0, vitalicio:0, bloqueado:0 };
+  todosUsuarios.forEach(u => {
+    if (u.bloqueado) { contPlanos.bloqueado++; return; }
+    const p = normPlano(u);
+    // normPlano pode retornar 'vitalicio:premium' — extrair só o tipo
+    const chave = p.startsWith('vitalicio') ? 'vitalicio' : p;
+    contPlanos[chave] = (contPlanos[chave] || 0) + 1;
+  });
+
+  const pagos = contPlanos.pro + contPlanos.familia + contPlanos.premium; // vitalício não conta como pago
+  const total = todosUsuarios.length;
+  const receita = contPlanos.pro*PRECOS.basico + contPlanos.familia*PRECOS.familia + contPlanos.premium*PRECOS.premium;
+
+  document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-total-sub').textContent = `${contPlanos.gratuito} no plano grátis`;
+  document.getElementById('kpi-pagos').textContent = pagos;
+  document.getElementById('kpi-pagos-sub').textContent = total > 0 ? `${Math.round(pagos/total*100)}% dos usuários` : '';
+  document.getElementById('kpi-receita').textContent = `R$${receita.toFixed(2).replace('.',',')}`;
+  document.getElementById('kpi-hoje').textContent = hoje;
+  document.getElementById('kpi-bloqueados').textContent = contPlanos.bloqueado;
+
+  // Barras
+  const planosConf = [
+    {key:'gratuito', label:'Grátis',    color:'#64748b'},
+    {key:'pro',      label:'Básico',    color:'#818cf8'},
+    {key:'familia',  label:'Família',   color:'#fb923c'},
+    {key:'premium',  label:'Premium',   color:'#c084fc'},
+    {key:'vitalicio',label:'Vitalício', color:'#fbbf24'},
+  ];
+  const maxP = Math.max(...planosConf.map(p => contPlanos[p.key]), 1);
+  document.getElementById('planos-bar').innerHTML = planosConf.map(p => `
+    <div class="plano-row">
+      <div class="plano-row-label" style="color:${p.color}">${p.label}</div>
+      <div class="plano-row-bar"><div class="plano-row-fill" style="width:${Math.round(contPlanos[p.key]/maxP*100)}%;background:${p.color}"></div></div>
+      <div class="plano-row-count" style="color:${p.color}">${contPlanos[p.key]}</div>
+    </div>`).join('');
+
+  // Gráfico 14 dias
+  const dias14 = [];
+  for (let i=13;i>=0;i--) {
+    const d=new Date(agora-i*dia);
+    dias14.push({label:`${d.getDate()}/${d.getMonth()+1}`,count:0,ts:new Date(d).setHours(0,0,0,0)});
+  }
+  todosUsuarios.forEach(u => {
+    const ts = u.criadoEm?.toMillis?.() || u.createdAt?.toMillis?.() || 0;
+    if (!ts) return;
+    const idx = dias14.findIndex((d,i) => { const nx=i<13?dias14[i+1].ts:agora+dia; return ts>=d.ts&&ts<nx; });
+    if (idx>=0) dias14[idx].count++;
+  });
+  const maxC = Math.max(...dias14.map(d=>d.count),1);
+  document.getElementById('chart-bars').innerHTML = dias14.map(d => `
+    <div class="chart-bar-wrap">
+      <div class="chart-bar-val">${d.count||''}</div>
+      <div class="chart-bar" style="height:${Math.max(d.count/maxC*100,4)}px"></div>
+      <div class="chart-bar-label">${d.label}</div>
+    </div>`).join('');
+
+  recalcCadastroNums();
+  renderUsuarios(todosUsuarios);
+}
+
+function normPlano(u) {
+  const vit = vitalicios.find(v => v.email === (u.email||'').toLowerCase());
+  if (vit) return 'vitalicio:' + (vit.plano || 'premium');
+  const p = (u.plano || u.plan || 'gratuito').toLowerCase();
+  if (p.includes('premium')) return 'premium';
+  if (p.includes('familia')||p.includes('família')||p.includes('family')) return 'familia';
+  if (p.includes('basico')||p.includes('básico')||p.includes('basic')||p.includes('pro')) return 'pro';
+  return 'gratuito';
+}
+
+// Contador sequencial de cadastro (índice na lista ordenada por data)
+let _cadastroNumMap = {};
+function recalcCadastroNums() {
+  const sorted = [...todosUsuarios].sort((a,b) => {
+    const ta = a.criadoEm?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
+    const tb = b.criadoEm?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
+    return ta - tb;
+  });
+  _cadastroNumMap = {};
+  sorted.forEach((u,i) => { _cadastroNumMap[u.id] = String(i+1).padStart(4,'0'); });
+}
+
+function renderUsuarios(lista) {
+  document.getElementById('usuarios-count').textContent = `${lista.length} usuário(s)`;
+  if (!lista.length) {
+    document.getElementById('usuarios-body').innerHTML = '<tr><td colspan="6" class="empty">Nenhum usuário encontrado.</td></tr>';
+    return;
+  }
+  document.getElementById('usuarios-body').innerHTML = lista.map(u => {
+    const planoRaw = u.bloqueado ? 'bloqueado' : normPlano(u);
+    const isVit = planoRaw.startsWith('vitalicio:');
+    const isDono = (u.email||'').toLowerCase() === 'cledyrtaveira@gmail.com';
+    const planoReal = isVit ? planoRaw.split(':')[1] : planoRaw;
+    const ts = u.criadoEm?.toDate?.() || u.createdAt?.toDate?.();
+    const quando = ts ? formatTs(ts) : '—';
+    const nome = esc(u.nome || u.displayName || '—');
+    const email = esc(u.email || u.uid?.slice(0,12) || u.id.slice(0,12));
+    const numCad = _cadastroNumMap[u.id] || '—';
+
+    const PLANO_LABEL = {gratuito:'Grátis',pro:'Básico',familia:'Família',premium:'Premium',bloqueado:'Bloqueado'};
+    const PLANO_BADGE = {gratuito:'gratis',pro:'basico',familia:'familia',premium:'premium',bloqueado:'bloqueado'};
+    const badgeClass = isVit ? 'badge-vitalicio' : `badge-${PLANO_BADGE[planoReal]||'gratis'}`;
+    const badgeLabel = isVit ? `⭐ ${PLANO_LABEL[planoReal]||planoReal}` : (PLANO_LABEL[planoReal]||planoReal);
+
+    // Coluna Acesso: ⭐ dono | ☀️ cortesia | 💳 pagante | 🆓 gratuito | 🔒 bloqueado
+    const acessoIcon = isDono
+      ? `<span title="Dono" style="font-size:18px">⭐</span>`
+      : isVit
+        ? `<span title="Acesso cortesia" style="font-size:18px">☀️</span>`
+        : u.bloqueado
+          ? `<span title="Bloqueado" style="font-size:18px">🔒</span>`
+          : planoReal === 'gratuito'
+            ? `<span title="Gratuito" style="font-size:18px">🆓</span>`
+            : `<span title="Pagante" style="font-size:18px">💳</span>`;
+
+    // Coluna Plano: badge + dropdown (apenas para não-vit e não-bloqueado)
+    const planoOpts = ['gratuito','pro','familia','premium'].map(p =>
+      `<option value="${p}" ${planoReal===p&&!u.bloqueado&&!isVit?'selected':''}>${PLANO_LABEL[p]}</option>`
+    ).join('');
+    const planoCol = `
+      <span class="badge ${badgeClass}">${badgeLabel}</span>
+      ${!u.bloqueado && !isVit ? `<br><select class="search-input" style="margin-top:5px;padding:3px 6px;font-size:11px;max-width:110px" onchange="fnvMudarPlano('${u.id}',this.value)">${planoOpts}</select>` : ''}`;
+
+    // Coluna Valor/mês: editável
+    const valorAtual = u.valorPlano !== undefined ? u.valorPlano : '';
+    const valorCol = `<input type="number" min="0" step="0.01" value="${valorAtual}" placeholder="R$0,00"
+      style="width:80px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--fg1);font-size:12px;outline:none"
+      onchange="fnvSalvarValorUsuario('${u.id}',this.value)" title="Valor mensal cobrado">`;
+
+    // Ações
+    const bloqBtn = u.bloqueado
+      ? `<button class="act-btn green" onclick="fnvDesbloquear('${u.id}')">✓ Desbloquear</button>`
+      : `<button class="act-btn red" onclick="fnvBloquear('${u.id}','${email}')">🚫 Bloquear</button>`;
+
+    return `<tr>
+      <td>
+        <div style="font-weight:600;color:var(--fg1)">${nome}</div>
+        <div style="font-size:11px;color:var(--fg3)">${email}</div>
+      </td>
+      <td style="text-align:center">${acessoIcon}</td>
+      <td>${planoCol}</td>
+      <td>${valorCol}</td>
+      <td style="font-size:13px;color:var(--fg2);font-weight:600">#${numCad}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">${bloqBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
+window.fnvFiltrarUsuarios = function() {
+  const q = document.getElementById('busca-usuario').value.toLowerCase();
+  const f = document.getElementById('filtro-plano').value;
+  const lista = todosUsuarios.filter(u => {
+    const nome = (u.nome||u.displayName||'').toLowerCase();
+    const email = (u.email||'').toLowerCase();
+    const matchQ = !q || nome.includes(q) || email.includes(q);
+    const planoF = u.bloqueado ? 'bloqueado' : normPlano(u);
+    const planoFReal = planoF.startsWith('vitalicio:') ? planoF.split(':')[1] : planoF;
+    const matchF = !f || planoFReal === f || planoF === f;
+    return matchQ && matchF;
+  });
+  renderUsuarios(lista);
+};
+
+window.fnvSalvarValorUsuario = async function(uid, valor) {
+  try {
+    const v = parseFloat(valor) || 0;
+    await db.collection('users').doc(uid).update({ valorPlano: v });
+    const u = todosUsuarios.find(x => x.id === uid);
+    if (u) u.valorPlano = v;
+    toast(`Valor definido: R$ ${v.toFixed(2).replace('.',',')}`);
+  } catch(e) { toast('Erro: '+e.message, true); }
+};
+
+window.fnvMudarPlano = async function(uid, novoPlano) {
+  try {
+    await db.collection('users').doc(uid).update({ plano: novoPlano });
+    const u = todosUsuarios.find(x => x.id === uid);
+    if (u) u.plano = novoPlano;
+    toast(`Plano alterado para ${novoPlano}`);
+  } catch(e) { toast('Erro: '+e.message, true); }
+};
+
+window.fnvBloquear = async function(uid, email) {
+  if (!confirm(`Bloquear o usuário ${email}? Ele não conseguirá mais acessar o app.`)) return;
+  try {
+    await db.collection('users').doc(uid).update({ bloqueado: true });
+    const u = todosUsuarios.find(x => x.id === uid);
+    if (u) u.bloqueado = true;
+    fnvFiltrarUsuarios();
+    toast('Usuário bloqueado');
+  } catch(e) { toast('Erro: '+e.message, true); }
+};
+
+window.fnvDesbloquear = async function(uid) {
+  try {
+    await db.collection('users').doc(uid).update({ bloqueado: false });
+    const u = todosUsuarios.find(x => x.id === uid);
+    if (u) u.bloqueado = false;
+    fnvFiltrarUsuarios();
+    toast('Usuário desbloqueado');
+  } catch(e) { toast('Erro: '+e.message, true); }
+};
+
+// ── CHATBOT LOGS ─────────────────────────────────────────────────────
+async function loadChatLogs() {
+  const snap = await db.collection('chatbot_logs').orderBy('ts','desc').limit(100).get();
+  todosLogs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  document.getElementById('kpi-chat').textContent = snap.size < 100 ? snap.size : '100+';
+  renderLogs(todosLogs);
+}
+function renderLogs(lista) {
+  if (!lista.length) {
+    document.getElementById('chat-logs-body').innerHTML = '<tr><td colspan="4" class="empty">Nenhuma pergunta ainda.</td></tr>';
+    return;
+  }
+  document.getElementById('chat-logs-body').innerHTML = lista.map(d => {
+    const ts = d.ts?.toDate?.();
+    const quando = ts ? formatTs(ts) : '—';
+    return `<tr>
+      <td style="color:var(--fg1);max-width:260px">${esc(d.pergunta||'—')}</td>
+      <td style="font-size:12px;color:var(--fg3);max-width:300px">${esc((d.resposta||'').slice(0,110)+(d.resposta?.length>110?'…':''))}</td>
+      <td style="font-size:11px;color:var(--fg3)">${esc(d.email||d.uid?.slice(0,10)||'anônimo')}</td>
+      <td style="font-size:11px;color:var(--fg3);white-space:nowrap">${quando}</td>
+    </tr>`;
+  }).join('');
+}
+window.fnvFiltrarChat = function() {
+  const q = document.getElementById('busca-chat').value.toLowerCase();
+  renderLogs(todosLogs.filter(l => !q || (l.pergunta||'').toLowerCase().includes(q) || (l.resposta||'').toLowerCase().includes(q)));
+};
+window.fnvLimparLogsAntigos = async function() {
+  if (!confirm('Deletar todos os logs com mais de 30 dias?')) return;
+  const limite = new Date(Date.now() - 30*86400000);
+  const snap = await db.collection('chatbot_logs').where('ts','<',limite).get();
+  if (snap.empty) { toast('Nenhum log antigo encontrado'); return; }
+  const batch = db.batch();
+  snap.docs.forEach(d => batch.delete(d.ref));
+  await batch.commit();
+  toast(`${snap.size} logs deletados`);
+  loadChatLogs();
+};
+
+// ── UTILS ────────────────────────────────────────────────────────────
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function formatTs(d) {
+  const diff = Date.now()-d;
+  if (diff<60000) return 'agora';
+  if (diff<3600000) return `${Math.floor(diff/60000)}min atrás`;
+  if (diff<86400000) return `${Math.floor(diff/3600000)}h atrás`;
+  return d.toLocaleDateString('pt-BR');
+}
+function toast(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = (err?'❌ ':'✅ ') + msg;
+  t.style.borderColor = err ? 'var(--red)' : 'var(--green)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

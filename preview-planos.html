@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planos Finanvô — Controle Financeiro Familiar</title>
+<meta name="description" content="Escolha o plano ideal para sua família. Comece grátis por 7 dias.">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#080b12;color:#e8ecf4;min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* Header */
+.header{text-align:center;padding:48px 20px 0;position:relative}
+.logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:32px;text-decoration:none}
+.logo-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#1e3a8a,#4c1d95);display:flex;align-items:center;justify-content:center;font-size:22px}
+.logo-text{font-size:20px;font-weight:800;color:#e8ecf4;letter-spacing:-.4px}
+.logo-sub{font-size:11px;color:#4f7fff;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+
+.badge-top{display:inline-flex;align-items:center;gap:6px;background:rgba(79,127,255,0.12);border:1px solid rgba(79,127,255,0.3);border-radius:50px;padding:6px 16px;font-size:12px;font-weight:600;color:#7aa2ff;margin-bottom:20px}
+h1{font-size:clamp(28px,6vw,52px);font-weight:900;letter-spacing:-1.5px;line-height:1.1;margin-bottom:16px}
+h1 span{background:linear-gradient(135deg,#4f7fff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{font-size:16px;color:#8899bb;max-width:480px;margin:0 auto 28px;line-height:1.6}
+
+.trust-badges{display:flex;flex-wrap:wrap;justify-content:center;gap:20px;margin-bottom:48px}
+.trust-item{display:flex;align-items:center;gap:6px;font-size:13px;color:#8899bb}
+.trust-item span{color:#22c55e;font-weight:600}
+
+/* Toggle mensal/anual */
+.toggle-wrap{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:36px}
+.toggle-label{font-size:14px;font-weight:600;color:#8899bb}
+.toggle-label.active{color:#e8ecf4}
+.toggle{position:relative;width:48px;height:26px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:rgba(255,255,255,0.1);border-radius:50px;transition:.3s}
+.toggle-slider:before{content:'';position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s}
+input:checked+.toggle-slider{background:linear-gradient(135deg,#4f7fff,#7c3aed)}
+input:checked+.toggle-slider:before{transform:translateX(22px)}
+.badge-anual{background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:50px}
+
+/* Grid planos */
+.plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:1000px;margin:0 auto;padding:0 20px 60px}
+
+.plan-card{background:rgba(14,18,30,0.9);border:1.5px solid rgba(255,255,255,0.07);border-radius:20px;padding:28px 24px;position:relative;transition:transform .2s,border-color .2s}
+.plan-card:hover{transform:translateY(-4px);border-color:rgba(255,255,255,0.15)}
+.plan-card.popular{border-color:rgba(139,92,246,0.6);background:rgba(139,92,246,0.06)}
+.plan-card.recommended{border-color:rgba(245,158,11,0.5);background:rgba(245,158,11,0.04)}
+
+.plan-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:700;padding:4px 14px;border-radius:50px;letter-spacing:.5px}
+.badge-popular{background:linear-gradient(135deg,#7c3aed,#4f7fff);color:#fff}
+.badge-recommended{background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff}
+
+.plan-emoji{font-size:28px;margin-bottom:10px}
+.plan-tag{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;opacity:.7}
+.plan-name{font-size:20px;font-weight:800;letter-spacing:-.4px;margin-bottom:16px}
+
+.plan-price-wrap{margin-bottom:20px}
+.plan-price{font-size:36px;font-weight:900;letter-spacing:-1px;line-height:1}
+.plan-price sub{font-size:14px;font-weight:600;vertical-align:baseline;opacity:.7}
+.plan-price-note{font-size:12px;color:#5a6480;margin-top:4px}
+.plan-price-annual{font-size:13px;font-weight:600;color:#22c55e;margin-top:6px}
+
+.plan-btn{display:block;width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:700;text-align:center;text-decoration:none;transition:opacity .2s,transform .1s;margin-bottom:10px;border:none;cursor:pointer}
+.plan-btn:hover{opacity:.9;transform:scale(1.01)}
+.plan-btn-outline{display:block;width:100%;padding:10px;border-radius:12px;font-size:13px;font-weight:600;text-align:center;text-decoration:none;transition:opacity .2s;margin-bottom:20px;background:transparent}
+.plan-btn-outline:hover{opacity:.8}
+
+.plan-divider{border:none;border-top:1px solid rgba(255,255,255,0.06);margin-bottom:16px}
+.plan-limits{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#5a6480;margin-bottom:10px}
+.plan-features{list-style:none}
+.plan-features li{font-size:13px;color:#8899bb;padding:5px 0;display:flex;align-items:flex-start;gap:8px;line-height:1.4}
+.plan-features li .icon{flex-shrink:0;margin-top:1px}
+
+/* Gratuito */
+.plan-free{grid-column:1/-1;max-width:360px;margin:0 auto;width:100%}
+
+/* Footer */
+.footer{text-align:center;padding:20px;border-top:1px solid rgba(255,255,255,0.05);font-size:12px;color:#3a4560}
+.footer a{color:#4f7fff;text-decoration:none}
+
+/* Responsivo */
+@media(max-width:600px){
+  .plans-grid{grid-template-columns:1fr}
+  .plan-free{max-width:100%}
+  h1{font-size:30px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="/finapp.html" class="logo">
+    <div class="logo-icon">📊</div>
+    <div>
+      <div class="logo-text">Finanvô</div>
+      <div class="logo-sub">Controle Familiar</div>
+    </div>
+  </a>
+
+  <div>
+    <div class="badge-top">+ PLANOS FINANVÔ</div>
+  </div>
+  <h1>Controle total das<br><span>suas finanças</span></h1>
+  <p class="subtitle">Comece grátis por 7 dias. Experimente tudo. Assine só quando sentir que não dá mais pra viver sem.</p>
+
+  <div class="trust-badges">
+    <div class="trust-item"><span>✓</span> 7 dias grátis, sem cartão</div>
+    <div class="trust-item"><span>✓</span> Cancele quando quiser</div>
+    <div class="trust-item"><span>✓</span> Dados 100% seguros</div>
+  </div>
+
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="lbl-mensal">Mensal</span>
+    <label class="toggle">
+      <input type="checkbox" id="toggle-anual" onchange="togglePeriodo(this.checked)">
+      <span class="toggle-slider"></span>
+    </label>
+    <span class="toggle-label active" id="lbl-anual">Anual <span class="badge-anual">até 12% OFF</span></span>
+  </div>
+</div>
+
+<div class="plans-grid">
+
+  <!-- Gratuito -->
+  <div class="plan-card plan-free">
+    <div class="plan-tag" style="color:#64748b">FREE</div>
+    <div class="plan-name" style="color:#94a3b8">Teste Grátis</div>
+    <div class="plan-price-wrap">
+      <div class="plan-price" style="color:#94a3b8">R$<span>0</span><sub>/mês</sub></div>
+      <div class="plan-price-note">Experimente tudo por 7 dias</div>
+    </div>
+    <a href="/finapp.html" class="plan-btn" style="background:rgba(255,255,255,0.07);color:#e8ecf4">
+      Começar grátis →
+    </a>
+    <hr class="plan-divider">
+    <ul class="plan-features">
+      <li><span class="icon">✓</span> Acesso completo a tudo</li>
+      <li><span class="icon">✓</span> Todas as features liberadas</li>
+      <li style="opacity:.5"><span class="icon">→</span> Após 7 dias: Só 6 despesas fixas</li>
+      <li style="opacity:.5"><span class="icon">→</span> Só 6 lançamentos/mês</li>
+      <li style="opacity:.5"><span class="icon">→</span> Histórico apenas 2 meses</li>
+    </ul>
+  </div>
+
+  <!-- Básico -->
+  <div class="plan-card">
+    <div class="plan-emoji">⚡</div>
+    <div class="plan-tag" style="color:#4f7fff">FINANVÔ</div>
+    <div class="plan-name" style="color:#e8ecf4">Básico</div>
+    <div class="plan-price-wrap">
+      <div class="plan-price" id="price-basico" style="color:#4f7fff">R$<span>12,40</span><sub>/mês</sub></div>
+      <div class="plan-price-note" id="note-basico">R$ 149,00/ano · <s style="opacity:.5">R$ 12,99/mês</s></div>
+      <div class="plan-price-annual" id="economy-basico">💰 Você economiza R$ 6,88</div>
+    </div>
+    <a id="btn-basico-mensal" href="https://pay.hotmart.com/U108262502C" target="_blank" class="plan-btn" style="background:linear-gradient(135deg,#2563eb,#4f7fff);color:#fff">
+      Assinar Básico
+    </a>
+    <a id="btn-basico-anual" href="https://pay.hotmart.com/U108262502C?offertag=anual" target="_blank" class="plan-btn-outline" style="color:#4f7fff;border:1.5px solid #4f7fff">
+      📅 Plano anual (economize 12%)
+    </a>
+    <hr class="plan-divider">
+    <div class="plan-limits">Limites</div>
+    <ul class="plan-features">
+      <li><span class="icon">✓</span> 13–16 despesas fixas</li>
+      <li><span class="icon">✓</span> 15–20 lançamentos/mês</li>
+      <li><span class="icon">✓</span> Histórico 12 meses</li>
+    </ul>
+    <div class="plan-limits" style="margin-top:12px">Recursos</div>
+    <ul class="plan-features">
+      <li><span class="icon">✓</span> Gráfico mensal e anual</li>
+      <li><span class="icon">✓</span> Alertas de vencimento</li>
+      <li><span class="icon">✓</span> Conta casal (2 usuários)</li>
+      <li style="opacity:.4"><span class="icon">✗</span> Sem radar de metas</li>
+    </ul>
+  </div>
+
+  <!-- Família -->
+  <div class="plan-card popular">
+    <div class="plan-badge badge-popular">👨‍👩‍👧 MAIS POPULAR</div>
+    <div class="plan-emoji">👨‍👩‍👧</div>
+    <div class="plan-tag" style="color:#8b5cf6">FINANVÔ</div>
+    <div class="plan-name" style="color:#e8ecf4">Família</div>
+    <div class="plan-price-wrap">
+      <div class="plan-price" id="price-familia" style="color:#8b5cf6">R$<span>20,75</span><sub>/mês</sub></div>
+      <div class="plan-price-note" id="note-familia">R$ 249,00/ano · <s style="opacity:.5">R$ 22,99/mês</s></div>
+      <div class="plan-price-annual" id="economy-familia">💰 R$ 3,48 por pessoa/mês (6 pessoas)</div>
+    </div>
+    <a id="btn-familia-mensal" href="https://pay.hotmart.com/U108265754P" target="_blank" class="plan-btn" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff">
+      Assinar Família →
+    </a>
+    <a id="btn-familia-anual" href="https://pay.hotmart.com/U108265754P?offertag=anual" target="_blank" class="plan-btn-outline" style="color:#8b5cf6;border:1.5px solid #8b5cf6">
+      📅 Plano anual (economize 12%)
+    </a>
+    <hr class="plan-divider">
+    <div class="plan-limits">Limites</div>
+    <ul class="plan-features">
+      <li><span class="icon">✓</span> 17–30 despesas fixas</li>
+      <li><span class="icon">✓</span> 21–30 lançamentos/mês</li>
+      <li><span class="icon">✓</span> Histórico 24 meses</li>
+    </ul>
+    <div class="plan-limits" style="margin-top:12px">Recursos</div>
+    <ul class="plan-features">
+      <li><span class="icon">✓</span> Gráfico mensal e anual</li>
+      <li><span class="icon">✓</span> Radar de metas</li>
+      <li><span class="icon">✓</span> Status de pagamento</li>
+      <li><span class="icon">✓</span> Conta família (6 usuários)</li>
+    </ul>
+  </div>
+
+  <!-- Premium -->
+  <div class="plan-card recommended">
+    <div class="plan-badge badge-recommended">👑 RECOMENDADO</div>
+    <div class="plan-emoji">👑</div>
+    <div class="plan-tag" style="color:#f59e0b">FINANVÔ</div>
+    <div class="plan-name" style="color:#e8ecf4">Premium</div>
+    <div class="plan-price-wrap">
+      <div class="plan-price" id="price-premium" style="color:#f59e0b">R$<span>29,00</span><sub>/mês</sub></div>
+      <div class="plan-price-note" id="note-premium">R$ 349,00/ano · <s style="opacity:.5">R$ 32,99/mês</s></div>
+      <div class="plan-price-annual" id="economy-premium">💰 R$ 2,42 por pessoa/mês (12 pessoas)</div>
+    </div>
+    <a id="btn-premium-mensal" href="https://pay.hotmart.com/A108265910E" target="_blank" class="plan-btn" style="background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff">
+      Assinar Premium →
+    </a>
+    <a id="btn-premium-anual" href="https://pay.hotmart.com/A108265910E?offertag=anual" target="_blank" class="plan-btn-outline" style="color:#f59e0b;border:1.5px solid #f59e0b">
+      📅 Plano anual (economize 12%)
+    </a>
+    <hr class="plan-divider">
+    <div class="plan-limits">Limites</div>
+    <ul class="plan-features">
+      <li><span class="icon">✓</span> Despesas <strong style="color:#f59e0b">ilimitadas</strong></li>
+      <li><span class="icon">✓</span> Lançamentos <strong style="color:#f59e0b">ilimitados</strong></li>
+      <li><span class="icon">✓</span> Histórico <strong style="color:#f59e0b">ilimitado</strong></li>
+    </ul>
+    <div class="plan-limits" style="margin-top:12px">Recursos</div>
+    <ul class="plan-features">
+      <li><span class="icon">✓</span> Tudo do plano Família</li>
+      <li><span class="icon">✓</span> Conta família (12 usuários)</li>
+      <li><span class="icon">✓</span> Projeções inteligentes</li>
+      <li><span class="icon">✓</span> Relatório PDF mensal</li>
+    </ul>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>© 2026 Finanvô · <a href="/finapp.html">Voltar ao app</a> · Pagamentos processados com segurança pela <a href="https://hotmart.com" target="_blank">Hotmart</a></p>
+</div>
+
+<script>
+function togglePeriodo(anual) {
+  const lblM = document.getElementById('lbl-mensal');
+  const lblA = document.getElementById('lbl-anual');
+  lblM.classList.toggle('active', !anual);
+  lblA.classList.toggle('active', anual);
+
+  // Básico
+  document.getElementById('price-basico').querySelector('span').textContent = anual ? '12,40' : '12,99';
+  document.getElementById('note-basico').innerHTML = anual
+    ? 'R$ 149,00/ano · <s style="opacity:.5">R$ 12,99/mês</s>'
+    : 'Cobrado mensalmente';
+  document.getElementById('economy-basico').style.display = anual ? 'block' : 'none';
+
+  // Família
+  document.getElementById('price-familia').querySelector('span').textContent = anual ? '20,75' : '22,99';
+  document.getElementById('note-familia').innerHTML = anual
+    ? 'R$ 249,00/ano · <s style="opacity:.5">R$ 22,99/mês</s>'
+    : 'Cobrado mensalmente';
+  document.getElementById('economy-familia').style.display = anual ? 'block' : 'none';
+
+  // Premium
+  document.getElementById('price-premium').querySelector('span').textContent = anual ? '29,00' : '32,99';
+  document.getElementById('note-premium').innerHTML = anual
+    ? 'R$ 349,00/ano · <s style="opacity:.5">R$ 32,99/mês</s>'
+    : 'Cobrado mensalmente';
+  document.getElementById('economy-premium').style.display = anual ? 'block' : 'none';
+}
+// Inicia com anual selecionado
+document.getElementById('toggle-anual').checked = true;
+</script>
+</body>
+</html>
