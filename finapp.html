@@ -10869,19 +10869,13 @@ window.entrarFamilia = async function() {
     const membros = data.membros || [];
 
     if (!membros.includes(usuarioAtivo)) {
-      // Item 32: verificar limite pelo plano do DONO da família, não do convidado
-      const donoUid = data.donoUid || data.criadorUid || codigo; // fallback: código = uid do dono
+      // Verificar limite pelo plano armazenado no doc da família (planoDono salvo pelo Worker)
+      // O convidado não tem permissão de ler users/{donoUid}, então usamos planoDono do próprio doc
       const LIMITES_FAMILIA = { gratuito: 0, pro: 2, familia: 6, premium: 6 };
       const NOMES_PLANOS = { gratuito: 'Gratuito', pro: 'Finanvô Básico', familia: 'Finanvô Família', premium: 'Finanvô Premium' };
-      let planoDono = 'pro'; // fallback seguro
-      let nomePlanoDono = 'Finanvô Básico';
-      try {
-        const donoDoc = await fbDb.collection('users').doc(donoUid).get();
-        if (donoDoc.exists) {
-          planoDono = (donoDoc.data() || {}).plano || 'pro';
-          nomePlanoDono = NOMES_PLANOS[planoDono] || planoDono;
-        }
-      } catch(e) { console.warn('Leitura plano do dono:', e.message); }
+      // planoDono fica salvo no doc da família pelo Worker quando o dono cria/atualiza
+      const planoDono = data.planoDono || 'pro';
+      const nomePlanoDono = NOMES_PLANOS[planoDono] || 'Finanvô Básico';
 
       const limiteMembrosFamilia = LIMITES_FAMILIA[planoDono] ?? 2;
       if (limiteMembrosFamilia !== null && membros.length >= limiteMembrosFamilia) {
@@ -11251,7 +11245,14 @@ window.getPlanoAtual = function() {
     }
     // Lê plano do _perfil (atualizado via onSnapshot do Firestore — definido pelo webhook)
     const p = window._perfil || {};
-    if (p.plano && PLANOS[p.plano]) return p.plano;
+    // Verifica planoExpira — se expirou, trata como gratuito
+    if (p.plano && PLANOS[p.plano]) {
+      if (p.planoExpira) {
+        const expira = new Date(p.planoExpira);
+        if (!isNaN(expira) && expira < new Date()) return 'gratuito'; // expirado
+      }
+      return p.plano;
+    }
     // Bonus temporário (ex: cortesia)
     if (p.planoBonus && PLANOS[p.planoBonus] && p.planoBonusExpira && new Date(p.planoBonusExpira) > new Date()) return p.planoBonus;
   } catch(e) {}

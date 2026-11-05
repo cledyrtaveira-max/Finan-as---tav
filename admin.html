@@ -1375,10 +1375,10 @@ function renderUsuarios(lista) {
       style="width:80px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--fg1);font-size:12px;outline:none"
       onchange="fnvSalvarValorUsuario('${u.id}',this.value)" title="Valor mensal cobrado">`;
 
-    // Ações
+    // Ações — usa data-* para evitar XSS com emails contendo aspas/JS
     const bloqBtn = u.bloqueado
-      ? `<button class="act-btn green" onclick="fnvDesbloquear('${u.id}')">✓ Desbloquear</button>`
-      : `<button class="act-btn red" onclick="fnvBloquear('${u.id}','${email}')">🚫 Bloquear</button>`;
+      ? `<button class="act-btn green" data-uid="${esc(u.id)}" onclick="fnvDesbloquear(this.dataset.uid)">✓ Desbloquear</button>`
+      : `<button class="act-btn red" data-uid="${esc(u.id)}" data-email="${esc(u.email||'')}" onclick="fnvBloquear(this.dataset.uid,this.dataset.email)">🚫 Bloquear</button>`;
 
     return `<tr>
       <td>

@@ -7,37 +7,74 @@ service cloud.firestore {
       // Leitura: apenas o próprio usuário
       allow read: if request.auth != null && request.auth.uid == uid;
 
-      // Criação: o próprio usuário pode criar seu doc de perfil
-      allow create: if request.auth != null && request.auth.uid == uid;
+      // Criação: o próprio usuário cria seu perfil, MAS não pode definir
+      // campos de plano/assinatura/controle — esses só o Worker escreve.
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && !request.resource.data.keys().hasAny([
+            'plano', 'planoBonus', 'planoBonusExpira', 'planoAtualizadoEm',
+            'planoExpira', 'bloqueado', 'valorPlano'
+           ]);
 
-      // Atualização: o próprio usuário pode editar, MAS não pode alterar
-      // os campos de plano/assinatura — esses só o Cloudflare Worker (service account) escreve.
+      // Atualização: o próprio usuário pode editar campos pessoais,
+      // mas NÃO pode alterar campos protegidos.
       allow update: if request.auth != null
         && request.auth.uid == uid
         && !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['plano', 'planoBonus', 'planoBonusExpira', 'planoAtualizadoEm']);
+            .hasAny([
+              'plano', 'planoBonus', 'planoBonusExpira', 'planoAtualizadoEm',
+              'planoExpira', 'bloqueado', 'valorPlano', 'criado', 'email'
+            ]);
     }
 
-    // ── Lançamentos, metas, família ──────────────────────────────────
+    // ── Lançamentos ──────────────────────────────────────────────────
     match /users/{uid}/lancamentos/{docId} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
+
+    // ── Metas ────────────────────────────────────────────────────────
     match /users/{uid}/metas/{docId} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
+
+    // ── Família do usuário (sub-coleção) ─────────────────────────────
     match /users/{uid}/familia/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── Dívidas do usuário ───────────────────────────────────────────
+    match /users/{uid}/dividas/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── Configurações do usuário ─────────────────────────────────────
+    match /users/{uid}/config/{docId} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
     // ── Família compartilhada ────────────────────────────────────────
     match /familias/{codFamilia} {
-      // Qualquer usuário autenticado pode ler para validar código de convite
+      // Qualquer autenticado pode ler para validar código de convite
       allow read: if request.auth != null;
-      // Só o dono (uid == codFamilia ou campo donoUid) pode criar/atualizar
+      // Criação: autenticado; atualização: apenas o dono
       allow create: if request.auth != null;
       allow update: if request.auth != null
-        && (resource.data.donoUid == request.auth.uid
-            || !resource.data.keys().hasAny(['donoUid']));
+        && resource.data.donoUid == request.auth.uid;
+      // Membros da família podem atualizar sub-docs
+      match /membros/{membroUid} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null
+          && (request.auth.uid == membroUid
+              || get(/databases/$(database)/documents/familias/$(codFamilia)).data.donoUid == request.auth.uid);
+      }
+    }
+
+    // ── Logs de chat/suporte (escrita do app, leitura só do owner) ───
+    match /chatbot_logs/{docId} {
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid;
+      allow read: if false; // só admin (service account) lê
+      allow update, delete: if false;
     }
 
     // ── Indicações (referral) ────────────────────────────────────────
@@ -46,13 +83,16 @@ service cloud.firestore {
         && (resource.data.indicadorUid == request.auth.uid
             || resource.data.indicadoUid == request.auth.uid);
       allow create: if request.auth != null;
-      // Atualização só pelo sistema (service account) — não pelo cliente
-      allow update: if false;
+      allow update: if false; // só service account
     }
 
-    // ── Planos pendentes (compra antes de criar conta) ───────────────
-    // Escrita só pelo Cloudflare Worker (service account), leitura proibida ao cliente
+    // ── Planos pendentes — só service account ────────────────────────
     match /planos_pendentes/{email} {
+      allow read, write: if false;
+    }
+
+    // ── Config do admin (vitalicios, etc.) — só service account ─────
+    match /admin_config/{docId} {
       allow read, write: if false;
     }
 
