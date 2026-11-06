@@ -662,27 +662,28 @@ const fbDb   = firebase.firestore();
 <style>
 /* ── Layout: sidebar fixa + área principal scrollável, igual ao Gemba ── */
 :root {
-  --bg:        #0f1117;
-  --surface:   #181c27;
-  --surface2:  #1e2333;
-  --border:    #272d40;
-  --border2:   #343d57;
-  --fg:        #e8ecf4;
-  --fg2:       #8892a8;
-  --fg3:       #545e78;
+  --bg:        #07090f;
+  --surface:   #0d1118;
+  --surface2:  #141928;
+  --border:    rgba(255,255,255,.07);
+  --border2:   rgba(255,255,255,.12);
+  --fg:        #edf0f8;
+  --fg1:       #edf0f8;
+  --fg2:       #7c8aa8;
+  --fg3:       #454e68;
   --accent:    #4f7fff;
-  --accent-bg: rgba(79,127,255,.12);
+  --accent-bg: rgba(79,127,255,.1);
   --green:     #22c55e;
-  --green-bg:  rgba(34,197,94,.12);
+  --green-bg:  rgba(34,197,94,.1);
   --red:       #f43f5e;
-  --red-bg:    rgba(244,63,94,.12);
+  --red-bg:    rgba(244,63,94,.1);
   --orange:    #f97316;
-  --orange-bg: rgba(249,115,22,.12);
+  --orange-bg: rgba(249,115,22,.1);
   --yellow:    #eab308;
-  --yellow-bg: rgba(234,179,8,.12);
+  --yellow-bg: rgba(234,179,8,.1);
   --purple:    #a855f7;
-  --sidebar-w: 200px;
-  --header-h:  52px;
+  --sidebar-w: 220px;
+  --header-h:  54px;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
@@ -693,6 +694,7 @@ const fbDb   = firebase.firestore();
     --border:   #e2e6f0;
     --border2:  #cdd3e3;
     --fg:       #1a2035;
+    --fg1:      #1a2035;
     --fg2:      #4a5472;
     --fg3:      #8892a8;
     color-scheme: light;
@@ -705,6 +707,7 @@ const fbDb   = firebase.firestore();
   --border:   #e2e6f0;
   --border2:  #cdd3e3;
   --fg:       #1a2035;
+  --fg1:      #1a2035;
   --fg2:      #4a5472;
   --fg3:      #8892a8;
   color-scheme: light;
@@ -732,64 +735,83 @@ body {
   flex-direction: column;
   flex-shrink: 0;
   overflow-y: auto;
+  scrollbar-width: none;
 }
+.sidebar::-webkit-scrollbar { display: none }
 .sidebar-logo {
-  padding: 16px 16px 12px;
+  padding: 18px 16px 14px;
   border-bottom: 1px solid var(--border);
 }
 .logo-mark {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 10px;
 }
 .logo-icon {
-  width: 34px; height: 34px; border-radius: 9px;
-  background: linear-gradient(135deg, #2563eb 0%, #4f7fff 60%, #7c3aed 100%);
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, #2563eb 0%, #4f7fff 55%, #7c3aed 100%);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(79,127,255,0.35);
+  box-shadow: 0 4px 12px rgba(79,127,255,0.4);
 }
 .logo-text {
-  font-weight: 800; font-size: 14px; letter-spacing: -.3px;
-  background: linear-gradient(90deg, #4f7fff, #7c3aed);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-weight: 900; font-size: 15px; letter-spacing: -.4px;
+  color: var(--fg);
 }
 .logo-sub { font-size: 10px; color: var(--fg3); margin-top: 1px; letter-spacing: .2px }
 
-.sidebar-section { padding: 12px 8px 4px; }
+.sidebar-section { padding: 16px 10px 4px; }
 .sidebar-label {
-  font-size: 9px; font-weight: 600; letter-spacing: .8px;
+  font-size: 9.5px; font-weight: 700; letter-spacing: 1px;
   text-transform: uppercase; color: var(--fg3);
-  padding: 0 8px; margin-bottom: 4px;
+  padding: 0 8px; margin-bottom: 6px;
 }
 .nav-item {
-  display: flex; align-items: center; gap: 9px;
-  padding: 7px 10px; border-radius: 7px; cursor: pointer;
-  color: var(--fg2); font-weight: 500; font-size: 12.5px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  color: var(--fg2); font-weight: 500; font-size: 13px;
   transition: background .12s, color .12s;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .nav-item:hover { background: var(--surface2); color: var(--fg) }
-.nav-item.active { background: var(--accent-bg); color: var(--accent) }
-.nav-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0 }
+.nav-item.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+.nav-icon {
+  width: 20px; height: 20px; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; opacity: .65;
+  transition: opacity .12s;
+}
+.nav-icon svg {
+  width: 17px; height: 17px;
+  stroke: currentColor; fill: none;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.nav-item.active .nav-icon { opacity: 1 }
+.nav-item:hover .nav-icon { opacity: 1 }
 
 .sidebar-footer {
   margin-top: auto;
-  padding: 12px 8px;
+  padding: 12px 10px;
   border-top: 1px solid var(--border);
 }
 .user-card {
   display: flex; align-items: center; gap: 9px;
-  padding: 8px 10px; border-radius: 8px;
+  padding: 9px 10px; border-radius: 9px;
   background: var(--surface2);
+  transition: background .15s;
 }
+.user-card:hover { background: rgba(255,255,255,.06) }
 .avatar {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: var(--accent); display: flex; align-items: center;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  display: flex; align-items: center;
   justify-content: center; font-size: 11px; font-weight: 700;
   color: #fff; flex-shrink: 0;
 }
 .user-info { min-width: 0 }
-.user-name { font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.user-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
 .user-role { font-size: 10px; color: var(--fg3) }
 
 /* ── Main ── */
@@ -805,16 +827,36 @@ body {
   padding: 0 24px;
   background: var(--surface);
 }
-.topbar-left { display: flex; flex-direction: column; gap: 1px }
-.breadcrumb { font-size: 10px; color: var(--fg3); text-transform: uppercase; letter-spacing: .6px }
-.page-title { font-size: 17px; font-weight: 700; letter-spacing: -.3px }
+.topbar-left { display: flex; flex-direction: column; gap: 2px }
+.breadcrumb { font-size: 10px; color: var(--fg3); text-transform: uppercase; letter-spacing: .7px; font-weight: 600 }
+.page-title { font-size: 16px; font-weight: 700; letter-spacing: -.3px; line-height: 1 }
 
-.topbar-right { display: flex; align-items: center; gap: 10px }
+.topbar-right { display: flex; align-items: center; gap: 8px }
 .sync-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--green); box-shadow: 0 0 6px var(--green);
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 8px var(--green);
+  animation: pulse-green 2s ease-in-out infinite;
+}
+@keyframes pulse-green {
+  0%,100% { opacity: 1 }
+  50% { opacity: .5 }
 }
 .sync-label { font-size: 11px; color: var(--fg2); display: flex; align-items: center; gap: 5px }
+.topbar-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff; cursor: pointer;
+  flex-shrink: 0;
+}
+.topbar-btn {
+  width: 32px; height: 32px; border-radius: 8px;
+  border: 1px solid var(--border2); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--fg2); transition: background .12s, color .12s;
+}
+.topbar-btn:hover { background: var(--surface2); color: var(--fg) }
+.topbar-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; pointer-events: none }
 
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
@@ -837,7 +879,12 @@ body {
   padding: 24px;
   padding-left: max(24px, env(safe-area-inset-left, 0px));
   padding-right: max(24px, env(safe-area-inset-right, 0px));
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
 }
+.content::-webkit-scrollbar { width: 5px }
+.content::-webkit-scrollbar-track { background: transparent }
+.content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px }
 
 /* ══ Status de pagamento ══════════════════════════════════════════ */
 .status-btn {
@@ -993,47 +1040,61 @@ body {
 @media (max-width: 640px) {
   :root { --sidebar-w: 0px }
   .sidebar { display: none !important }
-  .topbar { padding: 0 14px }
-  .content { padding: 14px; padding-bottom: 80px }
+  .topbar { padding: 0 16px }
+  .content { padding: 16px; padding-bottom: 84px }
   .lanc-kpis { grid-template-columns: repeat(2,1fr); }
   .bottom-nav {
     display: flex;
     position: fixed; bottom: 0; left: 0; right: 0;
-    height: 58px;
+    height: 60px;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background: var(--surface);
     border-top: 1px solid var(--border);
     z-index: 100;
     align-items: stretch;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
   .bn-item {
     flex: 1; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    gap: 2px; cursor: pointer;
-    color: var(--fg3); font-size: 9.5px; font-weight: 500;
+    gap: 3px; cursor: pointer;
+    color: var(--fg3); font-size: 9px; font-weight: 500;
     padding-bottom: 2px;
     transition: color .12s;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
   }
   .bn-item.active { color: var(--accent) }
-  .bn-item .bn-icon { font-size: 20px; line-height: 1 }
+  .bn-item .bn-icon {
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .bn-item .bn-icon svg {
+    width: 22px; height: 22px;
+    stroke: currentColor; fill: none;
+    stroke-linecap: round; stroke-linejoin: round;
+    transition: stroke .12s;
+  }
   .bn-more-menu {
-    position: fixed; bottom: 60px; right: 0; left: 0;
+    position: fixed; bottom: 62px; right: 0; left: 0;
     background: var(--surface);
     border-top: 1px solid var(--border);
-    padding: 8px 0;
+    padding: 10px 0;
     z-index: 99;
     display: none;
+    box-shadow: 0 -4px 24px rgba(0,0,0,.35);
   }
   .bn-more-menu.open { display: block }
   .bn-menu-item {
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center; gap: 12px;
     padding: 11px 20px; cursor: pointer;
     color: var(--fg2); font-size: 13px; font-weight: 500;
+    -webkit-tap-highlight-color: transparent;
   }
   .bn-menu-item.active { color: var(--accent) }
   .bn-menu-item:active { background: var(--surface2) }
+  .bn-menu-item svg { width: 18px; height: 18px; stroke: currentColor; fill: none; flex-shrink: 0 }
 }
 
 /* ── Views ── */
@@ -1065,11 +1126,15 @@ body {
 }
 .kpi-card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 12px; padding: 16px 16px 14px;
+  border-radius: 14px; padding: 16px 18px 15px;
   position: relative; overflow: hidden;
-  transition: transform .15s, box-shadow .15s;
+  transition: transform .15s, box-shadow .15s, border-color .15s;
 }
-.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.18) }
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+  border-color: var(--border2);
+}
 .kpi-card::before {
   content: ''; position: absolute; left: 0; top: 0; bottom: 0;
   width: 3px; border-radius: 3px 0 0 3px;
@@ -1078,11 +1143,19 @@ body {
 .kpi-red::before   { background: var(--red) }
 .kpi-blue::before  { background: var(--accent) }
 .kpi-orange::before { background: var(--orange) }
-.kpi-icon { font-size: 22px; margin-bottom: 8px; display: block }
-.kpi-label { font-size: 10.5px; color: var(--fg3); font-weight: 500; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px }
-.kpi-value { font-size: 20px; font-weight: 700; letter-spacing: -.5px; font-variant-numeric: tabular-nums }
-.kpi-sub { font-size: 10.5px; color: var(--fg3); margin-top: 4px }
-.kpi-trend { font-size: 10px; font-weight: 700; margin-top: 6px; display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border-radius: 10px }
+.kpi-icon {
+  font-size: 11px; margin-bottom: 10px; display: block;
+  font-weight: 600; color: var(--fg3);
+  text-transform: uppercase; letter-spacing: .6px;
+}
+.kpi-label { font-size: 10.5px; color: var(--fg3); font-weight: 500; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 5px }
+.kpi-value {
+  font-size: 22px; font-weight: 800; letter-spacing: -.8px;
+  font-variant-numeric: tabular-nums;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+.kpi-sub { font-size: 10.5px; color: var(--fg3); margin-top: 5px }
+.kpi-trend { font-size: 10px; font-weight: 700; margin-top: 6px; display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 10px }
 .kpi-trend.up   { color: var(--green); background: rgba(34,197,94,0.1) }
 .kpi-trend.down { color: var(--red);   background: rgba(239,68,68,0.1) }
 .kpi-trend.neu  { color: var(--fg3);   background: var(--surface2) }
@@ -1135,7 +1208,7 @@ body {
 .dhc-ctrl-btn:hover { background: rgba(255,255,255,0.24); transform: scale(1.05) }
 .dhc-ctrl-btn:active { transform: scale(0.95) }
 .dhc-saldo-label { font-size: 10px; color: rgba(255,255,255,0.55); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px }
-.dhc-saldo-val { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; line-height: 1 }
+.dhc-saldo-val { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; line-height: 1; font-family: 'JetBrains Mono', monospace }
 .dhc-saldo-val.negativo { color: #fca5a5 }
 /* Card 2 — Receita / Despesas / Dívidas */
 .dhc-kpi-card {
@@ -1172,17 +1245,18 @@ body {
 
 /* Toast tipado */
 .toast-typed {
-  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(0);
   display: flex; align-items: center; gap: 10px;
-  padding: 11px 18px; border-radius: 12px; font-size: 13px; font-weight: 600;
-  z-index: 9999; box-shadow: 0 6px 28px rgba(0,0,0,.45); transition: opacity .3s, transform .3s;
+  padding: 12px 20px; border-radius: 14px; font-size: 13px; font-weight: 600;
+  z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,.55); transition: opacity .25s, transform .25s;
   pointer-events: none; max-width: 90vw; white-space: nowrap;
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
 }
-.toast-typed.success { background: #052e16; border: 1px solid #166534; color: #4ade80; }
-.toast-typed.warning { background: #1c1407; border: 1px solid #92400e; color: #fbbf24; }
-.toast-typed.error   { background: #1c0505; border: 1px solid #991b1b; color: #f87171; }
-.toast-typed.info    { background: #0a1628; border: 1px solid #1d4ed8; color: #93c5fd; }
-.toast-typed.hidden  { opacity: 0; transform: translateX(-50%) translateY(10px); }
+.toast-typed.success { background: rgba(5,46,22,.9); border: 1px solid rgba(22,101,52,.7); color: #4ade80; }
+.toast-typed.warning { background: rgba(28,20,7,.9); border: 1px solid rgba(146,64,14,.7); color: #fbbf24; }
+.toast-typed.error   { background: rgba(28,5,5,.9); border: 1px solid rgba(153,27,27,.7); color: #f87171; }
+.toast-typed.info    { background: rgba(10,22,40,.9); border: 1px solid rgba(29,78,216,.7); color: #93c5fd; }
+.toast-typed.hidden  { opacity: 0; transform: translateX(-50%) translateY(8px); }
 
 /* Pill de status visual */
 .status-pill {
@@ -2143,16 +2217,16 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
     <div class="sidebar-section">
       <div class="sidebar-label">Controle</div>
       <div class="nav-item active" onclick="navTo('dashboard', this)">
-        <span class="nav-icon">📊</span> Dashboard
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg></span> Dashboard
       </div>
       <div class="nav-item" onclick="navTo('mensal', this)">
-        <span class="nav-icon">📅</span> Mês a Mês
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 2v3M13 2v3"/></svg></span> Mês a Mês
       </div>
       <div class="nav-item" onclick="navTo('lancamentos', this)">
-        <span class="nav-icon">📋</span> Lançamentos
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6h10M5 10h10M5 14h6"/></svg></span> Lançamentos
       </div>
       <div class="nav-item" onclick="navTo('grafico', this)">
-        <span class="nav-icon">📈</span> Gráficos
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,14 7,9 11,11 17,5"/><path d="M17 5h-4M17 5v4"/></svg></span> Gráficos
       </div>
     </div>
 
@@ -2162,16 +2236,16 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
       </div>
       <div id="submenu-planejamento" style="overflow:hidden;transition:max-height .3s ease;max-height:200px">
         <div class="nav-item" onclick="navTo('dividas', this)">
-          <span class="nav-icon">💳</span> Dívidas
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="16" height="11" rx="2"/><path d="M6 6V5a4 4 0 0 1 8 0v1M10 12v.01"/></svg></span> Dívidas
         </div>
         <div class="nav-item" onclick="navTo('estrategia', this)">
-          <span class="nav-icon">🎯</span> Estratégia
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><circle cx="10" cy="10" r="4"/><circle cx="10" cy="10" r="1" fill="currentColor" stroke="none"/></svg></span> Estratégia
         </div>
         <div class="nav-item" onclick="navTo('ia', this)">
-          <span class="nav-icon">🤖</span> Análise IA
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2C6.69 2 4 4.69 4 8c0 2.07 1 3.9 2.56 5.08L6 16l2.5-1.25A6.03 6.03 0 0 0 10 15c3.31 0 6-2.69 6-6s-2.69-7-6-7z"/><path d="M8 9h4M8 11h2"/></svg></span> Análise IA
         </div>
         <div class="nav-item" onclick="navTo('checklist', this)">
-          <span class="nav-icon">✅</span> Checklist Mensal
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l2 2 4-4"/><rect x="3" y="4" width="14" height="13" rx="2"/></svg></span> Checklist Mensal
         </div>
       </div>
     </div>
@@ -2179,26 +2253,26 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
     <div class="sidebar-section">
       <div class="sidebar-label">Comunidade</div>
       <div class="nav-item" onclick="navTo('indicacao', this)">
-        <span class="nav-icon">🎁</span> Indique e Ganhe
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H9.5a3.5 3.5 0 1 1 0-7H10v7M20 7v4M20 7H15.5a3.5 3.5 0 1 0 0 7H16v-7" transform="scale(0.85) translate(1.5,1.5)"/></svg></span> Indique e Ganhe
       </div>
       <div class="nav-item" onclick="navTo('afiliados', this)">
-        <span class="nav-icon">💸</span> Afiliados
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v16M6 6l4-4 4 4M6 14l4 4 4-4"/></svg></span> Afiliados
       </div>
       <div class="nav-item" onclick="navTo('familia', this)">
-        <span class="nav-icon">👨‍👩‍👧</span> Modo Família
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="6" r="2.5"/><circle cx="13" cy="6" r="2.5"/><path d="M2 17c0-3.31 2.24-5 5-5h6c2.76 0 5 1.69 5 5"/></svg></span> Modo Família
       </div>
     </div>
 
     <div class="sidebar-section">
       <div class="sidebar-label">Sistema</div>
       <div class="nav-item" onclick="navTo('config', this)">
-        <span class="nav-icon">⚙️</span> Configurações
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/></svg></span> Configurações
       </div>
       <div class="nav-item" onclick="mostrarInstalacao()">
-        <span class="nav-icon">📲</span> Instalar App
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="1" width="8" height="14" rx="2"/><path d="M9 15v3M7 18h6M10 5v4M8 7l2 2 2-2"/></svg></span> Instalar App
       </div>
       <div class="nav-item" onclick="alternarTema()" id="tema-nav-item">
-        <span class="nav-icon" id="tema-nav-icon">☀️</span> <span id="tema-nav-label">Tema claro</span>
+        <span class="nav-icon" id="tema-nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="4"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/></svg></span> <span id="tema-nav-label">Tema claro</span>
       </div>
     </div>
 
@@ -3087,34 +3161,34 @@ Abraços!</div>
 <!-- Bottom nav (só aparece em mobile via CSS) -->
 <div class="bn-more-menu" id="bn-more-menu" onclick="fecharBnMenu()">
   <div class="bn-menu-item" id="bnm-dividas" onclick="bnNav('dividas');event.stopPropagation()">
-    <span>💳</span> Dívidas
+    <svg viewBox="0 0 20 20" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="16" height="11" rx="2"/><path d="M6 6V5a4 4 0 0 1 8 0v1M10 12v.01"/></svg> Dívidas
   </div>
   <div class="bn-menu-item" id="bnm-estrategia" onclick="bnNav('estrategia');event.stopPropagation()">
-    <span>🎯</span> Estratégia
+    <svg viewBox="0 0 20 20" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><circle cx="10" cy="10" r="4"/><circle cx="10" cy="10" r="1" fill="currentColor" stroke="none"/></svg> Estratégia
   </div>
   <div class="bn-menu-item" id="bnm-config" onclick="bnNav('config');event.stopPropagation()">
-    <span>⚙️</span> Configurações
+    <svg viewBox="0 0 20 20" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/></svg> Configurações
   </div>
 </div>
 <nav class="bottom-nav" id="bottom-nav">
   <div class="bn-item active" id="bn-dashboard" onclick="bnNav('dashboard')">
-    <span class="bn-icon">📊</span>
+    <span class="bn-icon"><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg></span>
     <span>Dashboard</span>
   </div>
   <div class="bn-item" id="bn-mensal" onclick="bnNav('mensal')">
-    <span class="bn-icon">📅</span>
-    <span>Mês a Mês</span>
+    <span class="bn-icon"><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 2v3M13 2v3"/></svg></span>
+    <span>Mês</span>
   </div>
   <div class="bn-item" id="bn-lancamentos" onclick="bnNav('lancamentos')">
-    <span class="bn-icon">📋</span>
+    <span class="bn-icon"><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6h10M5 10h10M5 14h6"/></svg></span>
     <span>Lançamentos</span>
   </div>
   <div class="bn-item" id="bn-grafico" onclick="bnNav('grafico')">
-    <span class="bn-icon">📈</span>
+    <span class="bn-icon"><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,14 7,9 11,11 17,5"/><path d="M17 5h-4M17 5v4"/></svg></span>
     <span>Gráficos</span>
   </div>
   <div class="bn-item" id="bn-mais" onclick="toggleBnMenu()">
-    <span class="bn-icon">☰</span>
+    <span class="bn-icon"><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="15" r="1" fill="currentColor" stroke="none"/></svg></span>
     <span>Mais</span>
   </div>
 </nav>
@@ -3893,7 +3967,9 @@ function aplicarTema(tema) {
   if (btnLogin) btnLogin.textContent = isLight ? '🌙' : '☀️';
   const navIcon = document.getElementById('tema-nav-icon');
   const navLabel = document.getElementById('tema-nav-label');
-  if (navIcon) navIcon.textContent = isLight ? '🌙' : '☀️';
+  if (navIcon) navIcon.innerHTML = isLight
+    ? `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 12A7.5 7.5 0 0 1 8 2.5a7.5 7.5 0 1 0 9.5 9.5z"/></svg>`
+    : `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="4"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/></svg>`;
   if (navLabel) navLabel.textContent = isLight ? 'Tema escuro' : 'Tema claro';
 }
 function alternarTema() {
