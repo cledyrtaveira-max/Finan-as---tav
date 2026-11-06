@@ -7,14 +7,27 @@ export default {
   async fetch(request, env) {
     if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
-    let payload;
-    try { payload = await request.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
+    // Ler body como texto para validar HMAC antes de parsear
+    const rawBody = await request.text();
 
-    // Verificar token Hotmart (header, query param ou body)
-    const hottok = request.headers.get('X-Hotmart-Hottok')
-      || new URL(request.url).searchParams.get('hottok')
-      || payload.hottok;
-    if (env.HOTMART_HOTTOK && hottok !== env.HOTMART_HOTTOK) return new Response('Unauthorized', { status: 401 });
+    // ── Validação HMAC-SHA1 do Hotmart ───────────────────────────────
+    // Hotmart envia X-Hotmart-Webhook-Token com HMAC-SHA1(hottok, rawBody)
+    if (env.HOTMART_HOTTOK) {
+      const signature = request.headers.get('X-Hotmart-Webhook-Token') || '';
+      if (signature) {
+        // Validar HMAC apenas se o header estiver presente
+        const isValid = await verifyHmac(env.HOTMART_HOTTOK, rawBody, signature);
+        if (!isValid) return new Response('Unauthorized', { status: 401 });
+      } else {
+        // Fallback: validar pelo hottok no header antigo ou query param
+        const hottok = request.headers.get('X-Hotmart-Hottok')
+          || new URL(request.url).searchParams.get('hottok');
+        if (hottok !== env.HOTMART_HOTTOK) return new Response('Unauthorized', { status: 401 });
+      }
+    }
+
+    let payload;
+    try { payload = JSON.parse(rawBody); } catch { return new Response('Invalid JSON', { status: 400 }); }
 
     const evento = payload.event || payload.data?.event;
     const compra = payload.data?.purchase || payload.purchase;
@@ -61,6 +74,7 @@ export default {
 
 async function setPlano(env, email, plano, compra) {
   const token = await getToken(env);
+
   // Buscar UID pelo email
   const r1 = await fetch(`https://identitytoolkit.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/accounts:lookup`, {
     method: 'POST',
@@ -89,6 +103,10 @@ async function setPlano(env, email, plano, compra) {
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify({ fields })
     });
+
+    // ── PEN-02: Atualizar planoDono em familias onde este usuário é dono ──
+    // Busca todas as famílias onde donoUid == uid e atualiza planoDono
+    await atualizarPlanoDono(env, token, uid, plano);
   } else {
     // Usuário ainda não criou conta — salva como pendente
     const key = email.replace(/[.@]/g, '_');
@@ -97,6 +115,51 @@ async function setPlano(env, email, plano, compra) {
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify({ fields: { ...fields, email: { stringValue: email } } })
     });
+  }
+}
+
+// ── Atualiza planoDono nas famílias onde o usuário é dono ───────────
+// Cloudflare Workers não suporta queries Firestore com filtro diretamente
+// via REST sem índice — usamos collectionGroup query via REST v1
+async function atualizarPlanoDono(env, token, uid, plano) {
+  try {
+    // Query: familias WHERE donoUid == uid
+    const queryBody = {
+      structuredQuery: {
+        from: [{ collectionId: 'familias', allDescendants: false }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: 'donoUid' },
+            op: 'EQUAL',
+            value: { stringValue: uid }
+          }
+        },
+        limit: 20
+      }
+    };
+    const qr = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
+      {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify(queryBody)
+      }
+    );
+    const rows = await qr.json();
+
+    // Atualiza cada família encontrada
+    await Promise.all((rows || []).map(async row => {
+      const name = row.document?.name;
+      if (!name) return;
+      await fetch(`${name}?updateMask.fieldPaths=planoDono`, {
+        method: 'PATCH',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { planoDono: { stringValue: plano } } })
+      });
+    }));
+  } catch(e) {
+    // Não bloquear o fluxo principal se a atualização de família falhar
+    console.warn('atualizarPlanoDono falhou:', e.message);
   }
 }
 
@@ -140,6 +203,29 @@ function calcularExpiracao(plano, compra) {
   const fallback = new Date();
   fallback.setDate(fallback.getDate() + 31);
   return fallback.toISOString();
+}
+
+// ── Validação HMAC-SHA1 do Hotmart ──────────────────────────────────
+// Hotmart envia X-Hotmart-Webhook-Token = HMAC-SHA1(hottok, corpo)
+async function verifyHmac(secret, body, signature) {
+  try {
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw', enc.encode(secret),
+      { name: 'HMAC', hash: 'SHA-1' },
+      false, ['sign']
+    );
+    const mac = await crypto.subtle.sign('HMAC', key, enc.encode(body));
+    const computed = Array.from(new Uint8Array(mac))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+    // Comparação em tempo constante básica
+    if (computed.length !== signature.length) return false;
+    let diff = 0;
+    for (let i = 0; i < computed.length; i++) {
+      diff |= computed.charCodeAt(i) ^ signature.charCodeAt(i);
+    }
+    return diff === 0;
+  } catch { return false; }
 }
 
 async function getToken(env) {

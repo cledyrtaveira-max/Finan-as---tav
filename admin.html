@@ -454,6 +454,19 @@ select.search-input{cursor:pointer;}
             <button class="icon-btn" style="background:var(--surface);color:var(--fg2);border:1px solid var(--border)" onclick="fnvTestarPush()">🧪 Testar push para mim</button>
           </div>
           <div id="fcm-ok" style="font-size:12px;color:var(--green);margin-top:8px;min-height:16px"></div>
+          <!-- Chave de autenticação do worker push (ADMIN_PUSH_KEY no wrangler) -->
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+            <div style="font-size:13px;font-weight:600;margin-bottom:6px">🔑 Chave de autorização do Worker</div>
+            <div style="font-size:12px;color:var(--fg2);margin-bottom:8px">
+              Mesma chave configurada com <code>wrangler secret put ADMIN_PUSH_KEY</code>.
+              Salva apenas neste navegador — nunca vai ao servidor.
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="password" id="push-key-input" placeholder="Cole a ADMIN_PUSH_KEY aqui" class="search-input" style="flex:1">
+              <button class="icon-btn" onclick="fnvSalvarPushKey()">Salvar chave</button>
+            </div>
+            <div id="push-key-ok" style="font-size:12px;color:var(--green);margin-top:6px;min-height:16px"></div>
+          </div>
         </div>
 
         <div class="section-title">⭐ Acessos Vitalícios</div>
@@ -524,9 +537,17 @@ select.search-input{cursor:pointer;}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 const ADMIN_EMAIL = 'cledyrtaveira@gmail.com';
-const PIN_KEY = 'fnv_admin_pin';
+const PIN_KEY = 'fnv_admin_pin_hash'; // armazena SHA-256 do PIN, nunca plain text
 const PIN_OK_KEY = 'fnv_pin_ok';
 const DEFAULT_PIN = '1234';
+
+// Calcula SHA-256 do PIN (async)
+async function hashPin(pin) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+// Versão síncrona: retorna hash armazenado (ou hash do DEFAULT_PIN)
+async function getPin() { return localStorage.getItem(PIN_KEY) || await hashPin(DEFAULT_PIN); }
 
 const PRECOS = { basico: 12.99, familia: 22.99, premium: 32.99 };
 const ADMINS_VITALICIOS = ['cledyrtaveira@gmail.com'];
@@ -545,8 +566,8 @@ const db = firebase.firestore();
 let todosUsuarios = [], todosLogs = [];
 let pinBuffer = '';
 
-// ── PIN ──────────────────────────────────────────────────────────────
-function getPin() { return localStorage.getItem(PIN_KEY) || DEFAULT_PIN; }
+// ── PIN (hash SHA-256) ────────────────────────────────────────────────
+// getPin() foi redefinido acima como async — retorna hash armazenado
 
 window.fnvPin = function(d) {
   if (pinBuffer.length >= 4) return;
@@ -555,8 +576,10 @@ window.fnvPin = function(d) {
     document.getElementById('pd'+i).classList.toggle('filled', i < pinBuffer.length);
   }
   if (pinBuffer.length === 4) {
-    setTimeout(() => {
-      if (pinBuffer === getPin()) {
+    setTimeout(async () => {
+      const entered = await hashPin(pinBuffer);
+      const stored  = await getPin();
+      if (entered === stored) {
         sessionStorage.setItem(PIN_OK_KEY, '1');
         document.getElementById('pin-overlay').classList.add('hidden');
         fnvLoadDash();
@@ -706,10 +729,11 @@ window.fnvRemoverVitalicio = async function(idx) {
   } catch(e) { toast('Erro: ' + e.message, true); }
 };
 
-window.fnvSalvarPin = function() {
+window.fnvSalvarPin = async function() {
   const v = document.getElementById('pin-novo').value;
-  if (v.length !== 4) { toast('PIN precisa ter 4 dígitos', true); return; }
-  localStorage.setItem(PIN_KEY, v);
+  if (v.length !== 4 || !/^\d{4}$/.test(v)) { toast('PIN precisa ter 4 dígitos numéricos', true); return; }
+  const h = await hashPin(v);
+  localStorage.setItem(PIN_KEY, h);
   document.getElementById('pin-ok').textContent = '✓ PIN salvo com sucesso!';
   document.getElementById('pin-novo').value = '';
   setTimeout(() => document.getElementById('pin-ok').textContent = '', 3000);
@@ -992,9 +1016,22 @@ window.fnvRenderPerfilBase = function() {
 };
 
 // ── FCM / PUSH CONFIG ────────────────────────────────────────────────
-const FCM_KEY_STORAGE = 'fnv_fcm_server_key';
-const WORKER_URL = 'https://finanvo-ia.cledyrtaveira.workers.dev';
-const ADMIN_PUSH_KEY = 'finanvo-admin-push-2024';
+const FCM_KEY_STORAGE    = 'fnv_fcm_server_key';
+const PUSH_KEY_STORAGE   = 'fnv_admin_push_key'; // nunca hardcode — salvo localmente pelo admin
+const WORKER_URL         = 'https://finanvo-ia.cledyrtaveira.workers.dev';
+
+// Lê a chave push salva — retorna null se não configurada
+function getAdminPushKey() { return localStorage.getItem(PUSH_KEY_STORAGE) || null; }
+
+window.fnvSalvarPushKey = function() {
+  const v = document.getElementById('push-key-input')?.value.trim();
+  if (!v) { toast('Cole a ADMIN_PUSH_KEY antes de salvar', true); return; }
+  localStorage.setItem(PUSH_KEY_STORAGE, v);
+  document.getElementById('push-key-ok').textContent = '✓ Chave salva neste navegador!';
+  document.getElementById('push-key-input').value = '';
+  setTimeout(() => document.getElementById('push-key-ok').textContent = '', 3000);
+  toast('✅ Push Key configurada!');
+};
 
 window.fnvSalvarFcmKey = function() {
   const json = document.getElementById('fcm-sa-json')?.value.trim();
@@ -1012,6 +1049,7 @@ window.fnvSalvarFcmKey = function() {
 window.fnvTestarPush = async function() {
   const fcmKey = localStorage.getItem(FCM_KEY_STORAGE);
   if (!fcmKey) { toast('Configure a Service Account primeiro', true); return; }
+  if (!getAdminPushKey()) { toast('Configure a Chave de autorização do Worker (ADMIN_PUSH_KEY) primeiro', true); return; }
   // Pega o token do próprio admin (se tiver)
   const myUid = auth.currentUser?.uid;
   if (!myUid) { toast('Faça login primeiro', true); return; }
@@ -1024,7 +1062,7 @@ window.fnvTestarPush = async function() {
     const r = await fetch(`${WORKER_URL}/push-notify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tokens: [myToken], title: '🧪 Teste Finanvô', body: 'Push funcionando! 🎉', adminKey: ADMIN_PUSH_KEY, serviceAccount: JSON.parse(fcmKey) })
+      body: JSON.stringify({ tokens: [myToken], title: '🧪 Teste Finanvô', body: 'Push funcionando! 🎉', adminKey: getAdminPushKey(), serviceAccount: JSON.parse(fcmKey) })
     });
     const data = await r.json();
     statusEl.textContent = data.success ? '✅ Teste enviado com sucesso!' : '❌ Erro ao enviar';
@@ -1039,6 +1077,7 @@ window.fnvEnviarPush = async function() {
   if (!titulo) { toast('Digite um título', true); return; }
   const fcmKey = localStorage.getItem(FCM_KEY_STORAGE);
   if (!fcmKey) { statusEl.innerHTML = `<span style="color:var(--red)">⚠️ Configure a FCM Server Key na aba Config.</span>`; return; }
+  if (!getAdminPushKey()) { statusEl.innerHTML = `<span style="color:var(--red)">⚠️ Configure a Chave de autorização do Worker (ADMIN_PUSH_KEY) na aba Config.</span>`; return; }
   const tokens = todosUsuarios.filter(u => u.fcmToken).map(u => u.fcmToken);
   if (!tokens.length) { statusEl.textContent = '⚠️ Nenhum usuário com push ativado ainda.'; return; }
   statusEl.textContent = `Enviando para ${tokens.length} dispositivo(s)...`;
@@ -1048,7 +1087,7 @@ window.fnvEnviarPush = async function() {
     const r = await fetch(`${WORKER_URL}/push-notify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tokens, title: titulo, body: corpo, adminKey: ADMIN_PUSH_KEY, serviceAccount: JSON.parse(saJson) })
+      body: JSON.stringify({ tokens, title: titulo, body: corpo, adminKey: getAdminPushKey(), serviceAccount: JSON.parse(saJson) })
     });
     const data = await r.json();
     statusEl.innerHTML = `<span style="color:var(--green)">✅ Enviado: ${data.success}</span> &nbsp; <span style="color:var(--red)">❌ Erro: ${data.failure}</span>`;
@@ -1102,7 +1141,7 @@ async function fnvVerificarAvisosDiarios() {
           tokens: [u.fcmToken],
           title: `💳 Manutenção Finanvô — dia ${v.diaVencimento}`,
           body: textoAviso,
-          adminKey: ADMIN_PUSH_KEY,
+          adminKey: getAdminPushKey(),
           serviceAccount: JSON.parse(fcmKey)
         })
       });
@@ -1156,7 +1195,7 @@ window.fnvEnviarAvisoCobranca = async function(manual = true) {
           tokens: [u.fcmToken],
           title: `💳 Manutenção Finanvô — ${mes}`,
           body: `Olá! Sua taxa de manutenção do plano ${planoLabel} é R$ ${valor.toFixed(2).replace('.',',')}. Obrigado pelo apoio! 🙏`,
-          adminKey: ADMIN_PUSH_KEY,
+          adminKey: getAdminPushKey(),
           serviceAccount: JSON.parse(fcmKey)
         })
       });
@@ -1230,6 +1269,9 @@ window.fnvLoadDash = async function() {
     // Preencher FCM SA se já salva
     const savedFcmKey = localStorage.getItem(FCM_KEY_STORAGE);
     if (savedFcmKey) { const el = document.getElementById('fcm-sa-json'); if(el) el.value = savedFcmKey; }
+    // Indicar se push key está configurada (sem exibir o valor)
+    const pushKeyEl = document.getElementById('push-key-ok');
+    if (pushKeyEl && getAdminPushKey()) pushKeyEl.textContent = '✓ Chave já configurada neste navegador';
   } catch(e) {
     document.getElementById('dash-loading').innerHTML = `<div style="color:var(--red)">Erro: ${e.message}</div>`;
   }

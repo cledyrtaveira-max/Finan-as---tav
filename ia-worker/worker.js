@@ -53,7 +53,7 @@ export default {
       try { body = await request.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
       const { tokens, title, body: msgBody, adminKey, serviceAccount } = body;
       // Chave simples de admin
-      if (adminKey !== (env.ADMIN_PUSH_KEY || 'finanvo-admin-push-2024')) {
+      if (!env.ADMIN_PUSH_KEY || adminKey !== env.ADMIN_PUSH_KEY) {
         return new Response('Forbidden', { status: 403, headers: cors });
       }
       if (!tokens?.length || !title) return new Response('Missing tokens or title', { status: 400, headers: cors });
