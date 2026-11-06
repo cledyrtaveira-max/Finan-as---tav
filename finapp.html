@@ -1020,9 +1020,17 @@ body {
 
 /* Estado vazio */
 .lanc-empty {
-  text-align: center; padding: 40px 20px; color: var(--fg3); font-size: 13px;
+  text-align: center; padding: 48px 24px 36px; color: var(--fg3); font-size: 13px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
 }
-.lanc-empty-icon { font-size: 32px; margin-bottom: 10px; }
+.lanc-empty-icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: rgba(79,127,255,.07); border: 1px solid rgba(79,127,255,.15);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 2px;
+}
+.lanc-empty-icon svg { width: 26px; height: 26px; stroke: var(--accent); fill: none; opacity: .7; stroke-linecap: round; stroke-linejoin: round; }
+.lanc-empty-title { font-size: 14px; font-weight: 700; color: var(--fg2); }
+.lanc-empty-sub { font-size: 12px; line-height: 1.6; max-width: 220px; }
 
 /* Saldo final */
 .lanc-saldo-bar {
@@ -1099,7 +1107,8 @@ body {
 
 /* ── Views ── */
 .view { display: none }
-.view.active { display: block }
+.view.active { display: block; animation: view-enter .22s ease both }
+@keyframes view-enter { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
 
 /* ── Mês tabs ── */
 .mes-tabs {
@@ -1586,7 +1595,9 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
   transition:border-color .15s,color .15s;margin-top:4px;
 }
 .ck-add-btn:hover { border-color:var(--accent);color:var(--accent) }
-.ck-empty { text-align:center;padding:32px 20px;color:var(--fg3);font-size:13px }
+.ck-empty { text-align:center;padding:36px 20px;color:var(--fg3);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:8px }
+.ck-empty-icon{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center}
+.ck-empty-icon svg{width:22px;height:22px;stroke:var(--fg3);fill:none;stroke-linecap:round;stroke-linejoin:round}
 .ck-badge-wrap { display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px }
 .ck-badge { font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600 }
 .ck-badge.green { background:rgba(34,197,94,.12);color:#22c55e }
@@ -2301,11 +2312,14 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
   <!-- MAIN -->
   <div class="main">
     <!-- Loading overlay — visível enquanto o Firestore carrega os dados iniciais -->
-    <div id="loading-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:16px">
-      <div style="width:48px;height:48px;border:4px solid var(--brd);border-top-color:var(--accent);border-radius:50%;animation:spin-load 0.8s linear infinite"></div>
-      <div style="font-size:14px;font-weight:600;color:var(--fg2)">Carregando seus dados…</div>
+    <div id="loading-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:14px">
+      <div style="position:relative;width:52px;height:52px">
+        <div style="position:absolute;inset:0;border:3px solid var(--border2);border-radius:50%"></div>
+        <div style="position:absolute;inset:0;border:3px solid transparent;border-top-color:var(--accent);border-radius:50%;animation:spin-load 0.75s linear infinite"></div>
+      </div>
+      <div style="font-size:14px;font-weight:700;color:var(--fg2);letter-spacing:-.2px">Carregando seus dados…</div>
       <div style="font-size:12px;color:var(--fg3)">Conectando ao Firestore</div>
-      <button onclick="(async()=>{try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(r=>r.unregister()));}catch(e){}location.reload(true);})()" style="margin-top:20px;padding:10px 20px;background:#4f7fff;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">🔄 Limpar cache e recarregar</button>
+      <button onclick="(async()=>{try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(r=>r.unregister()));}catch(e){}location.reload(true);})()" style="margin-top:16px;padding:10px 22px;background:rgba(79,127,255,.12);color:var(--accent);border:1px solid rgba(79,127,255,.3);border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:.2s" onmouseover="this.style.background='rgba(79,127,255,.2)'" onmouseout="this.style.background='rgba(79,127,255,.12)'">Limpar cache e recarregar</button>
     </div>
     <style>
       @keyframes spin-load { to { transform: rotate(360deg); } }
@@ -6644,9 +6658,11 @@ function renderLancamentos() {
   // Vazio
   if (baseFiltrada.length === 0 && extras.length === 0) {
     html = `<div class="lanc-empty">
-      <div class="lanc-empty-icon">📋</div>
-      <div style="font-weight:600;margin-bottom:4px">Nenhum lançamento em ${mesSelecionado}</div>
-      <div style="font-size:12px">Adicione um lançamento pelo botão <strong>＋ Lançamento</strong> acima</div>
+      <div class="lanc-empty-icon">
+        <svg viewBox="0 0 24 24" stroke-width="1.6"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1.5"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+      </div>
+      <div class="lanc-empty-title">Nenhum lançamento em ${mesSelecionado}</div>
+      <div class="lanc-empty-sub">Registre sua primeira entrada ou saída para acompanhar o mês.</div>
     </div>`;
   }
 
@@ -8082,7 +8098,13 @@ function renderDividas() {
 
   let html = '';
   if (dividas.length === 0) {
-    html = '<div style="text-align:center;padding:40px 0;color:var(--fg3);font-size:13px">Nenhuma dívida cadastrada ainda.<br>Clique em <strong>+ Nova Dívida</strong> para começar.</div>';
+    html = `<div class="lanc-empty" style="padding:48px 20px">
+      <div class="lanc-empty-icon" style="background:rgba(244,63,94,.06);border-color:rgba(244,63,94,.2)">
+        <svg viewBox="0 0 24 24" stroke-width="1.6" stroke="#f43f5e" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      </div>
+      <div class="lanc-empty-title">Nenhuma dívida cadastrada</div>
+      <div class="lanc-empty-sub">Registre dívidas e cartões para acompanhar o que você deve.</div>
+    </div>`;
   } else {
     Object.keys(cats).forEach(catKey => {
       const itens = grupos[catKey] || [];
@@ -8258,7 +8280,13 @@ function renderEstrategia() {
   // Lista de caixinhas
   let html = '';
   if (invs.length === 0) {
-    html = '<div style="text-align:center;padding:40px 0;color:var(--fg3);font-size:13px">Nenhuma caixinha cadastrada ainda.<br>Clique em <strong>+ Nova Caixinha</strong> para começar.</div>';
+    html = `<div class="lanc-empty" style="padding:48px 20px">
+      <div class="lanc-empty-icon" style="background:rgba(79,127,255,.06);border-color:rgba(79,127,255,.2)">
+        <svg viewBox="0 0 24 24" stroke-width="1.6" stroke="var(--accent)" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+      </div>
+      <div class="lanc-empty-title">Nenhuma caixinha criada</div>
+      <div class="lanc-empty-sub">Separe dinheiro por objetivo: emergência, viagem, presente…</div>
+    </div>`;
   } else {
     const tipoLabel = {poupanca:'Poupança',cdb:'CDB',tesouro:'Tesouro Direto',fii:'FII',acoes:'Ações',previdencia:'Previdência',outro:'Outro'};
     invs.forEach(inv => {
@@ -11726,11 +11754,14 @@ window.rodarAnaliseIA = function() {
   }
 
   resultado.innerHTML = `
-    <div style="text-align:center;padding:40px 20px">
-      <div style="font-size:36px;animation:spin 1s linear infinite;display:inline-block">⚙️</div>
-      <div style="margin-top:12px;font-size:14px;color:var(--fg3)">Analisando seus dados...</div>
-    </div>
-    <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>
+    <div style="text-align:center;padding:48px 20px;display:flex;flex-direction:column;align-items:center;gap:14px">
+      <div style="position:relative;width:44px;height:44px">
+        <div style="position:absolute;inset:0;border:3px solid var(--border2);border-radius:50%"></div>
+        <div style="position:absolute;inset:0;border:3px solid transparent;border-top-color:var(--accent);border-radius:50%;animation:spin-load 0.75s linear infinite"></div>
+      </div>
+      <div style="font-size:14px;font-weight:600;color:var(--fg2)">Analisando seus dados…</div>
+      <div style="font-size:12px;color:var(--fg3)">A IA está processando seus lançamentos</div>
+    </div>`;
   `;
   if (btn) btn.disabled = true;
 
@@ -13966,7 +13997,7 @@ function ckRender() {
   // Extras
   html += `<div class="ck-section"><div class="ck-section-title">✏️ Tarefas extras do mês</div>`;
   if (p.extras.length === 0) {
-    html += `<div class="ck-empty">Nenhuma tarefa extra ainda</div>`;
+    html += `<div class="ck-empty"><div class="ck-empty-icon"><svg viewBox="0 0 22 22" stroke-width="1.6"><rect x="3" y="3" width="16" height="16" rx="4"/><path d="M7 11l3 3 5-5"/></svg></div><span>Nenhuma tarefa extra ainda</span></div>`;
   } else {
     p.extras.forEach((t, idx) => {
       const respClass = 'ck-resp-' + (t.resp || 'nos');
