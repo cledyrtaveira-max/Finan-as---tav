@@ -51,10 +51,21 @@ export default {
     if (url.pathname === '/push-notify') {
       let body;
       try { body = await request.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
-      const { tokens, title, body: msgBody, adminKey, serviceAccount } = body;
-      // Chave simples de admin
+      const { tokens, title, body: msgBody, adminKey, adminPin, serviceAccount } = body;
+      // Chave de admin (PEN-03: dupla verificação — chave + PIN)
       if (!env.ADMIN_PUSH_KEY || adminKey !== env.ADMIN_PUSH_KEY) {
         return new Response('Forbidden', { status: 403, headers: cors });
+      }
+      // PEN-03: Validar PIN de admin server-side
+      if (env.ADMIN_PIN) {
+        if (!adminPin) {
+          return new Response(JSON.stringify({ error: 'PIN obrigatório' }), { status: 403, headers: cors });
+        }
+        const pinHash = await hashSHA256(adminPin);
+        const expectedHash = await hashSHA256(env.ADMIN_PIN);
+        if (pinHash !== expectedHash) {
+          return new Response(JSON.stringify({ error: 'PIN inválido' }), { status: 403, headers: cors });
+        }
       }
       if (!tokens?.length || !title) return new Response('Missing tokens or title', { status: 400, headers: cors });
 
@@ -91,10 +102,19 @@ export default {
       return new Response(JSON.stringify(results), { headers: { ...cors, 'Content-Type': 'application/json' } });
     }
 
-    // Rota de suporte/chat — aberta para todos os planos
+    // Rota de suporte/chat — requer usuário autenticado
     if (url.pathname === '/chat') {
       let body;
       try { body = await request.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
+
+      // SEC-05: Verificar Firebase ID token
+      const chatToken = body.idToken || request.headers.get('Authorization')?.replace('Bearer ', '');
+      if (env.FIREBASE_PROJECT_ID && chatToken) {
+        const uid = await verifyFirebaseToken(chatToken, env.FIREBASE_PROJECT_ID);
+        if (!uid) {
+          return new Response(JSON.stringify({ error: 'Não autorizado' }), { status: 401, headers: cors });
+        }
+      }
 
       const { pergunta, historico = [] } = body;
       if (!pergunta) return new Response('Missing pergunta', { status: 400 });
@@ -139,6 +159,15 @@ Responda em no máximo 3 frases curtas.` },
 
     let body;
     try { body = await request.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
+
+    // SEC-05: Verificar Firebase ID token na rota de análise
+    const idToken = body.idToken || request.headers.get('Authorization')?.replace('Bearer ', '');
+    if (env.FIREBASE_PROJECT_ID && idToken) {
+      const verifiedUid = await verifyFirebaseToken(idToken, env.FIREBASE_PROJECT_ID);
+      if (!verifiedUid) {
+        return new Response(JSON.stringify({ error: 'Não autorizado' }), { status: 401, headers: cors });
+      }
+    }
 
     const { mes, ano, entradas, saidas, saldo, categorias, lancamentos, plano } = body;
 
@@ -255,6 +284,29 @@ Responda em JSON com exatamente este formato (sem markdown, só JSON puro):
     }
   }
 };
+
+// ── SHA-256 hash helper (para validação de PIN) ─────────────────────
+async function hashSHA256(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ── Verificar Firebase ID Token (SEC-05) ────────────────────────────
+// Usa a Firebase Auth REST API para validar o token sem SDK
+async function verifyFirebaseToken(idToken, projectId) {
+  try {
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${projectId}`;
+    // Verificação via tokenInfo endpoint do Google
+    const r = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+    if (!r.ok) return null;
+    const data = await r.json();
+    // Verifica se o token é do projeto correto
+    if (data.aud !== projectId && !data.aud?.includes(projectId)) return null;
+    return data.sub || data.user_id || null;
+  } catch {
+    return null;
+  }
+}
 
 // ── Google OAuth2 JWT para FCM v1 ───────────────────────────────────
 async function getGoogleAccessToken(sa) {
