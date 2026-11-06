@@ -3754,9 +3754,12 @@ fbAuth.onAuthStateChanged(async function(user) {
         ov.style.display = 'none';
         ov.remove();
       } else {
-        // Primeira vez — mostra por no máximo 4s
+        // Primeira vez — mostra por no máximo 2.5s e some de qualquer forma
         ov.style.display = 'flex';
-        setTimeout(() => { try { ov.style.display = 'none'; ov.remove(); } catch(e) {} }, 4000);
+        const esconderOv = () => { try { ov.style.display = 'none'; ov.remove(); } catch(e) {} };
+        setTimeout(esconderOv, 2500);
+        // Também some assim que o app estiver pronto (renderDashboard chama isso)
+        window._esconderLoadingOverlay = esconderOv;
       }
     })();
     iniciarSync();
@@ -4571,6 +4574,8 @@ function renderSemaforoEKpis() {
 }
 
 function renderDashboard() {
+  // Esconder loading overlay assim que o dashboard começa a renderizar
+  if (window._esconderLoadingOverlay) { window._esconderLoadingOverlay(); window._esconderLoadingOverlay = null; }
   const base = despesasEfetivas ? despesasEfetivas() : DESPESAS_BASE;
   const mesAtual = MESES[new Date().getMonth()];
 
