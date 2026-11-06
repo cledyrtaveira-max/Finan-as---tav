@@ -1812,15 +1812,15 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
     <input type="hidden" id="med-grupo" value="">
     <div class="field">
       <label>Nome da dívida</label>
-      <input id="med-nome" type="text" placeholder="Ex: Cartão Nubank" style="width:100%;padding:8px;border:1px solid var(--brd);border-radius:8px;background:var(--bg);color:var(--fg1);font-size:14px">
+      <input id="med-nome" type="text" placeholder="Ex: Cartão Nubank" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg1);font-size:14px">
     </div>
     <div class="field">
       <label>Valor total (R$)</label>
-      <input id="med-valor" type="number" min="0" step="100" placeholder="0,00" style="width:100%;padding:8px;border:1px solid var(--brd);border-radius:8px;background:var(--bg);color:var(--fg1);font-size:14px">
+      <input id="med-valor" type="number" min="0" step="100" placeholder="0,00" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg1);font-size:14px">
     </div>
     <div class="field">
       <label>Observação</label>
-      <input id="med-obs" type="text" placeholder="Ex: Confirmar valor na fatura" style="width:100%;padding:8px;border:1px solid var(--brd);border-radius:8px;background:var(--bg);color:var(--fg1);font-size:14px">
+      <input id="med-obs" type="text" placeholder="Ex: Confirmar valor na fatura" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg1);font-size:14px">
     </div>
     <div style="display:flex;gap:8px;margin-top:16px">
       <button class="btn btn-ghost" style="flex:1" onclick="fecharModalEditarDiv()">Cancelar</button>
@@ -2567,7 +2567,7 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
         <!-- Mini KPIs do período -->
         <div id="lanc-kpis" class="lanc-kpis"></div>
         <!-- Contador de lançamentos do plano (mostrado só p/ plano free) -->
-        <div id="lanc-contador-plano" style="display:none;padding:10px 14px;background:var(--surface);border:1px solid var(--brd);border-radius:10px;margin-bottom:10px"></div>
+        <div id="lanc-contador-plano" style="display:none;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:10px"></div>
         <!-- Filtros -->
         <div class="lanc-filtros">
           <input type="text" id="lanc-busca" placeholder="🔍 Buscar por descrição ou categoria..." oninput="renderLancamentos()">
@@ -4082,7 +4082,6 @@ function logout() {
       .forEach(k => localStorage.removeItem(k));
   } catch(e) {}
   window._perfil = {};
-  firebase.firestore().clearPersistence?.().catch(() => {});
   fbAuth.signOut().finally(() => location.reload());
 }
 
@@ -4458,7 +4457,7 @@ function renderSemaforoEKpis() {
   if (alertaEl) {
     let semaforoHTML = '';
     if (renda === 0) {
-      semaforoHTML = `<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card);border:1px solid var(--brd);border-radius:10px"><span style="font-size:22px">⚪</span><div><div style="font-size:13px;font-weight:600;color:var(--fg2)">Informe a renda do mês acima para ver o semáforo</div><div style="font-size:11px;color:var(--fg3)">Assim o app calcula se você está no azul ou no vermelho</div></div></div>`;
+      semaforoHTML = `<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px"><span style="font-size:22px">⚪</span><div><div style="font-size:13px;font-weight:600;color:var(--fg2)">Informe a renda do mês acima para ver o semáforo</div><div style="font-size:11px;color:var(--fg3)">Assim o app calcula se você está no azul ou no vermelho</div></div></div>`;
     } else if (pct > 100) {
       const excesso = totalGastos - renda;
       semaforoHTML = `<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(239,68,68,0.08);border:1.5px solid rgba(239,68,68,0.35);border-radius:10px"><span style="font-size:28px;line-height:1">🔴</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--red)">Atenção! Seus gastos excedem a renda em ${brl(excesso)}</div><div style="font-size:11px;color:var(--fg3);margin-top:2px">Gastos: ${brl(totalGastos)} · Renda: ${brl(renda)} · <strong>${pct}% comprometido</strong></div></div><div style="text-align:right;white-space:nowrap"><div style="font-size:18px;font-weight:700;color:var(--red)">-${brl(Math.abs(saldo))}</div><div style="font-size:10px;color:var(--fg3)">no vermelho</div></div></div>`;
@@ -4645,7 +4644,7 @@ function renderDashboard() {
           <input id="inp-renda-mes" type="number" min="0" step="100"
             value="${rendaMesVal > 0 ? rendaMesVal : ''}"
             placeholder="0,00"
-            style="width:130px;padding:8px 10px;border:1.5px solid var(--brd);border-radius:8px;font-size:14px;font-weight:600;background:var(--bg);color:var(--fg1);text-align:right"
+            style="width:130px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-weight:600;background:var(--bg);color:var(--fg1);text-align:right"
             oninput="salvarRendaMes(this.value)"
           />
         </div>
@@ -4732,7 +4731,7 @@ function renderDashboard() {
     let semaforoHTML = '';
     if (renda === 0) {
       semaforoHTML = `
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card);border:1px solid var(--brd);border-radius:10px">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px">
           <span style="font-size:22px">⚪</span>
           <div>
             <div style="font-size:13px;font-weight:600;color:var(--fg2)">Informe a renda do mês acima para ver o semáforo</div>
@@ -4898,14 +4897,14 @@ function renderDashboard() {
             </div>
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px">
-            <div style="background:var(--surface);border:1px solid var(--brd);border-radius:12px;padding:14px;display:flex;align-items:flex-start;gap:10px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:flex-start;gap:10px">
               <span style="font-size:22px;line-height:1">1️⃣</span>
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--fg1);margin-bottom:3px">Informe sua renda</div>
                 <div style="font-size:11px;color:var(--fg3);line-height:1.4">Digite quanto recebeu esse mês no campo acima — o semáforo financeiro vai te mostrar como está sua saúde.</div>
               </div>
             </div>
-            <div style="background:var(--surface);border:1px solid var(--brd);border-radius:12px;padding:14px;display:flex;align-items:flex-start;gap:10px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:flex-start;gap:10px">
               <span style="font-size:22px;line-height:1">2️⃣</span>
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--fg1);margin-bottom:3px">Registre um lançamento</div>
@@ -4913,7 +4912,7 @@ function renderDashboard() {
                 <button onclick="document.getElementById('btn-novo-lancamento')?.click()" style="margin-top:8px;padding:5px 12px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">+ Lançamento →</button>
               </div>
             </div>
-            <div style="background:var(--surface);border:1px solid var(--brd);border-radius:12px;padding:14px;display:flex;align-items:flex-start;gap:10px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:flex-start;gap:10px">
               <span style="font-size:22px;line-height:1">3️⃣</span>
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--fg1);margin-bottom:3px">Configure suas despesas fixas</div>
@@ -6650,7 +6649,7 @@ function renderLancamentos() {
     });
     if (temMais) {
       const restantes = extras.length - window._lancPagina;
-      html += `<button onclick="window._lancPagina=(window._lancPagina||20)+20;renderLancamentos()" style="width:100%;padding:9px;border:1.5px solid var(--brd);border-radius:8px;background:var(--surface2);color:var(--fg2);font-size:12px;font-weight:600;cursor:pointer;margin-top:6px">↓ Carregar mais ${Math.min(restantes,20)} de ${restantes} restantes</button>`;
+      html += `<button onclick="window._lancPagina=(window._lancPagina||20)+20;renderLancamentos()" style="width:100%;padding:9px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--fg2);font-size:12px;font-weight:600;cursor:pointer;margin-top:6px">↓ Carregar mais ${Math.min(restantes,20)} de ${restantes} restantes</button>`;
     }
     html += '</div>';
   }
@@ -10736,7 +10735,7 @@ function renderSecaoMetas() {
           <input type="number" min="0" step="50" value="${meta > 0 ? meta : ''}" placeholder="Sem limite"
             data-cat="${cat.replace(/"/g,'&quot;')}"
             oninput="window._salvarMetaInput(this)"
-            style="width:110px;padding:5px 8px;border:1.5px solid var(--brd);border-radius:7px;font-size:13px;font-weight:600;background:var(--bg);color:var(--fg1);text-align:right"/>
+            style="width:110px;padding:5px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-weight:600;background:var(--bg);color:var(--fg1);text-align:right"/>
           ${meta > 0 ? `<span style="font-size:10px;color:${cor};font-weight:700;white-space:nowrap">${pct.toFixed(0)}% usado</span>` : ''}
         </div>
       </td>
@@ -11513,7 +11512,7 @@ window.verificarPlanoExpirado = function() {
           <div style="font-size:12px;color:var(--fg2);line-height:1.5;margin-bottom:12px">Seus dados estão seguros! Para continuar adicionando lançamentos e acessar todos os recursos, escolha um plano Finanvô.</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button onclick="mostrarModalUpgrade('upgrade','pro')" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🚀 Ver planos</button>
-            <button onclick="document.getElementById('banner-plano-expirado').style.display='none'" style="padding:8px 14px;background:transparent;color:var(--fg3);border:1px solid var(--brd);border-radius:8px;font-size:12px;cursor:pointer">Depois</button>
+            <button onclick="document.getElementById('banner-plano-expirado').style.display='none'" style="padding:8px 14px;background:transparent;color:var(--fg3);border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer">Depois</button>
           </div>
         </div>
       </div>`;
