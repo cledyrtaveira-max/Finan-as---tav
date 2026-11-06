@@ -581,6 +581,7 @@ window.fnvPin = function(d) {
       const stored  = await getPin();
       if (entered === stored) {
         sessionStorage.setItem(PIN_OK_KEY, '1');
+        sessionStorage.setItem('fnv_admin_pin_plain', pinBuffer); // PEN-03: PIN para validação server-side
         document.getElementById('pin-overlay').classList.add('hidden');
         fnvLoadDash();
       } else {
@@ -1023,6 +1024,9 @@ const WORKER_URL         = 'https://finanvo-ia.cledyrtaveira.workers.dev';
 // Lê a chave push salva — retorna null se não configurada
 function getAdminPushKey() { return localStorage.getItem(PUSH_KEY_STORAGE) || null; }
 
+// PEN-03: Lê o PIN digitado na sessão atual para validação server-side
+function getAdminPin() { return sessionStorage.getItem('fnv_admin_pin_plain') || null; }
+
 window.fnvSalvarPushKey = function() {
   const v = document.getElementById('push-key-input')?.value.trim();
   if (!v) { toast('Cole a ADMIN_PUSH_KEY antes de salvar', true); return; }
@@ -1062,7 +1066,7 @@ window.fnvTestarPush = async function() {
     const r = await fetch(`${WORKER_URL}/push-notify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tokens: [myToken], title: '🧪 Teste Finanvô', body: 'Push funcionando! 🎉', adminKey: getAdminPushKey(), serviceAccount: JSON.parse(fcmKey) })
+      body: JSON.stringify({ tokens: [myToken], title: '🧪 Teste Finanvô', body: 'Push funcionando! 🎉', adminKey: getAdminPushKey(), adminPin: getAdminPin(), serviceAccount: JSON.parse(fcmKey) })
     });
     const data = await r.json();
     statusEl.textContent = data.success ? '✅ Teste enviado com sucesso!' : '❌ Erro ao enviar';
@@ -1087,7 +1091,7 @@ window.fnvEnviarPush = async function() {
     const r = await fetch(`${WORKER_URL}/push-notify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tokens, title: titulo, body: corpo, adminKey: getAdminPushKey(), serviceAccount: JSON.parse(saJson) })
+      body: JSON.stringify({ tokens, title: titulo, body: corpo, adminKey: getAdminPushKey(), adminPin: getAdminPin(), serviceAccount: JSON.parse(saJson) })
     });
     const data = await r.json();
     statusEl.innerHTML = `<span style="color:var(--green)">✅ Enviado: ${data.success}</span> &nbsp; <span style="color:var(--red)">❌ Erro: ${data.failure}</span>`;
@@ -1142,6 +1146,7 @@ async function fnvVerificarAvisosDiarios() {
           title: `💳 Manutenção Finanvô — dia ${v.diaVencimento}`,
           body: textoAviso,
           adminKey: getAdminPushKey(),
+          adminPin: getAdminPin(),
           serviceAccount: JSON.parse(fcmKey)
         })
       });
@@ -1196,6 +1201,7 @@ window.fnvEnviarAvisoCobranca = async function(manual = true) {
           title: `💳 Manutenção Finanvô — ${mes}`,
           body: `Olá! Sua taxa de manutenção do plano ${planoLabel} é R$ ${valor.toFixed(2).replace('.',',')}. Obrigado pelo apoio! 🙏`,
           adminKey: getAdminPushKey(),
+          adminPin: getAdminPin(),
           serviceAccount: JSON.parse(fcmKey)
         })
       });

@@ -11673,9 +11673,17 @@ window.rodarAnaliseIA = function() {
     const _planoIA = window.getPlanoAtual ? window.getPlanoAtual() : 'gratuito';
     const _planosPagos = ['pro', 'familia', 'premium'];
     if (IA_WORKER_URL && IA_WORKER_URL !== '' && _planosPagos.includes(_planoIA)) {
+      // SEC-05: Pegar Firebase ID token para autenticar no worker
+      let _idToken = null;
+      try {
+        if (fbAuth && fbAuth.currentUser) {
+          _idToken = await fbAuth.currentUser.getIdToken();
+        }
+      } catch(_e) {}
       const payload = {
         mes, ano,
         uid: fbAuth && fbAuth.currentUser ? fbAuth.currentUser.uid : null,
+        idToken: _idToken,
         plano: _planoIA,
         entradas: dadosMes.entradas,
         saidas: dadosMes.saidas,
@@ -14609,10 +14617,17 @@ window.$crisp=[];window.CRISP_WEBSITE_ID="76981913-2052-4a13-8705-c2f0f906fc4d";
     fnvTyping(true);
 
     try {
+      // SEC-05: Pegar Firebase ID token para autenticar no worker de chat
+      let _chatIdToken = null;
+      try {
+        if (typeof fbAuth !== 'undefined' && fbAuth.currentUser) {
+          _chatIdToken = await fbAuth.currentUser.getIdToken();
+        }
+      } catch(_e) {}
       const r = await fetch(IA_CHAT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pergunta, historico: historico.slice(-8) })
+        body: JSON.stringify({ pergunta, historico: historico.slice(-8), idToken: _chatIdToken })
       });
       const data = await r.json();
       fnvTyping(false);
