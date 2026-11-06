@@ -19,17 +19,18 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
 <style>
 :root {
-  --bg:  #090c14;
-  --bg2: #0f1420;
-  --bg3: #161c2e;
-  --fg1: #f0f4ff;
-  --fg2: #a8b8d8;
-  --fg3: #5a6a8a;
+  --bg:  #07090f;
+  --bg2: #0d1118;
+  --bg3: #141928;
+  --fg1: #edf0f8;
+  --fg2: #8898b8;
+  --fg3: #4a5472;
   --accent: #4f7fff;
   --accent2: #7c3aed;
   --green: #22c55e;
   --orange: #f97316;
   --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
   --grd: linear-gradient(135deg, #4f7fff 0%, #7c3aed 100%);
 }
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -43,21 +44,26 @@ img { max-width: 100%; display: block; }
 /* ── NAV ── */
 header {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(9,12,20,0.9); backdrop-filter: blur(16px);
+  background: rgba(7,9,15,0.85); backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
 }
-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; max-width: 1080px; margin: 0 auto; }
-.logo { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
-.logo span { background: var(--grd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.nav-links { display: flex; align-items: center; gap: 28px; }
+nav { display: flex; align-items: center; justify-content: space-between; padding: 13px 24px; max-width: 1080px; margin: 0 auto; }
+.logo {
+  font-size: 20px; font-weight: 900; letter-spacing: -0.4px;
+  display: flex; align-items: center;
+}
+.logo span { color: var(--fg1); }
+.nav-links { display: flex; align-items: center; gap: 24px; }
 .nav-links a { font-size: 14px; font-weight: 500; color: var(--fg2); transition: color .2s; }
 .nav-links a:hover { color: var(--fg1); }
 .btn-nav {
   background: var(--grd) !important; color: #fff !important;
-  padding: 9px 22px; border-radius: 10px; font-weight: 700 !important; font-size: 14px;
-  transition: opacity .2s;
+  padding: 9px 20px; border-radius: 9px; font-weight: 700 !important; font-size: 14px;
+  transition: opacity .2s, transform .15s;
+  box-shadow: 0 4px 16px rgba(79,127,255,0.3);
 }
-.btn-nav:hover { opacity: .85; }
+.btn-nav:hover { opacity: .9; transform: translateY(-1px); }
 @media (max-width: 640px) { .nav-links { display: none; } }
 
 /* ── HERO ── */
@@ -73,33 +79,34 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 }
 .hero-badge {
   display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(79,127,255,0.12); border: 1px solid rgba(79,127,255,0.3);
-  border-radius: 999px; padding: 5px 16px; font-size: 12px; font-weight: 700;
-  color: #7aadff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 24px;
+  background: rgba(79,127,255,0.1); border: 1px solid rgba(79,127,255,0.25);
+  border-radius: 999px; padding: 5px 18px; font-size: 11.5px; font-weight: 700;
+  color: #93b8ff; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 28px;
 }
 .hero h1 {
-  font-size: clamp(36px, 6vw, 66px);
-  font-weight: 900; line-height: 1.08; letter-spacing: -1.5px;
-  margin-bottom: 20px; max-width: 820px; margin-left: auto; margin-right: auto;
+  font-size: clamp(38px, 6vw, 70px);
+  font-weight: 900; line-height: 1.07; letter-spacing: -2px;
+  margin-bottom: 22px; max-width: 780px; margin-left: auto; margin-right: auto;
+  text-wrap: balance;
 }
 .hero h1 em { font-style: normal; background: var(--grd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.hero p { font-size: 18px; color: var(--fg2); max-width: 520px; margin: 0 auto 36px; line-height: 1.75; }
-.hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+.hero p { font-size: 18px; color: var(--fg2); max-width: 500px; margin: 0 auto 36px; line-height: 1.8; }
+.hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
 .btn-primary {
   display: inline-flex; align-items: center; gap: 8px;
   background: var(--grd); color: #fff;
-  padding: 15px 32px; border-radius: 12px; font-weight: 800; font-size: 16px;
+  padding: 15px 34px; border-radius: 12px; font-weight: 800; font-size: 16px;
   transition: transform .2s, box-shadow .2s;
-  box-shadow: 0 4px 24px rgba(79,127,255,0.35);
+  box-shadow: 0 6px 28px rgba(79,127,255,0.4);
 }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(79,127,255,0.5); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 36px rgba(79,127,255,0.55); }
 .btn-secondary {
   display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(255,255,255,0.05); color: var(--fg1);
-  border: 1px solid var(--border); padding: 15px 32px;
-  border-radius: 12px; font-weight: 600; font-size: 16px; transition: background .2s;
+  background: rgba(255,255,255,0.04); color: var(--fg1);
+  border: 1px solid var(--border2); padding: 15px 32px;
+  border-radius: 12px; font-weight: 600; font-size: 16px; transition: background .2s, border-color .2s;
 }
-.btn-secondary:hover { background: rgba(255,255,255,0.09); }
+.btn-secondary:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); }
 .hero-trust { font-size: 13px; color: var(--fg3); margin-top: 12px; }
 .hero-trust span { color: var(--green); margin-right: 4px; }
 
@@ -139,10 +146,17 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .bar-fill { height: 100%; border-radius: 3px; }
 
 /* ── LOGOS ── */
-.logos-strip { padding: 40px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-.logos-label { text-align: center; font-size: 12px; font-weight: 700; color: var(--fg3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; }
-.logos-row { display: flex; justify-content: center; align-items: center; gap: 36px; flex-wrap: wrap; }
-.logos-row span { font-size: 14px; font-weight: 700; color: var(--fg3); letter-spacing: 0.5px; }
+.logos-strip { padding: 44px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.logos-label { text-align: center; font-size: 11px; font-weight: 700; color: var(--fg3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 22px; }
+.logos-row { display: flex; justify-content: center; align-items: center; gap: 0; flex-wrap: wrap; }
+.logos-row span {
+  font-size: 13px; font-weight: 700; color: var(--fg3);
+  letter-spacing: 0.5px; padding: 6px 20px;
+  border-right: 1px solid var(--border);
+  transition: color .2s;
+}
+.logos-row span:last-child { border-right: none }
+.logos-row span:hover { color: var(--fg2) }
 
 /* ── SECTION HEADER ── */
 .sec-hd { text-align: center; margin-bottom: 56px; }
@@ -355,7 +369,16 @@ section { padding: 80px 0; }
 <!-- ── NAV ── -->
 <header>
   <nav>
-    <div class="logo"><span>Finanvô</span></div>
+    <div class="logo">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style="vertical-align:middle;margin-right:6px;flex-shrink:0">
+        <rect width="28" height="28" rx="8" fill="url(#lg)"/>
+        <rect x="4" y="17" width="4" height="7" rx="1" fill="rgba(255,255,255,0.5)"/>
+        <rect x="10" y="12" width="4" height="12" rx="1" fill="rgba(255,255,255,0.75)"/>
+        <rect x="16" y="6" width="4" height="18" rx="1" fill="#fff"/>
+        <polyline points="5,15 10,10 14.5,12.5 20,5" stroke="rgba(255,255,255,0.85)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="28" y2="28"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs>
+      </svg><span>Finanvô</span>
+    </div>
     <div class="nav-links">
       <a href="#recursos">Recursos</a>
       <a href="#planos">Planos</a>
@@ -367,11 +390,11 @@ section { padding: 80px 0; }
 
 <!-- ── HERO ── -->
 <section class="hero">
-  <div class="hero-badge">💰 Controle financeiro familiar</div>
-  <h1>Suas finanças organizadas.<br><em>De verdade. Sem complicação.</em></h1>
-  <p>Dashboard, metas, semáforo financeiro e IA para analisar seus gastos — tudo num só lugar, funciona offline e instala no celular.</p>
+  <div class="hero-badge">Controle financeiro familiar</div>
+  <h1>Suas finanças,<br><em>organizadas de verdade.</em></h1>
+  <p>Lançamentos, metas, dívidas e IA — tudo num único dashboard que funciona offline e instala no celular em 3 segundos.</p>
   <div class="hero-btns">
-    <a href="finapp.html" class="btn-primary">Começar grátis → </a>
+    <a href="finapp.html" class="btn-primary">Começar grátis</a>
     <a href="#planos" class="btn-secondary">Ver planos</a>
   </div>
   <p class="hero-trust"><span>✓</span> Gratuito para sempre &nbsp;·&nbsp; <span>✓</span> Sem cartão de crédito &nbsp;·&nbsp; <span>✓</span> Cancele quando quiser</p>
@@ -414,14 +437,14 @@ section { padding: 80px 0; }
 <!-- ── LOGOS ── -->
 <div class="logos-strip">
   <div class="container">
-    <p class="logos-label">Funciona com as ferramentas que você já usa</p>
+    <p class="logos-label">Tecnologia que você já conhece</p>
     <div class="logos-row">
-      <span>🔥 Hotmart</span>
-      <span>☁️ Firebase</span>
-      <span>🤖 Llama 3.1 IA</span>
-      <span>📱 PWA</span>
-      <span>🔒 Google Auth</span>
-      <span>📄 PDF Export</span>
+      <span>Hotmart</span>
+      <span>Firebase</span>
+      <span>Llama 3.1 IA</span>
+      <span>PWA</span>
+      <span>Google Auth</span>
+      <span>PDF Export</span>
     </div>
   </div>
 </div>
@@ -430,7 +453,7 @@ section { padding: 80px 0; }
 <section id="recursos">
   <div class="container">
     <div class="sec-hd">
-      <div class="eyebrow">✦ Recursos</div>
+      <div class="eyebrow">Recursos</div>
       <h2>Tudo que a família precisa</h2>
       <p>De despesas fixas ao relatório do mês — sem planilhas nem complicação.</p>
     </div>
@@ -459,7 +482,7 @@ section { padding: 80px 0; }
           <div style="font-size:11px;color:#4ade80;margin-top:2px">sobrou este mês ✓</div>
         </div>
         <div class="rec-body">
-          <div class="rec-title">🖥️ Dashboard em tempo real</div>
+          <div class="rec-title">Dashboard em tempo real</div>
           <p class="rec-desc">Semáforo financeiro que mostra instantaneamente se você está no verde, amarelo ou vermelho — com saldo, entradas e saídas do mês.</p>
           <ul class="rec-bullets">
             <li>Atualiza automaticamente a cada lançamento</li>
@@ -480,7 +503,7 @@ section { padding: 80px 0; }
           </div>
         </div>
         <div class="rec-body">
-          <div class="rec-title">🎯 Metas por categoria <span class="rec-novo">NOVO</span></div>
+          <div class="rec-title">Metas por categoria <span class="rec-novo">NOVO</span></div>
           <p class="rec-desc">Defina um limite mensal para cada categoria e veja em tempo real quanto já foi gasto — com alerta visual quando estiver perto do limite.</p>
           <ul class="rec-bullets">
             <li>Barra de progresso por categoria</li>
@@ -500,7 +523,7 @@ section { padding: 80px 0; }
           </div>
         </div>
         <div class="rec-body">
-          <div class="rec-title">📄 Relatório PDF mensal <span class="rec-novo">NOVO</span></div>
+          <div class="rec-title">Relatório PDF mensal <span class="rec-novo">NOVO</span></div>
           <p class="rec-desc">Gere um relatório completo do mês com KPIs, gráfico de pizza por categoria e lista de lançamentos — salve ou imprima com um toque.</p>
           <ul class="rec-bullets">
             <li>KPIs: entradas, saídas, saldo e economia</li>
@@ -525,7 +548,7 @@ section { padding: 80px 0; }
           </div>
         </div>
         <div class="rec-body">
-          <div class="rec-title">🏦 Despesas fixas e dívidas</div>
+          <div class="rec-title">Despesas fixas e dívidas</div>
           <p class="rec-desc">Cadastre aluguel, assinaturas e parcelas uma só vez. O app lança automaticamente todo mês — sem você precisar lembrar.</p>
           <ul class="rec-bullets">
             <li>Lançamento automático todo mês</li>
@@ -547,7 +570,7 @@ section { padding: 80px 0; }
           <div style="font-size:12px;color:#94a3b8;text-align:center">4 membros · dados isolados<br>sincronizados na nuvem ☁️</div>
         </div>
         <div class="rec-body">
-          <div class="rec-title">👨‍👩‍👧 Multi-usuário com login</div>
+          <div class="rec-title">Multi-usuário com login</div>
           <p class="rec-desc">Cada membro da família tem sua própria conta com dados completamente separados — mas todos no mesmo app, sincronizados em tempo real.</p>
           <ul class="rec-bullets">
             <li>Login com e-mail ou Google</li>
@@ -567,7 +590,7 @@ section { padding: 80px 0; }
           </div>
         </div>
         <div class="rec-body">
-          <div class="rec-title">📲 Instala como app (PWA)</div>
+          <div class="rec-title">Instala como app (PWA)</div>
           <p class="rec-desc">Adicione o Finanvô direto na tela inicial do seu celular. Abre como app nativo, funciona offline e não ocupa espaço de armazenamento.</p>
           <ul class="rec-bullets">
             <li>Funciona sem internet (offline)</li>
@@ -587,17 +610,17 @@ section { padding: 80px 0; }
 .rec-filtro:hover{border-color:var(--accent);color:var(--fg1)}
 .rec-filtro.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .rec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.rec-card{background:var(--bg2);border:1px solid var(--border);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:.2s}
-.rec-card:hover{border-color:rgba(79,127,255,.35);transform:translateY(-2px)}
+.rec-card{background:var(--bg2);border:1px solid var(--border);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s, transform .2s, box-shadow .2s}
+.rec-card:hover{border-color:rgba(79,127,255,.3);transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.35)}
 .rec-card.hidden{display:none}
-.rec-preview{background:var(--bg3);padding:20px;min-height:120px;display:flex;align-items:center;border-bottom:1px solid var(--border)}
-.rec-body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:8px}
-.rec-title{font-size:15px;font-weight:700;color:var(--fg1);display:flex;align-items:center;gap:6px}
-.rec-desc{font-size:13px;color:var(--fg2);line-height:1.6}
-.rec-bullets{list-style:none;padding:0;margin:4px 0 0;display:flex;flex-direction:column;gap:4px}
-.rec-bullets li{font-size:12px;color:var(--fg3);padding-left:14px;position:relative}
-.rec-bullets li::before{content:"·";position:absolute;left:0;color:var(--accent)}
-.rec-novo{font-size:9px;font-weight:800;background:rgba(79,127,255,.2);color:#818cf8;padding:2px 6px;border-radius:4px;letter-spacing:.5px}
+.rec-preview{background:var(--bg3);padding:22px;min-height:130px;display:flex;align-items:center;border-bottom:1px solid var(--border)}
+.rec-body{padding:20px 22px 22px;display:flex;flex-direction:column;gap:9px}
+.rec-title{font-size:15px;font-weight:800;color:var(--fg1);display:flex;align-items:center;gap:6px;letter-spacing:-.2px}
+.rec-desc{font-size:13px;color:var(--fg2);line-height:1.65}
+.rec-bullets{list-style:none;padding:0;margin:2px 0 0;display:flex;flex-direction:column;gap:5px}
+.rec-bullets li{font-size:12.5px;color:var(--fg3);padding-left:16px;position:relative}
+.rec-bullets li::before{content:"→";position:absolute;left:0;color:var(--accent);font-size:11px}
+.rec-novo{font-size:9px;font-weight:800;background:rgba(79,127,255,.18);color:#818cf8;padding:2px 7px;border-radius:5px;letter-spacing:.5px;text-transform:uppercase}
 .rec-barra-row{display:flex;align-items:center;gap:6px;font-size:11px;color:#94a3b8}
 .rec-barra-row span:first-child{width:72px;flex-shrink:0}
 .rec-barra-row span:last-child{width:28px;flex-shrink:0;text-align:right}
