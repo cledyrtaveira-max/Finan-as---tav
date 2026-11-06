@@ -1218,17 +1218,30 @@ window.fnvEnviarAvisoCobranca = async function(manual = true) {
 };
 
 // ── AUTH ─────────────────────────────────────────────────────────────
-auth.onAuthStateChanged(user => {
+auth.onAuthStateChanged(async user => {
   if (!user) { showLogin(); return; }
   if (user.email !== ADMIN_EMAIL) {
     auth.signOut();
     document.getElementById('login-err').textContent = '⚠️ Acesso permitido apenas ao administrador.';
     showLogin(); return;
   }
+  // Verifica Custom Claim admin:true no token Firebase
+  try {
+    const idTokenResult = await user.getIdTokenResult(true); // force refresh
+    if (!idTokenResult.claims.admin) {
+      auth.signOut();
+      document.getElementById('login-err').textContent = '⚠️ Sua conta não tem permissão de administrador.';
+      showLogin(); return;
+    }
+  } catch(e) {
+    auth.signOut();
+    document.getElementById('login-err').textContent = '⚠️ Erro ao verificar permissões.';
+    showLogin(); return;
+  }
   showApp(user);
-  // Sempre pede PIN ao entrar (remove sessão anterior)
-  sessionStorage.removeItem(PIN_OK_KEY);
-  document.getElementById('pin-overlay').classList.remove('hidden');
+  // Oculta PIN overlay — autenticação agora é via Firebase Custom Claim
+  document.getElementById('pin-overlay').classList.add('hidden');
+  fnvLoadDash();
 });
 function showLogin() {
   document.getElementById('login-screen').style.display = 'flex';
@@ -1251,7 +1264,7 @@ window.fnvLogin = async function() {
     btn.disabled = false; btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12.545 10.239v3.821h5.445c-.712 2.315-2.647 3.972-5.445 3.972a6.033 6.033 0 110-12.064c1.498 0 2.866.549 3.921 1.453l2.814-2.814A9.969 9.969 0 0012.545 2C7.021 2 2.543 6.477 2.543 12s4.478 10 10.002 10c8.396 0 10.249-7.85 9.426-11.748l-9.426-.013z"/></svg> Entrar com Google`;
   }
 };
-window.fnvSignOut = () => { sessionStorage.removeItem(PIN_OK_KEY); auth.signOut(); };
+window.fnvSignOut = () => { sessionStorage.removeItem(PIN_OK_KEY); sessionStorage.removeItem('fnv_admin_pin_plain'); auth.signOut(); };
 
 // ── TABS ─────────────────────────────────────────────────────────────
 window.fnvTab = function(id, el) {
