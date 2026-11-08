@@ -3603,10 +3603,10 @@ async function loginGoogle() {
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    await fbAuth.signInWithPopup(provider);
-    // onAuthStateChanged cuida do resto
+    // signInWithRedirect evita bloqueio COOP em GitHub Pages / domínios customizados
+    await fbAuth.signInWithRedirect(provider);
   } catch(e) {
-    if (e.code !== 'auth/popup-closed-by-user') loginShakeError(firebaseErroPtBr(e));
+    loginShakeError(firebaseErroPtBr(e));
   }
 }
 
@@ -3667,6 +3667,13 @@ function confirmarAtualizacao() {
   if (modal) modal.classList.add('hidden');
   mostrarToast('✅ App atualizado!');
 }
+
+// Captura resultado do signInWithRedirect (volta após autenticação Google)
+fbAuth.getRedirectResult().catch(function(e) {
+  if (e && e.code && e.code !== 'auth/popup-closed-by-user') {
+    loginShakeError(firebaseErroPtBr(e));
+  }
+});
 
 // Escuta mudança de estado de auth
 fbAuth.onAuthStateChanged(async function(user) {
