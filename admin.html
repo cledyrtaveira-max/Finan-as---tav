@@ -101,6 +101,7 @@ body{background:var(--bg);color:var(--fg1);font-family:-apple-system,BlinkMacSys
 .login-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;background:linear-gradient(135deg,#4f7fff,#7c3aed);color:#fff;font-size:14px;font-weight:700;font-family:inherit;transition:opacity .2s;box-shadow:0 4px 20px rgba(79,127,255,.35);}
 .login-btn:hover{opacity:.88;}
 .login-err{color:#f87171;font-size:13px;margin-top:14px;min-height:20px;}
+.login-footer{font-size:10px;color:rgba(255,255,255,.18);letter-spacing:1.5px;margin-top:20px;text-transform:uppercase;}
 
 /* ── HEADER ── */
 header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
@@ -224,14 +225,18 @@ select.search-input{cursor:pointer;}
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-logo">💰</div>
-    <h1>Finanvô Admin</h1>
-    <p>Acesso restrito ao administrador</p>
+    <div class="login-logo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+    </div>
+    <div class="login-eyebrow">ACESSO ADMINISTRATIVO</div>
+    <h1>Finanvô</h1>
+    <p>Painel restrito ao administrador</p>
     <button class="login-btn" onclick="fnvLogin()">
       <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12.545 10.239v3.821h5.445c-.712 2.315-2.647 3.972-5.445 3.972a6.033 6.033 0 110-12.064c1.498 0 2.866.549 3.921 1.453l2.814-2.814A9.969 9.969 0 0012.545 2C7.021 2 2.543 6.477 2.543 12s4.478 10 10.002 10c8.396 0 10.249-7.85 9.426-11.748l-9.426-.013z"/></svg>
       Entrar com Google
     </button>
     <div class="login-err" id="login-err"></div>
+    <div class="login-footer">FINANVÔ — ACESSO PRIVADO</div>
   </div>
 </div>
 
