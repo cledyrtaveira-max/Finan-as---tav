@@ -1,6 +1,6 @@
-/* Finanvô — Service Worker v7 */
-const CACHE_NAME = 'finanvo-v7';
-const CACHE_CDN  = 'finanvo-cdn-v7';
+/* Finanvô — Service Worker v8 */
+const CACHE_NAME = 'finanvo-v8';
+const CACHE_CDN  = 'finanvo-cdn-v8';
 
 const SHELL = [self.registration.scope + 'finapp.html'];
 
