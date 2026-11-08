@@ -11744,7 +11744,7 @@ window.selecionarAnaliseIA = function(modo, el) {
   document.getElementById('ia-resultado').innerHTML = '';
 };
 
-window.rodarAnaliseIA = function() {
+window.rodarAnaliseIA = async function() {
   // Lê do nav de período (novo) ou fallback para selects legados
   const _navIa = document.getElementById('ia-nav-periodo');
   const mes = (_navIa && _navIa.dataset.mes) || document.getElementById('ia-mes')?.value || mesSelecionado;
@@ -11766,7 +11766,6 @@ window.rodarAnaliseIA = function() {
       <div style="font-size:14px;font-weight:600;color:var(--fg2)">Analisando seus dados…</div>
       <div style="font-size:12px;color:var(--fg3)">A IA está processando seus lançamentos</div>
     </div>`;
-  `;
   if (btn) btn.disabled = true;
 
   const dadosMes   = coletarDadosMesIA(mes, ano);
