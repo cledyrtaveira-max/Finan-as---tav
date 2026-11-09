@@ -1,6 +1,6 @@
-/* Finanvô — Service Worker v8 */
-const CACHE_NAME = 'finanvo-v8';
-const CACHE_CDN  = 'finanvo-cdn-v8';
+/* Finanvô — Service Worker v9 — network-first para shell + notificação de update */
+const CACHE_NAME = 'finanvo-v9';
+const CACHE_CDN  = 'finanvo-cdn-v9';
 
 const SHELL = [self.registration.scope + 'finapp.html'];
 
@@ -32,11 +32,13 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
 
+  // Nunca interceptar requisições Firebase
   if (url.hostname.includes('firestore.googleapis.com')
     || url.hostname.includes('identitytoolkit.googleapis.com')
     || url.hostname.includes('securetoken.googleapis.com')
     || url.hostname.includes('firebase.googleapis.com')) return;
 
+  // CDN: cache-first (bibliotecas raramente mudam)
   const isCdn = CDN_ORIGINS.some(o => url.href.startsWith(o));
   if (isCdn) {
     e.respondWith(
@@ -54,14 +56,38 @@ self.addEventListener('fetch', e => {
   }
 
   if (url.origin !== self.location.origin) return;
+
+  // Shell (finapp.html, sw.js, etc.): network-first com fallback para cache
+  // e notificação de update quando versão nova está disponível
   e.respondWith(
     caches.open(CACHE_NAME).then(async cache => {
-      const cached = await cache.match(e.request);
-      const fetchPromise = fetch(e.request).then(resp => {
-        if (resp && resp.status === 200) cache.put(e.request, resp.clone());
-        return resp;
-      }).catch(() => cached);
-      return cached || fetchPromise;
+      try {
+        const networkResp = await fetch(e.request);
+        if (networkResp && networkResp.status === 200) {
+          // Comparar com versão em cache para detectar atualização
+          const cached = await cache.match(e.request);
+          if (cached) {
+            // Verifica se o conteúdo mudou pelo header ETag ou Last-Modified
+            const cachedDate = cached.headers.get('last-modified') || cached.headers.get('etag');
+            const networkDate = networkResp.headers.get('last-modified') || networkResp.headers.get('etag');
+            if (cachedDate && networkDate && cachedDate !== networkDate) {
+              // Nova versão detectada — notificar clientes
+              self.clients.matchAll({ type: 'window' }).then(clients => {
+                clients.forEach(c => c.postMessage({ type: 'SW_UPDATE_AVAILABLE' }));
+              });
+            }
+          }
+          cache.put(e.request, networkResp.clone());
+          return networkResp;
+        }
+        // Resposta inválida: usa cache
+        const fallback = await cache.match(e.request);
+        return fallback || networkResp;
+      } catch(err) {
+        // Sem rede: usa cache
+        const cached = await cache.match(e.request);
+        return cached || new Response('Offline — sem conexão', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+      }
     })
   );
 });

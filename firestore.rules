@@ -2,10 +2,16 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── Helper: verifica se o token tem custom claim admin:true ──────
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
     // ── Coleção users ────────────────────────────────────────────────
     match /users/{uid} {
-      // Leitura: apenas o próprio usuário
-      allow read: if request.auth != null && request.auth.uid == uid;
+      // Leitura: o próprio usuário OU admin com custom claim
+      allow read: if (request.auth != null && request.auth.uid == uid)
+                  || isAdmin();
 
       // Criação: o próprio usuário cria seu perfil, MAS não pode definir
       // campos de plano/assinatura/controle — esses só o Worker escreve.
@@ -18,38 +24,45 @@ service cloud.firestore {
 
       // Atualização: o próprio usuário pode editar campos pessoais,
       // mas NÃO pode alterar campos protegidos.
-      allow update: if request.auth != null
-        && request.auth.uid == uid
-        && !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny([
-              'plano', 'planoBonus', 'planoBonusExpira', 'planoAtualizadoEm',
-              'planoExpira', 'bloqueado', 'valorPlano', 'criado', 'email'
-            ]);
+      // Admin pode atualizar qualquer campo (plano, bloqueado, etc.)
+      allow update: if isAdmin()
+        || (request.auth != null
+            && request.auth.uid == uid
+            && !request.resource.data.diff(resource.data).affectedKeys()
+                .hasAny([
+                  'plano', 'planoBonus', 'planoBonusExpira', 'planoAtualizadoEm',
+                  'planoExpira', 'bloqueado', 'valorPlano'
+                ]));
+
+      // ── Subcoleções do usuário — admin lê/escreve tudo ──────────────
+      match /{subcol}/{docId} {
+        allow read, write: if (request.auth != null && request.auth.uid == uid)
+                            || isAdmin();
+      }
     }
 
     // ── Lançamentos ──────────────────────────────────────────────────
+    // (Coberto pelo wildcard match /{subcol}/{docId} dentro de /users/{uid})
+    // Regras explícitas mantidas para clareza e retrocompatibilidade:
     match /users/{uid}/lancamentos/{docId} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if (request.auth != null && request.auth.uid == uid)
+                          || isAdmin();
     }
-
-    // ── Metas ────────────────────────────────────────────────────────
     match /users/{uid}/metas/{docId} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if (request.auth != null && request.auth.uid == uid)
+                          || isAdmin();
     }
-
-    // ── Família do usuário (sub-coleção) ─────────────────────────────
     match /users/{uid}/familia/{docId} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if (request.auth != null && request.auth.uid == uid)
+                          || isAdmin();
     }
-
-    // ── Dívidas do usuário ───────────────────────────────────────────
     match /users/{uid}/dividas/{docId} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if (request.auth != null && request.auth.uid == uid)
+                          || isAdmin();
     }
-
-    // ── Configurações do usuário ─────────────────────────────────────
     match /users/{uid}/config/{docId} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if (request.auth != null && request.auth.uid == uid)
+                          || isAdmin();
     }
 
     // ── Família compartilhada ────────────────────────────────────────
@@ -69,31 +82,32 @@ service cloud.firestore {
       }
     }
 
-    // ── Logs de chat/suporte (escrita do app, leitura só do owner) ───
+    // ── Logs de chat/suporte ─────────────────────────────────────────
     match /chatbot_logs/{docId} {
       allow create: if request.auth != null
         && request.resource.data.uid == request.auth.uid;
-      allow read: if false; // só admin (service account) lê
-      allow update, delete: if false;
+      allow read: if isAdmin(); // admin pode ler logs
+      allow update, delete: if isAdmin();
     }
 
     // ── Indicações (referral) ────────────────────────────────────────
     match /indicacoes/{docId} {
-      allow read: if request.auth != null
-        && (resource.data.indicadorUid == request.auth.uid
-            || resource.data.indicadoUid == request.auth.uid);
+      allow read: if isAdmin()
+        || (request.auth != null
+            && (resource.data.indicadorUid == request.auth.uid
+                || resource.data.indicadoUid == request.auth.uid));
       allow create: if request.auth != null;
-      allow update: if false; // só service account
+      allow update: if isAdmin(); // só admin ou service account
     }
 
-    // ── Planos pendentes — só service account ────────────────────────
+    // ── Planos pendentes — service account + admin ───────────────────
     match /planos_pendentes/{email} {
-      allow read, write: if false;
+      allow read, write: if isAdmin();
     }
 
-    // ── Config do admin (vitalicios, etc.) — só service account ─────
+    // ── Config do admin (vitalicios, etc.) — admin + service account ─
     match /admin_config/{docId} {
-      allow read, write: if false;
+      allow read, write: if isAdmin();
     }
 
     // ── Bloquear qualquer outro acesso não mapeado ───────────────────

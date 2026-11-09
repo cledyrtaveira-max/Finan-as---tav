@@ -23,6 +23,17 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="icon" type="image/png" href="/icons/icon-192.png">
+<!-- ── Tema antecipado: evita flash de FOUT ao carregar (deve ser o 1º script) ── -->
+<script>
+(function() {
+  try {
+    var t = localStorage.getItem('tf-tema');
+    if (t === 'light' || t === 'dark') {
+      document.documentElement.setAttribute('data-theme', t);
+    }
+  } catch(e) {}
+})();
+</script>
 <script>
 // ── PWA Service Worker ───────────────────────────────────────────
 (function() {
@@ -34,6 +45,23 @@
     })();
     navigator.serviceWorker.register(swPath)
       .catch(() => {}); // falha silenciosa em contextos sem suporte
+
+    // ── Ouve mensagens do SW (ex: nova versão disponível) ────────────
+    navigator.serviceWorker.addEventListener('message', function(evt) {
+      if (evt.data && evt.data.type === 'SW_UPDATE_AVAILABLE') {
+        // Mostrar toast de atualização assim que mostrarToast estiver disponível
+        const tentarToast = function() {
+          if (typeof mostrarToast === 'function') {
+            const btn = '<button onclick="location.reload()" style="margin-left:10px;padding:3px 10px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;font-size:12px;cursor:pointer">Atualizar</button>';
+            const el = document.querySelector('#toast-container .toast:last-child');
+            mostrarToast('🔄 Nova versão disponível!' + btn, 'info', 12000);
+          } else {
+            setTimeout(tentarToast, 500);
+          }
+        };
+        tentarToast();
+      }
+    });
   }
 })();
 </script>
@@ -126,7 +154,7 @@ function renderBannerVencimentos() {
     const label = i.urgencia === 'hoje' ? '🔴 HOJE' : i.urgencia === 'amanha' ? '🟠 Amanhã' : '🟡 Em breve';
     return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
       <div>
-        <div style="font-size:13px;font-weight:600;color:var(--fg1)">${i.desc}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--fg1)">${esc(i.desc)}</div>
         <div style="font-size:11px;color:var(--fg3)">Vence dia ${i.diaVenc}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -227,7 +255,7 @@ function renderConfigNotificacoes() {
       const brl = v => v ? 'R$ ' + Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
       itensEl.innerHTML = '<div style="font-size:12px;font-weight:600;color:var(--fg2);margin-bottom:6px">Despesas com notificação configurada:</div>'
         + itens.map(i => `<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--fg2);padding:4px 0;border-bottom:1px solid var(--border)">
-          <span>📅 Dia ${i.diaVenc} — ${i.desc}</span>
+          <span>📅 Dia ${i.diaVenc} — ${esc(i.desc)}</span>
           <span style="font-weight:600;color:var(--red)">${brl(i.val)}</span>
         </div>`).join('');
     }
@@ -1041,6 +1069,26 @@ body {
 
 /* Modal editar lançamento manual */
 #modal-editar-lanc .modal { max-width: 360px }
+
+/* ── 375px fix: linha de lançamento em duas linhas ── */
+@media (max-width: 420px) {
+  .lanc-item {
+    flex-wrap: wrap;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .lanc-info { flex-basis: calc(100% - 54px); }
+  .lanc-val {
+    font-size: 13px;
+    margin-left: auto;
+  }
+  .lanc-btn { width: 24px; height: 24px; font-size: 12px; }
+  /* Garantir que o valor + botões ficam numa segunda linha */
+  .lanc-item .lanc-val,
+  .lanc-item .lanc-btn { flex-shrink: 0; }
+  /* Chip de tipo menor */
+  .lanc-chip { font-size: 9px; padding: 1px 5px; }
+}
 
 /* ── Mobile: esconde sidebar, mostra bottom nav ── */
 .bottom-nav { display: none }
@@ -3695,7 +3743,7 @@ fbAuth.onAuthStateChanged(async function(user) {
     document.getElementById('sidebar-role').textContent = 'Finanvô · Sair 🔒';
     // Garantir que o perfil existe no Firestore e manter _perfil atualizado em tempo real
     const perfilRef = firebase.firestore().collection('users').doc(user.uid);
-    perfilRef.get().then(snap => {
+    perfilRef.get().then(async snap => {
       // ── Verificação de bloqueio ──────────────────────────────────────
       if (snap.exists && snap.data().bloqueado === true) {
         fbAuth.signOut();
@@ -3704,14 +3752,39 @@ fbAuth.onAuthStateChanged(async function(user) {
         if (errEl) errEl.textContent = '⛔ Sua conta foi suspensa. Entre em contato com o suporte.';
         return;
       }
-      // ────────────────────────────────────────────────────────────────
+      // ── Garantir que o perfil existe com todos os campos ANTES de qualquer
+      //    outra escrita no documento (ex: registrarDiaAcesso).
+      //    Isso evita race condition que impedia o período de cortesia em novas contas.
       if (!snap.exists || !snap.data().criado) {
-        perfilRef.set({
-          email: (user.email || '').toLowerCase(),
-          criado: firebase.firestore.FieldValue.serverTimestamp(),
-          codigoIndicacao: user.uid.slice(0, 8).toUpperCase()
-        }, { merge: true }).catch(e => console.warn('perfil set:', e));
+        try {
+          await perfilRef.set({
+            nome: user.displayName || '',
+            email: (user.email || '').toLowerCase(),
+            criado: firebase.firestore.FieldValue.serverTimestamp(),
+            codigoIndicacao: user.uid.slice(0, 8).toUpperCase()
+          }, { merge: true });
+        } catch(e) { console.warn('perfil set:', e); }
       }
+      // ── Registrar dia de acesso APÓS garantir que o perfil existe ────
+      (function registrarDiaAcesso(uid) {
+        try {
+          const hoje = new Date().toISOString().slice(0, 10);
+          const chave = 'finDiasAcesso_' + uid;
+          let dias = [];
+          try { dias = JSON.parse(localStorage.getItem(chave) || '[]'); } catch(e) {}
+          if (!dias.includes(hoje)) {
+            dias.push(hoje);
+            if (dias.length > 60) dias = dias.slice(-60);
+            try { localStorage.setItem(chave, JSON.stringify(dias)); } catch(e) {}
+            if (fbDb) {
+              fbDb.collection('users').doc(uid).set(
+                { diasAcesso: dias, ultimoAcesso: hoje },
+                { merge: true }
+              ).catch(() => {});
+            }
+          }
+        } catch(e) {}
+      })(user.uid);
     });
     // Monitora mudanças no perfil (incluindo ativação de plano pelo webhook)
     let _planoAnterior = null;
@@ -3777,28 +3850,8 @@ fbAuth.onAuthStateChanged(async function(user) {
     registrarIndicacaoSeExistir(user.uid, user.email, user.displayName || '');
     // Ativar indicações que já completaram 7 dias de uso real
     verificarIndicacoesAtivas(user.uid);
-    // Registrar dia de acesso real (usado por verificarIndicacoesAtivas)
-    (function registrarDiaAcesso(uid) {
-      try {
-        const hoje = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
-        const chave = 'finDiasAcesso_' + uid;
-        let dias = [];
-        try { dias = JSON.parse(localStorage.getItem(chave) || '[]'); } catch(e) {}
-        if (!dias.includes(hoje)) {
-          dias.push(hoje);
-          // Mantém só os últimos 60 dias para não crescer indefinidamente
-          if (dias.length > 60) dias = dias.slice(-60);
-          try { localStorage.setItem(chave, JSON.stringify(dias)); } catch(e) {}
-          // Sincroniza com Firestore também (para leitura pelo indicador)
-          if (fbDb) {
-            fbDb.collection('users').doc(uid).set(
-              { diasAcesso: dias, ultimoAcesso: hoje },
-              { merge: true }
-            ).catch(() => {});
-          }
-        }
-      } catch(e) {}
-    })(user.uid);
+    // Registrar dia de acesso: movido para dentro de perfilRef.get().then()
+    // para garantir que o perfil completo existe antes desta escrita.
   } else {
     // Deslogado
     logado = false;
@@ -4383,6 +4436,17 @@ function brl(v) {
   return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
+// ── XSS sanitizer — SEMPRE usar em dados do usuário dentro de innerHTML ──
+function esc(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ── Render Dashboard ──────────────────────────────────────────────
 // ── Frases motivacionais ─────────────────────────────────────────
 const FRASES = [
@@ -4426,7 +4490,7 @@ function renderAtrasoCard() {
   const itensHtml = vencidos.slice(0,5).map(v=>`
     <div class="dash-atraso-item">
       <div>
-        <div class="dash-atraso-desc">${v.desc}</div>
+        <div class="dash-atraso-desc">${esc(v.desc)}</div>
         <div class="dash-atraso-meta">${v.mes} ${v.ano}</div>
       </div>
       <div class="dash-atraso-val">− ${brl(v.val)}</div>
@@ -4697,7 +4761,7 @@ function renderDashboard() {
   let renda = 0, desp = 0, divs = 0, saldo = 0;
   const saldoCor = saldo>=0?'var(--green)':'var(--red)';
 
-  // ── Somatória: só itens confirmados ✅ ────────────────────────
+  // ── Somatória: confirmados ✅ e, quando nenhum pago, usa previsto ──
   const cfgPer = cfgPeriodo();
   const statusMap = cfgPer.status || {};
   // Base fixa confirmada
@@ -4708,12 +4772,19 @@ function renderDashboard() {
   const rendaManConf = lanMes.filter(l=>l.tipo==='entrada' && statusMap[`lanc_${l.id}`]==='pago').reduce((s,l)=>s+l.val,0);
   const despManConf  = lanMes.filter(l=>l.tipo==='saida'   && statusMap[`lanc_${l.id}`]==='pago').reduce((s,l)=>s+l.val,0);
   const divsManConf  = lanMes.filter(l=>l.tipo==='divida'  && statusMap[`lanc_${l.id}`]==='pago').reduce((s,l)=>s+l.val,0);
-  // Totais confirmados — esses aparecem nos cards
-  renda = rendaBaseConf + rendaManConf;
-  desp  = despBaseConf  + despManConf;
-  divs  = divsBaseConf  + divsManConf;
+  // Totais confirmados
+  const rendaConf = rendaBaseConf + rendaManConf;
+  const despConf  = despBaseConf  + despManConf;
+  const divsConf  = divsBaseConf  + divsManConf;
+  const algumPago = (rendaConf + despConf + divsConf) > 0 || Object.values(statusMap).some(v => v === 'pago');
+  // Se nenhum item foi marcado como pago, usa valores previstos para não mostrar R$ 0,00
+  renda = algumPago ? rendaConf : (rendaPrev + rendaReal);
+  desp  = algumPago ? despConf  : (despPrev  + despReal);
+  divs  = algumPago ? divsConf  : (divsPrev  + divsReal);
   saldo = renda - desp - divs;
   const saldoReal = saldo; // alias para compatibilidade
+  // Flag para label do período (previsto × confirmado)
+  const usandoPrevisto = !algumPago;
 
   // ── Alerta itens vencidos/atrasados no mês atual ──────────────
   const totalVencMes = Object.values(statusMap).filter(v => v === 'vencido').length;
@@ -4733,7 +4804,11 @@ function renderDashboard() {
 
   // ── Label do header: saldo real + previsto ────────────────────
   const dhcPeriodoLabel = document.getElementById('dhc-periodo-label');
-  if (dhcPeriodoLabel) dhcPeriodoLabel.innerHTML = `Saldo confirmado · <span style="color:rgba(255,255,255,0.5);font-size:9px">Previsto: ${brl(saldoPrev)}</span>`;
+  if (dhcPeriodoLabel) {
+    dhcPeriodoLabel.innerHTML = usandoPrevisto
+      ? `Saldo previsto · <span style="color:rgba(255,255,255,0.5);font-size:9px">Marque itens como ✅ pago para ver o confirmado</span>`
+      : `Saldo confirmado · <span style="color:rgba(255,255,255,0.5);font-size:9px">Previsto: ${brl(saldoPrev)}</span>`;
+  }
 
   // ── Alerta inteligente (semáforo) ─────────────────────────────
   const alertaEl = document.getElementById('dash-alerta');
@@ -7192,8 +7267,8 @@ function renderConfig() {
       const valColor = item.tipo==='entrada'?'var(--green)':item.tipo==='divida'?'var(--orange)':'var(--red)';
       const modMark = modP ? ' 🖊' : modG ? ' •' : '';
       return `<tr style="${rowStyle}">
-        <td style="font-weight:500">${nome}</td>
-        <td><span class="chip chip-blue" style="font-size:10px">${item.cat}</span></td>
+        <td style="font-weight:500">${esc(nome)}</td>
+        <td><span class="chip chip-blue" style="font-size:10px">${esc(item.cat)}</span></td>
         <td style="text-align:right;white-space:nowrap">
           <span style="font-size:13px;font-weight:700;color:${valColor};margin-right:4px">${valFmt}${modMark}</span>
           <button class="btn btn-ghost" style="padding:3px 8px;font-size:11px;color:var(--accent);margin-left:2px" onclick="abrirModalEditarValor(${idx})" title="Editar valor">✏</button>
@@ -7212,14 +7287,14 @@ function renderConfig() {
   // Extras: globais + do período
   function linhasExtras() {
     const globais = (appCfg.extras||[]).map((item,eIdx)=>`<tr>
-      <td>${item.desc} <span style="font-size:9px;color:var(--accent)">• fixa global</span></td>
-      <td><span class="chip chip-blue" style="font-size:10px">${item.cat}</span></td>
+      <td>${esc(item.desc)} <span style="font-size:9px;color:var(--accent)">• fixa global</span></td>
+      <td><span class="chip chip-blue" style="font-size:10px">${esc(item.cat)}</span></td>
       <td class="td-valor ${item.tipo==='entrada'?'entrada':item.tipo==='divida'?'divida':'saida'} text-right mono" style="font-size:13px;font-weight:700">${brl(item.val)}</td>
       <td style="text-align:right"><button class="btn btn-ghost" style="padding:3px 8px;font-size:11px;color:var(--red)" onclick="removerExtraFixa(${eIdx})">✕</button></td>
     </tr>`);
     const periodo = (cfgP.extras||[]).map((item,eIdx)=>`<tr>
-      <td>${item.desc} <span style="font-size:9px;color:#f59e0b">• extra ${cfgMesSel}</span></td>
-      <td><span class="chip chip-blue" style="font-size:10px">${item.cat}</span></td>
+      <td>${esc(item.desc)} <span style="font-size:9px;color:#f59e0b">• extra ${cfgMesSel}</span></td>
+      <td><span class="chip chip-blue" style="font-size:10px">${esc(item.cat)}</span></td>
       <td class="td-valor ${item.tipo==='entrada'?'entrada':item.tipo==='divida'?'divida':'saida'} text-right mono" style="font-size:13px;font-weight:700">${brl(item.val)}</td>
       <td style="text-align:right"><button class="btn btn-ghost" style="padding:3px 8px;font-size:11px;color:var(--red)" onclick="removerExtraPeriodo(${eIdx})">✕</button></td>
     </tr>`);
@@ -7515,7 +7590,13 @@ function iniciarSync() {
     if (ov && ov.style.display !== 'none') ov.style.display = 'none';
 
     const remotos = [];
-    snap.forEach(d => remotos.push({ id: d.id, ...d.data() }));
+    snap.forEach(d => {
+      const item = { id: d.id, ...d.data() };
+      // Garantir que campos numéricos sejam números (Firestore pode retornar strings)
+      if (item.val !== undefined) item.val = Number(item.val) || 0;
+      if (item.diaVenc !== undefined) item.diaVenc = Number(item.diaVenc) || 0;
+      remotos.push(item);
+    });
     appData.lancamentos = remotos;
     try { localStorage.setItem('finvo_data_' + usuarioAtivo, JSON.stringify(appData)); } catch(e) {}
     const v = document.querySelector('.view.active');
@@ -7808,7 +7889,7 @@ function renderDivPendentes() {
           </div>
         </div>
         <div class="div-card-valor" style="${semVal ? 'color:var(--fg3);font-size:13px' : ''}">${semVal ? '⚠️ Valor a definir' : brl(d.total)}</div>
-        ${d.obs ? `<div class="div-card-info"><span>${d.obs}</span></div>` : ''}
+        ${d.obs ? `<div class="div-card-info"><span>${esc(d.obs)}</span></div>` : ''}
         <div style="display:flex;gap:6px;margin-top:10px">
           <button onclick="abrirPagarPendente('${d.id}')" ${semVal?'disabled title="Defina o valor primeiro"':''}"
             style="flex:1;padding:6px;font-size:11px;font-weight:700;border-radius:7px;cursor:${semVal?'not-allowed':'pointer'};
@@ -8465,8 +8546,8 @@ function renderGastosList(cartaoId) {
   [...arr].reverse().forEach(g => {
     html += `<div class="gasto-item">
       <div>
-        <span>${g.desc}</span>
-        <span class="gasto-cat-pill">${catGastosLabel[g.cat]||g.cat}</span>
+        <span>${esc(g.desc)}</span>
+        <span class="gasto-cat-pill">${esc(catGastosLabel[g.cat]||g.cat)}</span>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-weight:700">${brl(g.valor)}</span>
@@ -8511,7 +8592,7 @@ function renderCriptos() {
     html += `<div class="caixinha-card">
       <div class="caixinha-top">
         <div>
-          <div class="caixinha-nome">🪙 ${c.nome}</div>
+          <div class="caixinha-nome">🪙 ${esc(c.nome)}</div>
           <div style="font-size:10px;color:var(--fg3);margin-top:2px">${c.simbolo?.toUpperCase()||''} ${c.qtd ? '· ' + c.qtd + ' unid.' : ''}</div>
         </div>
         <div style="display:flex;gap:6px">
@@ -8596,7 +8677,7 @@ function renderObjetivos() {
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:24px">${o.icone||'🎯'}</span>
           <div>
-            <div class="caixinha-nome">${o.nome}</div>
+            <div class="caixinha-nome">${esc(o.nome)}</div>
             ${o.prazo ? `<div style="font-size:10px;color:var(--fg3)">Prazo: ${o.prazo}</div>` : ''}
           </div>
         </div>
@@ -9051,15 +9132,25 @@ function calcProgressoMeta(meta) {
   const rendaM = cfgM.rendaMes ? parseFloat(cfgM.rendaMes) : ent;
   const saldo = rendaM - sai - div;
   let atual = 0, label = '';
-  if (meta.tipo === 'economia') { atual = Math.max(0, saldo); label = `Saldo atual: ${brl(saldo)}`; }
-  else if (meta.tipo === 'limite') { atual = meta.valor - (sai + div); label = `Gasto: ${brl(sai+div)} de ${brl(meta.valor)}`; }
-  else if (meta.tipo === 'categoria') {
+  if (meta.tipo === 'economia') {
+    // Economia: quanto já poupei em relação à meta
+    atual = Math.max(0, saldo);
+    label = `Saldo atual: ${brl(saldo)}`;
+    const pct = Math.min(100, Math.round((atual / meta.valor) * 100));
+    return { pct, label, ok: atual >= meta.valor, atual };
+  } else if (meta.tipo === 'limite') {
+    // Limite: quanto já gastei em relação ao teto — pct = gasto/limite
+    const gasto = sai + div;
+    label = `Gasto: ${brl(gasto)} de ${brl(meta.valor)}`;
+    const pct = Math.min(200, Math.round((gasto / meta.valor) * 100)); // deixa passar 100 p/ mostrar estouro
+    return { pct, label, ok: gasto <= meta.valor, atual: gasto };
+  } else if (meta.tipo === 'categoria') {
     const gastoCat = [...todos, ...lanMes].filter(l => (l.cat||'Outros')===meta.cat && (l.tipo==='saida'||l.tipo==='divida')).reduce((s,l)=>s+l.val,0);
-    atual = Math.max(0, meta.valor - gastoCat);
     label = `Gasto em ${meta.cat}: ${brl(gastoCat)} / limite ${brl(meta.valor)}`;
+    const pct = Math.min(200, Math.round((gastoCat / meta.valor) * 100));
+    return { pct, label, ok: gastoCat <= meta.valor, atual: gastoCat };
   }
-  const pct = Math.min(100, Math.round((atual / meta.valor) * 100));
-  return { pct, label, ok: pct >= 100, atual };
+  return { pct: 0, label: '', ok: true, atual: 0 };
 }
 
 function renderMetasDash() {
@@ -9075,35 +9166,61 @@ function renderMetasDash() {
   metas.forEach(m => {
     const { pct, ok } = calcProgressoMeta(m);
     const chave = `_meta_alerted_${m.id}`;
-    if (!ok && pct >= 90 && !window[chave + '_90']) {
-      window[chave + '_90'] = true;
-      setTimeout(() => mostrarToast(`⚡ "${m.desc}" está em ${pct}% — falta pouco!`, 'warning'), 1200);
-    }
-    if (!ok && pct >= 100 && !window[chave + '_100']) {
-      window[chave + '_100'] = true;
-      setTimeout(() => mostrarToast(`🔴 Meta "${m.desc}" atingiu 100%!`, 'error'), 800);
+    // Para limite/categoria: pct = gasto/limite → alerta quando se aproxima do teto
+    // Para economia: pct = poupado/meta → alerta quando está longe ainda
+    if (m.tipo === 'economia') {
+      if (!ok && pct >= 80 && !window[chave + '_80']) {
+        window[chave + '_80'] = true;
+        setTimeout(() => mostrarToast(`⚡ "${m.desc}" está em ${pct}% — quase lá!`, 'warning'), 1200);
+      }
+      if (!ok && pct >= 100 && !window[chave + '_100']) {
+        window[chave + '_100'] = true;
+        setTimeout(() => mostrarToast(`🏆 Meta "${m.desc}" atingida!`, 'success'), 800);
+      }
+    } else {
+      // limite ou categoria: alerta quando gasto passa de 80% e quando estoura
+      if (!ok && pct >= 80 && pct < 100 && !window[chave + '_80']) {
+        window[chave + '_80'] = true;
+        setTimeout(() => mostrarToast(`⚡ "${m.desc}" está em ${pct}% do limite — falta pouco!`, 'warning'), 1200);
+      }
+      if (pct >= 100 && !window[chave + '_100']) {
+        window[chave + '_100'] = true;
+        setTimeout(() => mostrarToast(`🔴 Limite "${m.desc}" estourado (${pct}%)!`, 'error'), 800);
+      }
     }
   });
   wrap.innerHTML = metas.map(m => {
     const { pct, label, ok } = calcProgressoMeta(m);
-    // Cor dinâmica: verde→laranja→vermelho
-    const cor = ok
-      ? (pct >= 80 ? '#22c55e' : '#4ade80')
-      : (pct >= 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : '#60a5fa');
-    const emoji = ok ? (pct >= 100 ? '🏆' : '✅') : (pct >= 100 ? '🔴' : pct >= 80 ? '⚡' : '🎯');
-    const barCor = ok
-      ? 'linear-gradient(90deg,#22c55e,#4ade80)'
-      : (pct >= 100 ? 'linear-gradient(90deg,#ef4444,#f87171)' : pct >= 80 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,#4f7fff,#7c3aed)');
-    const alertTag = !ok && pct >= 100
-      ? `<div style="font-size:10px;font-weight:700;color:#ef4444;margin-top:3px">🔴 Limite atingido!</div>`
-      : !ok && pct >= 80
-      ? `<div style="font-size:10px;font-weight:700;color:#f59e0b;margin-top:3px">⚡ Perto do limite</div>`
-      : '';
+    // Cor dinâmica: varia conforme tipo
+    // economia: azul→verde conforme poupança cresce; limite/categoria: verde→laranja→vermelho conforme gasto cresce
+    const isLimite = m.tipo === 'limite' || m.tipo === 'categoria';
+    const pctBar = Math.min(100, pct); // barra nunca passa de 100%
+    let cor, emoji, barCor, alertTag;
+    if (isLimite) {
+      cor   = pct >= 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : '#22c55e';
+      emoji = pct >= 100 ? '🔴' : pct >= 80 ? '⚡' : '✅';
+      barCor = pct >= 100 ? 'linear-gradient(90deg,#ef4444,#f87171)'
+             : pct >= 80  ? 'linear-gradient(90deg,#f59e0b,#fbbf24)'
+             :               'linear-gradient(90deg,#22c55e,#4ade80)';
+      alertTag = pct >= 100
+        ? `<div style="font-size:10px;font-weight:700;color:#ef4444;margin-top:3px">🔴 Limite estourado!</div>`
+        : pct >= 80
+        ? `<div style="font-size:10px;font-weight:700;color:#f59e0b;margin-top:3px">⚡ Perto do limite</div>`
+        : '';
+    } else {
+      // economia
+      cor   = ok ? '#22c55e' : pct >= 80 ? '#4ade80' : '#60a5fa';
+      emoji = ok ? '🏆' : pct >= 80 ? '⚡' : '🎯';
+      barCor = ok ? 'linear-gradient(90deg,#22c55e,#4ade80)'
+             : pct >= 80 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)'
+             : 'linear-gradient(90deg,#4f7fff,#7c3aed)';
+      alertTag = ok ? `<div style="font-size:10px;font-weight:700;color:#22c55e;margin-top:3px">🏆 Meta atingida!</div>` : '';
+    }
     return `<div class="meta-card" style="${!ok && pct >= 100 ? 'border-color:rgba(239,68,68,0.4);' : !ok && pct >= 80 ? 'border-color:rgba(245,158,11,0.35);' : ''}">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
         <div style="display:flex;align-items:center;gap:8px">
           <span>${TIPO_ICON[m.tipo]||'🎯'}</span>
-          <span style="font-size:13px;font-weight:600;color:var(--fg1)">${m.desc}</span>
+          <span style="font-size:13px;font-weight:600;color:var(--fg1)">${esc(m.desc)}</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <span style="font-size:18px">${emoji}</span>
@@ -9356,7 +9473,7 @@ function renderAlertasCat() {
         <span style="font-size:20px">${emoji}</span>
         <div style="flex:1">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:13px;font-weight:600;color:var(--fg1)">${CAT_ICON[a.cat]||'📌'} ${a.cat}</span>
+            <span style="font-size:13px;font-weight:600;color:var(--fg1)">${CAT_ICON[a.cat]||'📌'} ${esc(a.cat)}</span>
             <span style="font-size:12px;font-weight:700;color:${a.pct>=100?'var(--red)':a.pct>=85?'var(--orange)':'var(--yellow, #f59e0b)'}">${a.pct}%</span>
           </div>
           <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px">
@@ -10517,9 +10634,17 @@ window.obFinalizar = function() {
     appCfg.overrides['1'] = 0;
   }
 
-  // Marca onboarding como completo
+  // Marca onboarding como completo — salvar localmente E no Firestore
+  // para que novos dispositivos não repitam o onboarding
   appCfg._onboardingDone = true;
   saveCfg(appCfg);
+  // Persist no Firestore (perfil) para sincronizar entre dispositivos
+  if (fbDb && usuarioAtivo) {
+    fbDb.collection('users').doc(usuarioAtivo).set(
+      { onboardingDone: true },
+      { merge: true }
+    ).catch(() => {});
+  }
 
   // Fecha onboarding e mostra app
   document.getElementById('onboarding-screen').classList.add('hidden');
@@ -10532,12 +10657,19 @@ window._checkOnboarding = function() {
   if (!usuarioAtivo) return;
   // Usa o primeiro disparo do onSnapshot (_perfil já carregado) ou aguarda até 2s
   function verificar() {
-    if (!appCfg._onboardingDone) {
+    // Verifica local E Firestore (window._perfil) para suportar múltiplos dispositivos
+    const doneLocal    = !!appCfg._onboardingDone;
+    const doneFirebase = !!(window._perfil && window._perfil.onboardingDone);
+    if (!doneLocal && !doneFirebase) {
       document.getElementById('onboarding-screen').classList.remove('hidden');
       obStep = 0;
       obRender();
       // Mini canvas decorativo
       _obCanvas();
+    } else if (!doneLocal && doneFirebase) {
+      // Já concluiu em outro dispositivo — marcar localmente e não mostrar de novo
+      appCfg._onboardingDone = true;
+      saveCfg(appCfg);
     }
   }
   // Se _perfil já foi recebido (onSnapshot disparou), executa imediatamente
@@ -10599,20 +10731,33 @@ async function verificarPlanoPendente(email) {
     const data = snap.data();
     if (!data || !data.plano || data.plano === 'gratuito') return;
 
-    // Aplicar plano pendente ao usuário
-    await fbDb.collection('users').doc(usuarioAtivo).set({
-      plano: data.plano,
-      planoAtualizadoEm: data.planoAtualizadoEm || new Date().toISOString(),
-      planoOrigemHotmart: true
-    }, { merge: true });
-
-    // Remover pendente
-    await fbDb.collection('planos_pendentes').doc(key).delete();
-
-    // Plano virá via onSnapshot do Firestore — não alterar appCfg.plano no navegador
+    // NOTA: o campo "plano" é protegido — apenas o Worker/Cloud Function escreve nele.
+    // O app não pode alterar "plano" diretamente. O Worker monitora planos_pendentes
+    // e aplica automaticamente. Aqui apenas informamos o usuário que está em processamento.
 
     const nomesPlanos = { pro: 'Finanvô Básico', familia: 'Finanvô Família', premium: 'Finanvô Premium' };
-    mostrarToast(`🎉 Plano ${nomesPlanos[data.plano] || data.plano} ativado! Bem-vindo ao Finanvô!`);
+    const nomeExibicao = nomesPlanos[data.plano] || data.plano;
+
+    // Verificar se o plano já foi ativado (campo no perfil do usuário)
+    const perfilSnap = await fbDb.collection('users').doc(usuarioAtivo).get();
+    const planoAtual = perfilSnap.exists ? (perfilSnap.data().plano || 'gratuito') : 'gratuito';
+
+    if (planoAtual !== 'gratuito' && planoAtual !== 'free' && planoAtual === data.plano) {
+      // Plano já foi ativado pelo Worker — remover pendente
+      try { await fbDb.collection('planos_pendentes').doc(key).delete(); } catch(_) {}
+      return; // onSnapshot já notificou
+    }
+
+    // Plano ainda pendente — mostrar aviso de processamento
+    if (typeof mostrarToast === 'function') {
+      mostrarToast(
+        `⏳ Pagamento do ${nomeExibicao} confirmado! Ativando em instantes...`,
+        'info', 8000
+      );
+    }
+
+    // Esperar ativação pelo Worker (poll por até 2 min via onSnapshot — já configurado)
+    console.log('[Finanvô] Plano pendente detectado:', data.plano, '— aguardando Worker ativar.');
   } catch(e) {
     // permission-denied é esperado para usuários sem plano pendente — silencia
     if (e.code !== 'permission-denied') {
@@ -10895,10 +11040,11 @@ window.criarFamilia = async function() {
     const codigo = gerarCodigo();
 
     // Garante que o documento do usuário existe antes de tudo
+    // Nota: "criado" só é escrito na criação inicial (em fazerLogin/onAuthStateChanged).
+    // Aqui apenas atualizamos campos que o usuário pode alterar.
     await fbDb.collection('users').doc(usuarioAtivo).set({
       email: window.usuarioEmail || '',
       uid: usuarioAtivo,
-      criado: new Date().toISOString(),
       codigoIndicacao: usuarioAtivo.substring(0,8).toUpperCase()
     }, { merge: true });
 
@@ -12168,7 +12314,7 @@ function renderDetector(dados3m, mes, ano) {
     html += recSemPad.map(r => `
       <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
         <div>
-          <div style="font-size:13px;font-weight:600;color:var(--fg1)">${r.nome}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--fg1)">${esc(r.nome)}</div>
           <div style="font-size:11px;color:var(--fg3)">${r.meses.size} meses seguidos</div>
         </div>
         <div style="font-size:13px;font-weight:700;color:var(--fg2)">R$${r.media.toFixed(0)}/mês</div>
@@ -12594,7 +12740,7 @@ function renderAnaliseIA(a, mes, ano) {
     const w = Math.round((c.val/maxCat)*100);
     return `<div style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
-        <span style="color:var(--fg2);font-weight:500">${c.nome}</span>
+        <span style="color:var(--fg2);font-weight:500">${esc(c.nome)}</span>
         <span style="color:var(--fg1);font-weight:600">R$${c.val.toFixed(0)}</span>
       </div>
       <div style="background:var(--surface2);border-radius:6px;height:7px;overflow:hidden">
@@ -12665,8 +12811,34 @@ function renderAnaliseIA(a, mes, ano) {
 // Utilitários
 function parseBRL(str) {
   if (!str) return 0;
-  // Remove R$, espaços, pontos de milhar; troca vírgula por ponto
-  const s = String(str).replace(/R\$\s*/g,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.');
+  let s = String(str).replace(/R\$\s*/g,'').replace(/\s/g,'').trim();
+  // Detecta separador decimal:
+  // "1.234,56" → vírgula é decimal  → remove pontos, troca vírgula por ponto
+  // "45.9" ou "1234.56" → ponto é decimal → remove vírgulas (se houver)
+  // "1.234.567" → só milhar, sem decimal
+  const temVirgula = s.includes(',');
+  const temPonto   = s.includes('.');
+  if (temVirgula && temPonto) {
+    // Formato BRL clássico: 1.234,56 — remove ponto de milhar, troca vírgula
+    s = s.replace(/\./g, '').replace(',', '.');
+  } else if (temVirgula && !temPonto) {
+    // Só vírgula: pode ser milhar "1,234" ou decimal "45,9"
+    // Se há exatamente 3 dígitos após a vírgula, assume milhar; senão decimal
+    const partes = s.split(',');
+    if (partes.length === 2 && partes[1].length === 3) {
+      s = s.replace(',', ''); // milhar → remove
+    } else {
+      s = s.replace(',', '.'); // decimal → troca
+    }
+  } else if (temPonto) {
+    // Só ponto: pode ser milhar "1.234" ou decimal "45.9" / "1234.56"
+    const partes = s.split('.');
+    if (partes.length === 2 && partes[1].length === 3 && partes[0].length >= 1) {
+      // Ambíguo como "1.234" — assume milhar (valor inteiro)
+      s = s.replace('.', '');
+    }
+    // "45.9", "1234.56" → ponto já é decimal, não faz nada
+  }
   return parseFloat(s) || 0;
 }
 
@@ -13161,8 +13333,8 @@ function mostrarPreviewCSV(text, filename) {
     const previewHTML = transacoes.slice(0, 5).map(t => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);gap:8px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:12px;font-weight:600;color:var(--fg1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.desc}</div>
-          <div style="font-size:11px;color:var(--fg3)">${t.mes} ${t.ano} · ${t.cat}</div>
+          <div style="font-size:12px;font-weight:600;color:var(--fg1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.desc)}</div>
+          <div style="font-size:11px;color:var(--fg3)">${esc(t.mes)} ${t.ano} · ${esc(t.cat)}</div>
         </div>
         <div style="font-size:13px;font-weight:700;color:${t.tipo==='entrada'?'#4ade80':'#f87171'};white-space:nowrap">
           ${t.tipo==='entrada'?'+':'-'}${brl(t.val)}
@@ -13448,11 +13620,11 @@ async function registrarIndicacaoSeExistir(uid, email, nome) {
           });
           await db.collection('users').doc(docUid).update({ indicacoes });
 
-          // Dar 30 dias ao indicado (novo usuário)
+          // Dar 30 dias ao indicado — apenas campos não-protegidos.
+          // planoBonus/planoBonusExpira são escritos pelo Worker/Cloud Function.
+          // Aqui registramos apenas o bônus local para cálculo de prazo.
           await db.collection('users').doc(uid).update({
-            bonusDias: firebase.firestore.FieldValue.increment(30),
-            planoBonus: 'premium',
-            planoBonusExpira: new Date(Date.now() + 30 * 86400000).toISOString()
+            bonusDias: firebase.firestore.FieldValue.increment(30)
           });
         }
         break;
