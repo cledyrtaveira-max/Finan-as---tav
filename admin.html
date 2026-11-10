@@ -194,7 +194,8 @@ select.search-input{cursor:pointer;}
 <body>
 
 <!-- PIN OVERLAY -->
-<div class="overlay" id="pin-overlay">
+<!-- M9 FIX: PIN overlay oculto por padrão — só aparece após verificação de login -->
+<div class="overlay hidden" id="pin-overlay">
   <div class="modal">
     <div class="modal-icon">🔐</div>
     <h2>Código de acesso</h2>
@@ -347,7 +348,12 @@ select.search-input{cursor:pointer;}
             <tbody id="usuarios-body"><tr><td colspan="6" class="empty">Carregando...</td></tr></tbody>
           </table>
         </div>
-        <div style="font-size:12px;color:var(--fg3);margin-top:10px;text-align:center" id="usuarios-count"></div>
+        <!-- I11 FIX: controles de paginação -->
+        <div style="display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap;justify-content:center">
+          <button id="pag-prev" onclick="fnvPagAnterior()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 12px;cursor:pointer;color:var(--fg2);font-size:13px" disabled>← Anterior</button>
+          <span id="usuarios-count" style="font-size:12px;color:var(--fg3)"></span>
+          <button id="pag-next" onclick="fnvPagProxima()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 12px;cursor:pointer;color:var(--fg2);font-size:13px" disabled>Próxima →</button>
+        </div>
       </div>
 
       <!-- ── CHATBOT ── -->
@@ -485,13 +491,15 @@ select.search-input{cursor:pointer;}
         <div class="section-title">🔔 Push Notifications (FCM)</div>
         <div class="card" style="max-width:500px">
           <div style="font-size:14px;font-weight:700;margin-bottom:4px">Firebase Cloud Messaging — API v1</div>
-          <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">
-            Cole o JSON da <strong>Service Account</strong>: <a href="https://console.firebase.google.com/project/finanvo-4e9e0/settings/serviceaccounts/adminsdk" target="_blank" style="color:var(--accent)">Firebase Console → Contas de serviço → Gerar nova chave privada →</a>
+          <!-- C6 FIX: Service Account NÃO é mais armazenada no navegador.
+               A chave fica no worker (wrangler secret put FCM_SA_SECRET).
+               O admin só precisa da ADMIN_PUSH_KEY para autorizar o worker. -->
+          <div style="font-size:12px;color:var(--fg2);margin-bottom:12px;padding:10px;background:rgba(79,127,255,.06);border-radius:8px">
+            🔒 A <strong>Service Account</strong> do FCM fica armazenada com segurança no Cloudflare Worker
+            (<code>wrangler secret put FCM_SA_SECRET</code>). Não é necessário inseri-la aqui.
+            <br><a href="https://console.firebase.google.com/project/finanvo-4e9e0/settings/serviceaccounts/adminsdk" target="_blank" style="color:var(--accent)">Obter chave no Firebase Console →</a>
           </div>
-          <textarea id="fcm-sa-json" rows="4" placeholder='{"type":"service_account","project_id":"finanvo-4e9e0",...}'
-            style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--fg1);font-size:11px;resize:vertical;outline:none;font-family:monospace"></textarea>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-            <button class="icon-btn" onclick="fnvSalvarFcmKey()">Salvar Service Account</button>
             <button class="icon-btn" style="background:var(--surface);color:var(--fg2);border:1px solid var(--border)" onclick="fnvTestarPush()">🧪 Testar push para mim</button>
           </div>
           <div id="fcm-ok" style="font-size:12px;color:var(--green);margin-top:8px;min-height:16px"></div>
@@ -501,6 +509,11 @@ select.search-input{cursor:pointer;}
             <div style="font-size:12px;color:var(--fg2);margin-bottom:8px">
               Mesma chave configurada com <code>wrangler secret put ADMIN_PUSH_KEY</code>.
               Salva apenas neste navegador — nunca vai ao servidor.
+            </div>
+            <!-- M26 FIX: aviso de risco de armazenamento local -->
+            <div style="font-size:11px;color:#f59e0b;margin-bottom:8px;padding:6px 10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px">
+              ⚠️ <strong>Segurança:</strong> esta chave fica no <code>localStorage</code> deste navegador.
+              Use apenas em dispositivo de confiança. Limpe o localStorage ao terminar a sessão em computadores compartilhados.
             </div>
             <div style="display:flex;gap:8px;align-items:center">
               <input type="password" id="push-key-input" placeholder="Cole a ADMIN_PUSH_KEY aqui" class="search-input" style="flex:1">
@@ -688,7 +701,7 @@ function fnvRenderVitalicios() {
         ? `<span style="font-size:10px;color:var(--fg3)">vence dia ${diaVenc}</span>`
         : '';
     return `<div style="display:flex;align-items:center;gap:8px;background:var(--bg3);border-radius:8px;padding:8px 12px;font-size:13px;flex-wrap:wrap">
-      <span style="flex:1;min-width:130px">${v.email}</span>
+      <span style="flex:1;min-width:130px">${esc(v.email)}</span>
       ${isDono
         ? `<span style="font-size:11px;padding:2px 8px;border-radius:6px;background:rgba(234,179,8,.15);color:#fbbf24">⭐ dono</span>`
         : `<select onchange="fnvAlterarPlanoVit(${i},this.value)" style="background:var(--bg2);border:1px solid var(--border);color:${cor};border-radius:6px;padding:3px 6px;font-size:12px;cursor:pointer">${selectOpts}</select>
@@ -1078,24 +1091,13 @@ window.fnvSalvarPushKey = function() {
   toast('✅ Push Key configurada!');
 };
 
-window.fnvSalvarFcmKey = function() {
-  const json = document.getElementById('fcm-sa-json')?.value.trim();
-  if (!json) { toast('Cole o JSON da Service Account', true); return; }
-  try {
-    const parsed = JSON.parse(json);
-    if (!parsed.client_email || !parsed.private_key) throw new Error('JSON incompleto');
-  } catch(e) { toast('JSON inválido: ' + e.message, true); return; }
-  localStorage.setItem(FCM_KEY_STORAGE, json);
-  document.getElementById('fcm-ok').textContent = '✓ Service Account salva!';
-  setTimeout(() => document.getElementById('fcm-ok').textContent = '', 3000);
-  toast('✅ FCM Service Account configurada!');
-};
+// C6 FIX: fnvSalvarFcmKey removida — Service Account não é mais armazenada no browser.
+// A chave fica como secret no Cloudflare Worker: wrangler secret put FCM_SA_SECRET
+// window.fnvSalvarFcmKey foi removida intencionalmente.
 
 window.fnvTestarPush = async function() {
-  const fcmKey = localStorage.getItem(FCM_KEY_STORAGE);
-  if (!fcmKey) { toast('Configure a Service Account primeiro', true); return; }
+  // C6 FIX: serviceAccount não é mais enviada pelo browser — fica no worker como secret
   if (!getAdminPushKey()) { toast('Configure a Chave de autorização do Worker (ADMIN_PUSH_KEY) primeiro', true); return; }
-  // Pega o token do próprio admin (se tiver)
   const myUid = auth.currentUser?.uid;
   if (!myUid) { toast('Faça login primeiro', true); return; }
   const snap = await db.collection('users').doc(myUid).get();
@@ -1107,7 +1109,7 @@ window.fnvTestarPush = async function() {
     const r = await fetch(`${WORKER_URL}/push-notify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tokens: [myToken], title: '🧪 Teste Finanvô', body: 'Push funcionando! 🎉', adminKey: getAdminPushKey(), adminPin: getAdminPin(), serviceAccount: JSON.parse(fcmKey) })
+      body: JSON.stringify({ tokens: [myToken], title: '🧪 Teste Finanvô', body: 'Push funcionando! 🎉', adminKey: getAdminPushKey(), adminPin: getAdminPin() })
     });
     const data = await r.json();
     statusEl.textContent = data.success ? '✅ Teste enviado com sucesso!' : '❌ Erro ao enviar';
@@ -1116,23 +1118,20 @@ window.fnvTestarPush = async function() {
 };
 
 window.fnvEnviarPush = async function() {
+  // C6 FIX: serviceAccount não é mais enviada pelo browser — fica no worker como secret
   const titulo = document.getElementById('push-titulo')?.value.trim();
   const corpo  = document.getElementById('push-corpo')?.value.trim();
   const statusEl = document.getElementById('push-status');
   if (!titulo) { toast('Digite um título', true); return; }
-  const fcmKey = localStorage.getItem(FCM_KEY_STORAGE);
-  if (!fcmKey) { statusEl.innerHTML = `<span style="color:var(--red)">⚠️ Configure a FCM Server Key na aba Config.</span>`; return; }
   if (!getAdminPushKey()) { statusEl.innerHTML = `<span style="color:var(--red)">⚠️ Configure a Chave de autorização do Worker (ADMIN_PUSH_KEY) na aba Config.</span>`; return; }
   const tokens = todosUsuarios.filter(u => u.fcmToken).map(u => u.fcmToken);
   if (!tokens.length) { statusEl.textContent = '⚠️ Nenhum usuário com push ativado ainda.'; return; }
   statusEl.textContent = `Enviando para ${tokens.length} dispositivo(s)...`;
   try {
-    const saJson = localStorage.getItem(FCM_KEY_STORAGE);
-    if (!saJson) { statusEl.innerHTML = `<span style="color:var(--red)">⚠️ Configure a Service Account na aba Config.</span>`; return; }
     const r = await fetch(`${WORKER_URL}/push-notify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tokens, title: titulo, body: corpo, adminKey: getAdminPushKey(), adminPin: getAdminPin(), serviceAccount: JSON.parse(saJson) })
+      body: JSON.stringify({ tokens, title: titulo, body: corpo, adminKey: getAdminPushKey(), adminPin: getAdminPin() })
     });
     const data = await r.json();
     statusEl.innerHTML = `<span style="color:var(--green)">✅ Enviado: ${data.success}</span> &nbsp; <span style="color:var(--red)">❌ Erro: ${data.failure}</span>`;
@@ -1143,11 +1142,11 @@ window.fnvEnviarPush = async function() {
 // ── AVISO DE COBRANÇA MENSAL ─────────────────────────────────────────
 // Verificação automática diária ao abrir o painel
 async function fnvVerificarAvisosDiarios() {
+  // C6 FIX: não verificar mais FCM key no localStorage — chave fica no worker
   const hoje = new Date().getDate();
   const chave = `fnv_aviso_${new Date().toISOString().slice(0,10)}`; // uma vez por dia
   if (localStorage.getItem(chave)) return;
-  const fcmKey = localStorage.getItem(FCM_KEY_STORAGE);
-  if (!fcmKey) return;
+  if (!getAdminPushKey()) return; // sem chave de autorização do worker, não envia
 
   const alvo = vitalicios.filter(v => {
     const u = todosUsuarios.find(x => (x.email||'').toLowerCase() === v.email);
@@ -1187,8 +1186,8 @@ async function fnvVerificarAvisosDiarios() {
           title: `💳 Manutenção Finanvô — dia ${v.diaVencimento}`,
           body: textoAviso,
           adminKey: getAdminPushKey(),
-          adminPin: getAdminPin(),
-          serviceAccount: JSON.parse(fcmKey)
+          adminPin: getAdminPin()
+          // C6 FIX: serviceAccount removida — fica no worker como FCM_SA_SECRET
         })
       });
     } catch(e) {}
@@ -1197,8 +1196,8 @@ async function fnvVerificarAvisosDiarios() {
 }
 
 window.fnvEnviarAvisoCobranca = async function(manual = true) {
-  const fcmKey = localStorage.getItem(FCM_KEY_STORAGE);
-  if (!fcmKey) { toast('Configure a Service Account FCM na aba Config primeiro', true); return; }
+  // C6 FIX: serviceAccount não é mais verificada no localStorage
+  if (!getAdminPushKey()) { toast('Configure a Chave de autorização do Worker (ADMIN_PUSH_KEY) na aba Config', true); return; }
 
   // Manual: envia para todos com valor > 0 (independente do dia)
   // Automático: só quem está nos 5 dias antes do vencimento
@@ -1242,8 +1241,8 @@ window.fnvEnviarAvisoCobranca = async function(manual = true) {
           title: `💳 Manutenção Finanvô — ${mes}`,
           body: `Olá! Sua taxa de manutenção do plano ${planoLabel} é R$ ${valor.toFixed(2).replace('.',',')}. Obrigado pelo apoio! 🙏`,
           adminKey: getAdminPushKey(),
-          adminPin: getAdminPin(),
-          serviceAccount: JSON.parse(fcmKey)
+          adminPin: getAdminPin()
+          // C6 FIX: serviceAccount removida — fica no worker como FCM_SA_SECRET
         })
       });
       const data = await r.json();
@@ -1332,9 +1331,12 @@ window.fnvLoadDash = async function() {
     document.getElementById('dash-content').style.display = 'block';
     fnvRenderSim();
     fnvRenderPerfilBase();
-    // Preencher FCM SA se já salva
-    const savedFcmKey = localStorage.getItem(FCM_KEY_STORAGE);
-    if (savedFcmKey) { const el = document.getElementById('fcm-sa-json'); if(el) el.value = savedFcmKey; }
+    // C6 FIX: apagar chave FCM que possa ter sido salva em versões anteriores
+    // A Service Account não deve ficar no localStorage (risco de XSS / roubo de chave)
+    if (localStorage.getItem(FCM_KEY_STORAGE)) {
+      localStorage.removeItem(FCM_KEY_STORAGE);
+      console.info('[Finanvô Admin] FCM Service Account removida do localStorage (migração C6)');
+    }
     // Indicar se push key está configurada (sem exibir o valor)
     const pushKeyEl = document.getElementById('push-key-ok');
     if (pushKeyEl && getAdminPushKey()) pushKeyEl.textContent = '✓ Chave já configurada neste navegador';
@@ -1349,7 +1351,8 @@ async function loadUsuarios() {
 
   const agora = Date.now(), dia = 86400000;
   const hoje = todosUsuarios.filter(u => {
-    const ts = u.criadoEm?.toMillis?.() || u.createdAt?.toMillis?.() || 0;
+    // I9 FIX: app grava o campo como "criado" (Firestore Timestamp), não criadoEm/createdAt
+    const ts = u.criado?.toMillis?.() || u.criadoEm?.toMillis?.() || u.createdAt?.toMillis?.() || 0;
     return agora - ts < dia;
   }).length;
 
@@ -1397,7 +1400,8 @@ async function loadUsuarios() {
     dias14.push({label:`${d.getDate()}/${d.getMonth()+1}`,count:0,ts:new Date(d).setHours(0,0,0,0)});
   }
   todosUsuarios.forEach(u => {
-    const ts = u.criadoEm?.toMillis?.() || u.createdAt?.toMillis?.() || 0;
+    // I9 FIX: usar "criado" (campo gravado pelo app) para gráfico de cadastros
+    const ts = u.criado?.toMillis?.() || u.criadoEm?.toMillis?.() || u.createdAt?.toMillis?.() || 0;
     if (!ts) return;
     const idx = dias14.findIndex((d,i) => { const nx=i<13?dias14[i+1].ts:agora+dia; return ts>=d.ts&&ts<nx; });
     if (idx>=0) dias14[idx].count++;
@@ -1436,13 +1440,37 @@ function recalcCadastroNums() {
   sorted.forEach((u,i) => { _cadastroNumMap[u.id] = String(i+1).padStart(4,'0'); });
 }
 
-function renderUsuarios(lista) {
-  document.getElementById('usuarios-count').textContent = `${lista.length} usuário(s)`;
-  if (!lista.length) {
+// I11 FIX: paginação de usuários (50 por página)
+const PAG_TAMANHO = 50;
+let _listaAtual = [], _pagAtual = 0;
+
+window.fnvPagAnterior = function() { if (_pagAtual > 0) { _pagAtual--; _renderPaginaAtual(); } };
+window.fnvPagProxima  = function() { if ((_pagAtual+1)*PAG_TAMANHO < _listaAtual.length) { _pagAtual++; _renderPaginaAtual(); } };
+
+function _renderPaginaAtual() {
+  const total  = _listaAtual.length;
+  const inicio = _pagAtual * PAG_TAMANHO;
+  const fim    = Math.min(inicio + PAG_TAMANHO, total);
+  const pagina = _listaAtual.slice(inicio, fim);
+  const totalPags = Math.max(1, Math.ceil(total / PAG_TAMANHO));
+  document.getElementById('usuarios-count').textContent =
+    `${total} usuário(s) — página ${_pagAtual+1} de ${totalPags} (mostrando ${inicio+1}–${fim})`;
+  document.getElementById('pag-prev').disabled = _pagAtual === 0;
+  document.getElementById('pag-next').disabled = fim >= total;
+  if (!pagina.length) {
     document.getElementById('usuarios-body').innerHTML = '<tr><td colspan="6" class="empty">Nenhum usuário encontrado.</td></tr>';
     return;
   }
-  document.getElementById('usuarios-body').innerHTML = lista.map(u => {
+  document.getElementById('usuarios-body').innerHTML = pagina.map(renderUsuarioRow).join('');
+}
+
+function renderUsuarios(lista) {
+  _listaAtual = lista;
+  _pagAtual   = 0;
+  _renderPaginaAtual();
+}
+
+function renderUsuarioRow(u) {
     const planoRaw = u.bloqueado ? 'bloqueado' : normPlano(u);
     const isVit = planoRaw.startsWith('vitalicio:');
     const isDono = (u.email||'').toLowerCase() === 'cledyrtaveira@gmail.com';
@@ -1499,7 +1527,6 @@ function renderUsuarios(lista) {
       <td style="font-size:13px;color:var(--fg2);font-weight:600">#${numCad}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">${bloqBtn}</td>
     </tr>`;
-  }).join('');
 }
 
 window.fnvFiltrarUsuarios = function() {
@@ -1528,11 +1555,55 @@ window.fnvSalvarValorUsuario = async function(uid, valor) {
 };
 
 window.fnvMudarPlano = async function(uid, novoPlano) {
+  // I10 FIX: confirmação + planoAtualizadoEm + planoExpira + audit log
+  const u = todosUsuarios.find(x => x.id === uid);
+  const emailAlvo = u?.email || uid;
+  const PLANO_LABEL = { gratuito:'Grátis', pro:'Básico', familia:'Família', premium:'Premium' };
+  const planoAnterior = u?.plano || '?';
+
+  if (!confirm(`Alterar plano de ${esc(emailAlvo)}\nDe: ${PLANO_LABEL[planoAnterior] || planoAnterior}\nPara: ${PLANO_LABEL[novoPlano] || novoPlano}\n\nConfirmar?`)) {
+    // Reverter o select visualmente
+    fnvFiltrarUsuarios();
+    return;
+  }
+
+  // Solicitar data de expiração para planos pagos
+  let planoExpira = null;
+  if (novoPlano !== 'gratuito') {
+    const expInput = prompt(
+      `Data de expiração para o plano ${PLANO_LABEL[novoPlano]} de ${emailAlvo}:\n` +
+      `(formato: AAAA-MM-DD, ou Enter para +31 dias)`,
+      new Date(Date.now() + 31 * 86400000).toISOString().slice(0,10)
+    );
+    if (expInput === null) { fnvFiltrarUsuarios(); return; } // cancelado
+    const d = expInput.trim() ? new Date(expInput.trim()) : new Date(Date.now() + 31 * 86400000);
+    planoExpira = isNaN(d.getTime()) ? new Date(Date.now() + 31 * 86400000).toISOString() : d.toISOString();
+  }
+
   try {
-    await db.collection('users').doc(uid).update({ plano: novoPlano });
-    const u = todosUsuarios.find(x => x.id === uid);
-    if (u) u.plano = novoPlano;
-    toast(`Plano alterado para ${novoPlano}`);
+    const agora = new Date().toISOString();
+    const adminEmail = auth.currentUser?.email || 'admin';
+
+    const update = {
+      plano: novoPlano,
+      planoAtualizadoEm: agora,
+      planoExpira: planoExpira || null
+    };
+    await db.collection('users').doc(uid).update(update);
+
+    // Audit log na subcoleção do usuário
+    await db.collection('users').doc(uid).collection('auditLog').add({
+      acao: 'plano_alterado_manualmente',
+      planoAnterior,
+      planoNovo: novoPlano,
+      planoExpira: planoExpira || null,
+      adminEmail,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    if (u) { u.plano = novoPlano; u.planoExpira = planoExpira; }
+    fnvFiltrarUsuarios();
+    toast(`✅ Plano de ${emailAlvo} alterado para ${PLANO_LABEL[novoPlano] || novoPlano}`);
   } catch(e) { toast('Erro: '+e.message, true); }
 };
 

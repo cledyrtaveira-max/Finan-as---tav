@@ -43,23 +43,40 @@
       const p = window.location.pathname;
       return p.replace(/[^/]*$/, '') + 'sw.js';
     })();
+
+    // M1 FIX: helper para exibir toast de atualização com duração longa
+    function _mostrarToastUpdate() {
+      const btn = '<button onclick="location.reload()" style="margin-left:10px;padding:3px 10px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;font-size:12px;cursor:pointer">Atualizar</button>';
+      if (typeof mostrarToast === 'function') {
+        mostrarToast('🔄 Nova versão disponível!' + btn, 'info', 30000);
+      } else {
+        setTimeout(_mostrarToastUpdate, 800);
+      }
+    }
+
     navigator.serviceWorker.register(swPath)
+      .then(function(reg) {
+        // M1 FIX: escuta updatefound para detectar SW novo instalando
+        reg.addEventListener('updatefound', function() {
+          const installing = reg.installing;
+          if (!installing) return;
+          installing.addEventListener('statechange', function() {
+            // SW novo instalado e pronto (waiting) — avisa o usuário
+            if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+              _mostrarToastUpdate();
+            }
+          });
+        });
+
+        // M1 FIX: verifica update a cada 60 minutos (apps abertos por horas nunca saberiam)
+        setInterval(function() { reg.update().catch(function(){}); }, 60 * 60 * 1000);
+      })
       .catch(() => {}); // falha silenciosa em contextos sem suporte
 
     // ── Ouve mensagens do SW (ex: nova versão disponível) ────────────
     navigator.serviceWorker.addEventListener('message', function(evt) {
       if (evt.data && evt.data.type === 'SW_UPDATE_AVAILABLE') {
-        // Mostrar toast de atualização assim que mostrarToast estiver disponível
-        const tentarToast = function() {
-          if (typeof mostrarToast === 'function') {
-            const btn = '<button onclick="location.reload()" style="margin-left:10px;padding:3px 10px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;font-size:12px;cursor:pointer">Atualizar</button>';
-            const el = document.querySelector('#toast-container .toast:last-child');
-            mostrarToast('🔄 Nova versão disponível!' + btn, 'info', 12000);
-          } else {
-            setTimeout(tentarToast, 500);
-          }
-        };
-        tentarToast();
+        _mostrarToastUpdate();
       }
     });
   }
@@ -103,11 +120,14 @@ function getItensComVencimento() {
 }
 
 // ── Verificar vencimentos hoje e nos próximos dias ───────────────
+// I26 FIX: rolar corretamente para o próximo mês quando o dia alvo ultrapassa o mês atual
 function getVencimentosHoje(diasAdiantamento) {
   const hoje = new Date();
-  const diaHoje = hoje.getDate();
-  const alvoDia = diaHoje + (diasAdiantamento || 0);
-  return getItensComVencimento().filter(i => i.diaVenc === alvoDia);
+  const alvo = new Date(hoje);
+  alvo.setDate(hoje.getDate() + (diasAdiantamento || 0));
+  const alvoDia = alvo.getDate();
+  // Se mudou de mês, ainda compara pelo dia (ex: hoje=30/nov + 2 = 2/dez → alvoDia=2)
+  return getItensComVencimento().filter(i => Number(i.diaVenc) === alvoDia);
 }
 
 // ── Disparar push notification ───────────────────────────────────
@@ -175,7 +195,8 @@ function renderBannerVencimentos() {
 // ── Verificação ao abrir o app ───────────────────────────────────
 function verificarVencimentosAoAbrir() {
   // Só verifica uma vez por dia (localStorage)
-  const hoje = new Date().toISOString().slice(0, 10);
+  // M13 FIX: data local (não UTC) para evitar virada de dia errada após 21h no Brasil
+  const _hj = new Date(); const hoje = _hj.getFullYear() + '-' + String(_hj.getMonth()+1).padStart(2,'0') + '-' + String(_hj.getDate()).padStart(2,'0');
   let key = 'finvo_notif_check_' + (usuarioAtivo || 'anon');
   let lastCheck = '';
   try { lastCheck = localStorage.getItem(key) || ''; } catch(e) {}
@@ -386,6 +407,7 @@ const fbDb   = firebase.firestore();
     0 0 0 1px rgba(255,255,255,0.04),
     0 28px 60px rgba(0,0,0,0.65),
     0 0 50px rgba(79,127,255,0.07);
+  -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
 }
 
@@ -455,9 +477,12 @@ const fbDb   = firebase.firestore();
 }
 .login-field input::placeholder { color: #252c3f }
 .login-eye {
-  position: absolute; right: 11px; bottom: 10px;
+  /* I13 FIX: área de toque mínima 44×44px */
+  position: absolute; right: 4px; bottom: 4px;
   background: none; border: none; cursor: pointer;
-  color: #404968; font-size: 15px; padding: 0; line-height: 1;
+  color: #404968; font-size: 15px;
+  min-width: 44px; min-height: 44px;
+  padding: 0; display: flex; align-items: center; justify-content: center;
 }
 .login-eye:hover { color: #8892a8 }
 
@@ -712,6 +737,10 @@ const fbDb   = firebase.firestore();
   --purple:    #a855f7;
   --sidebar-w: 220px;
   --header-h:  54px;
+  /* M22 FIX: aliases para --card/--card-bg/--text usados em vários lugares */
+  --card:      var(--surface);
+  --card-bg:   var(--surface);
+  --text:      var(--fg1);
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
@@ -856,7 +885,8 @@ body {
   background: var(--surface);
 }
 .topbar-left { display: flex; flex-direction: column; gap: 2px }
-.breadcrumb { font-size: 10px; color: var(--fg3); text-transform: uppercase; letter-spacing: .7px; font-weight: 600 }
+/* I14 FIX: breadcrumb mínimo 11px para contraste/legibilidade */
+.breadcrumb { font-size: 11px; color: var(--fg3); text-transform: uppercase; letter-spacing: .7px; font-weight: 600 }
 .page-title { font-size: 16px; font-weight: 700; letter-spacing: -.3px; line-height: 1 }
 
 .topbar-right { display: flex; align-items: center; gap: 8px }
@@ -888,7 +918,8 @@ body {
 
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 14px; border-radius: 7px; border: none; cursor: pointer;
+  /* I13 FIX: altura mínima 44px para cumprir toque mínimo recomendado */
+  padding: 6px 14px; min-height: 44px; border-radius: 7px; border: none; cursor: pointer;
   font-family: inherit; font-size: 12px; font-weight: 600;
   transition: opacity .15s, transform .1s;
 }
@@ -985,7 +1016,8 @@ body {
   background: var(--card); border: 1px solid var(--border); border-radius: 10px;
   padding: 10px 10px 8px; text-align: center;
 }
-.lanc-kpi-label { font-size: 10px; color: var(--fg3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px }
+/* I14 FIX: label dos KPIs mínimo 11px */
+.lanc-kpi-label { font-size: 11px; color: var(--fg3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px }
 .lanc-kpi-val { font-size: 13px; font-weight: 700; font-family: 'JetBrains Mono',monospace; }
 
 /* Grupos de lançamentos */
@@ -1115,7 +1147,8 @@ body {
     flex: 1; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     gap: 3px; cursor: pointer;
-    color: var(--fg3); font-size: 9px; font-weight: 500;
+    /* I14 FIX: texto da bottom nav mínimo 11px */
+    color: var(--fg3); font-size: 11px; font-weight: 500;
     padding-bottom: 2px;
     transition: color .12s;
     -webkit-tap-highlight-color: transparent;
@@ -1257,14 +1290,16 @@ body {
 .dhc-greeting-name { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
 .dhc-controls { display: flex; gap: 5px; align-items: center; flex-shrink: 0; position: relative; z-index: 2 }
 .dhc-ctrl-btn {
+  /* I13 FIX: área de toque mínima 44×44px (tela do mês tem 32px visuais) */
   background: rgba(255,255,255,0.13); border: 1px solid rgba(255,255,255,0.22);
-  color: rgba(255,255,255,0.9); border-radius: 8px; width: 32px; height: 32px;
+  color: rgba(255,255,255,0.9); border-radius: 8px; width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: background .15s, transform .1s; flex-shrink: 0;
 }
 .dhc-ctrl-btn:hover { background: rgba(255,255,255,0.24); transform: scale(1.05) }
 .dhc-ctrl-btn:active { transform: scale(0.95) }
-.dhc-saldo-label { font-size: 10px; color: rgba(255,255,255,0.55); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px }
+/* I14 FIX: saldo label min 11px */
+.dhc-saldo-label { font-size: 11px; color: rgba(255,255,255,0.65); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px }
 .dhc-saldo-val { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; line-height: 1; font-family: 'JetBrains Mono', monospace }
 .dhc-saldo-val.negativo { color: #fca5a5 }
 /* Card 2 — Receita / Despesas / Dívidas */
@@ -1290,7 +1325,8 @@ body {
 .dhc-kpi-icon.green { background: rgba(34,197,94,0.12) }
 .dhc-kpi-icon.red   { background: rgba(239,68,68,0.10) }
 .dhc-kpi-icon.orange{ background: rgba(245,158,11,0.12) }
-.dhc-kpi-label { font-size: 10px; color: var(--fg3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px }
+/* I14 FIX: KPI labels mínimo 11px */
+.dhc-kpi-label { font-size: 11px; color: var(--fg3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px }
 .dhc-kpi-val { font-size: 14px; font-weight: 700; color: var(--fg1); font-variant-numeric: tabular-nums }
 .dhc-kpi-val.green { color: #22c55e }
 .dhc-kpi-val.red   { color: #ef4444 }
@@ -1366,7 +1402,7 @@ body {
 /* Modal de atualização de versão */
 .update-overlay {
   position: fixed; inset: 0; z-index: 9999;
-  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.65); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   display: flex; align-items: center; justify-content: center; padding: 20px;
 }
 .update-overlay.hidden { display: none !important; }
@@ -1407,9 +1443,10 @@ body {
 .meta-acoes button:hover { border-color: var(--accent); color: var(--accent) }
 /* Filtros lançamentos */
 .lanc-filtros { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center }
-.lanc-filtros input[type=text] { flex: 1; min-width: 120px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--surface); color: var(--fg1); outline: none; transition: border-color .15s }
+/* I13 FIX: busca e filtros com altura mínima 44px para toque */
+.lanc-filtros input[type=text] { flex: 1; min-width: 120px; padding: 11px 12px; min-height: 44px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--surface); color: var(--fg1); outline: none; transition: border-color .15s }
 .lanc-filtros input[type=text]:focus { border-color: var(--accent) }
-.lanc-filtro-btn { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--fg2); font-size: 12px; cursor: pointer; transition: all .15s; white-space: nowrap }
+.lanc-filtro-btn { padding: 6px 12px; min-height: 44px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--fg2); font-size: 12px; cursor: pointer; transition: all .15s; white-space: nowrap }
 .lanc-filtro-btn.active { background: var(--accent); color: #fff; border-color: var(--accent) }
 /* Botão ocultar valores */
 .btn-ocultar-vals {
@@ -1539,6 +1576,7 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 100;
   display: flex; align-items: center; justify-content: center;
+  -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
 }
 .modal-overlay.hidden { display: none }
@@ -1773,6 +1811,21 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
   .dhc-greeting-name { font-size: 14px }
   /* Tabelas com scroll horizontal para caber em 375px */
   .table-wrap table { min-width: 480px }
+}
+
+/* M5 FIX: Paisagem em celular — ocultar sidebar e usar barra inferior como no retrato.
+   Sem esta regra, 667×375 mostrava a sidebar de 199px + modal passava da altura da tela. */
+@media (max-height: 500px) and (orientation: landscape) {
+  :root { --sidebar-w: 0px }
+  .sidebar { display: none !important }
+  .content { padding: 12px; padding-bottom: 72px }
+  .bottom-nav {
+    display: flex !important;
+    height: 52px;
+  }
+  /* Modais não ultrapassam a tela em paisagem */
+  .modal { max-height: 90vh; overflow-y: auto }
+  .modal-overlay { align-items: flex-start; padding-top: env(safe-area-inset-top, 8px) }
 }
 
 /* ── Utilitários ── */
@@ -2188,7 +2241,7 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
     <div class="field-row">
       <div class="field">
         <label>Valor (R$)</label>
-        <input id="f-val" placeholder="0,00" type="number" step="0.01" min="0">
+        <input id="f-val" placeholder="0,00" type="text" inputmode="decimal">
       </div>
       <div class="field">
         <label>Categoria</label>
@@ -3651,8 +3704,29 @@ async function loginGoogle() {
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    // signInWithRedirect evita bloqueio COOP em GitHub Pages / domínios customizados
-    await fbAuth.signInWithRedirect(provider);
+    // C8 FIX: usa popup primeiro (evita falha de 3rd-party cookies em Safari/Firefox/Chrome 115+)
+    // Fallback para redirect apenas se popup for bloqueado pelo browser
+    try {
+      await fbAuth.signInWithPopup(provider);
+    } catch(popupErr) {
+      const popupCodes = [
+        'auth/popup-blocked',
+        'auth/operation-not-supported-in-this-environment',
+        'auth/web-storage-unsupported'
+      ];
+      if (popupCodes.includes(popupErr.code)) {
+        // Browser bloqueou o popup — tenta redirect como fallback
+        await fbAuth.signInWithRedirect(provider);
+      } else if (
+        popupErr.code === 'auth/popup-closed-by-user' ||
+        popupErr.code === 'auth/cancelled-popup-request'
+      ) {
+        // Usuário fechou o popup — não é erro
+        return;
+      } else {
+        throw popupErr;
+      }
+    }
   } catch(e) {
     loginShakeError(firebaseErroPtBr(e));
   }
@@ -3746,11 +3820,11 @@ fbAuth.onAuthStateChanged(async function(user) {
     perfilRef.get().then(async snap => {
       // ── Verificação de bloqueio ──────────────────────────────────────
       if (snap.exists && snap.data().bloqueado === true) {
-        fbAuth.signOut();
-        document.getElementById('login-screen').classList.remove('hidden');
-        const errEl = document.getElementById('login-err') || document.getElementById('login-error');
-        if (errEl) errEl.textContent = '⛔ Sua conta foi suspensa. Entre em contato com o suporte.';
-        return;
+        // I4 FIX: persiste flag de bloqueio no localStorage ANTES do signOut+redirect
+        // para que a mensagem apareça na tela de login após o reload
+        try { localStorage.setItem('finvoBloqueado', '1'); } catch(e) {}
+        await fbAuth.signOut();
+        return; // onAuthStateChanged (else branch) mostrará a tela de login
       }
       // ── Garantir que o perfil existe com todos os campos ANTES de qualquer
       //    outra escrita no documento (ex: registrarDiaAcesso).
@@ -3768,7 +3842,8 @@ fbAuth.onAuthStateChanged(async function(user) {
       // ── Registrar dia de acesso APÓS garantir que o perfil existe ────
       (function registrarDiaAcesso(uid) {
         try {
-          const hoje = new Date().toISOString().slice(0, 10);
+          // M13 FIX: data local para não virar dia depois das 21h no Brasil
+          const _hj2 = new Date(); const hoje = _hj2.getFullYear() + '-' + String(_hj2.getMonth()+1).padStart(2,'0') + '-' + String(_hj2.getDate()).padStart(2,'0');
           const chave = 'finDiasAcesso_' + uid;
           let dias = [];
           try { dias = JSON.parse(localStorage.getItem(chave) || '[]'); } catch(e) {}
@@ -3787,8 +3862,10 @@ fbAuth.onAuthStateChanged(async function(user) {
       })(user.uid);
     });
     // Monitora mudanças no perfil (incluindo ativação de plano pelo webhook)
+    // M28 FIX: guardar o unsubscribe para cancelar no logout (evita listener órfão)
     let _planoAnterior = null;
-    perfilRef.onSnapshot(d => {
+    if (window._unsubPerfil) { try { window._unsubPerfil(); } catch(e) {} }
+    window._unsubPerfil = perfilRef.onSnapshot(d => {
       const anterior = window._perfil || {};
       window._perfil = d.exists ? (d.data() || {}) : {};
       // Sinaliza que o perfil foi carregado (usado pelo _checkOnboarding)
@@ -3860,6 +3937,17 @@ fbAuth.onAuthStateChanged(async function(user) {
     document.getElementById('login-screen').classList.remove('hidden');
     document.getElementById('login-password').value = '';
     loginClearError();
+    // I4 FIX: exibe mensagem persistente se conta foi bloqueada
+    try {
+      if (localStorage.getItem('finvoBloqueado') === '1') {
+        localStorage.removeItem('finvoBloqueado');
+        const errEl = document.getElementById('login-error');
+        if (errEl) {
+          errEl.textContent = '⛔ Sua conta foi suspensa. Entre em contato com o suporte.';
+          errEl.classList.add('visible');
+        }
+      }
+    } catch(e) {}
   }
 });
 
@@ -4061,11 +4149,12 @@ function alternarTema() {
   } catch(e) {}
 })();
 
-// Funções de recuperação — legacy (mantidas vazias para compatibilidade)
+// M21: Funções de recuperação de senha — mantidas vazias para evitar erros em
+// onclick handlers antigos. Não remover sem verificar que nenhum HTML as referencia.
 function abrirRecuperacao() { enviarRecuperacao(); }
-function fecharRecuperacao() {}
-function recClearMsg() {}
-function recMsg() {}
+function fecharRecuperacao() { /* legacy — não utilizada */ }
+function recClearMsg()       { /* legacy — não utilizada */ }
+function recMsg()            { /* legacy — não utilizada */ }
 
 function loginClearError() {
   const err = document.getElementById('login-error');
@@ -4138,13 +4227,17 @@ function resetarConta() {
 }
 
 function logout() {
-  // Limpar localStorage para evitar vazamento de dados entre contas no mesmo aparelho
+  // M16 FIX: limpar TODAS as chaves de dados financeiros do localStorage ao sair
+  // Preserva apenas tf-tema (preferência de tema, não é dado financeiro)
   try {
-    Object.keys(localStorage)
-      .filter(k => /^(fin_taveira|ftav_|finMetas|finCatLimites|finvo_|fin_ref)/.test(k))
-      .forEach(k => localStorage.removeItem(k));
+    const keysToRemove = Object.keys(localStorage).filter(k =>
+      /^(fin_taveira|ftav_|finMetas|finCatLimites|finvo_|fnv_|fin_ref|finValsOcultos|finRefCode|_det_metas|finDiasAcesso_|finVencCheck_|finvo_notif|finvoBloqueado)/.test(k)
+    );
+    keysToRemove.forEach(k => localStorage.removeItem(k));
   } catch(e) {}
   window._perfil = {};
+  // M28 FIX: cancelar listener do perfil antes do signOut
+  if (window._unsubPerfil) { try { window._unsubPerfil(); } catch(e) {} window._unsubPerfil = null; }
   fbAuth.signOut().finally(() => location.reload());
 }
 
@@ -4411,7 +4504,9 @@ function getCatValue(selId, inputId) {
 
 function salvarLancamento() {
   const desc = document.getElementById('f-desc').value.trim();
-  const val  = parseFloat(document.getElementById('f-val').value);
+  const val  = typeof parseBRL === 'function'
+    ? parseBRL(document.getElementById('f-val').value)
+    : parseFloat(document.getElementById('f-val').value);
   const tipo = document.getElementById('f-tipo').value;
   const mes  = document.getElementById('f-mes').value;
   const cat  = getCatValue('f-cat', 'f-cat-custom');
@@ -4520,7 +4615,9 @@ function renderSemaforoEKpis() {
               + lanMes.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0);
   const divs  = baseVis.filter(l=>(appCfg.tipos&&appCfg.tipos[String(l._baseIdx)]||l.tipo)==='divida').reduce((s,l)=>s+l.val,0)
               + lanMes.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0);
-  const rendaEfetiva = rendaMesVal > 0 ? rendaMesVal : (rendaBase + rendaLan);
+  // I25 FIX: rendaMes substitui apenas a renda base fixa — lançamentos extras de entrada
+  // (freela, bônus, etc.) são sempre somados por cima, não ignorados
+  const rendaEfetiva = (rendaMesVal > 0 ? rendaMesVal : rendaBase) + rendaLan;
   const renda = rendaEfetiva;
   const saldo = renda - desp - divs;
   const saldoCor = saldo>=0?'var(--green)':'var(--red)';
@@ -4752,7 +4849,8 @@ function renderDashboard() {
   // Totais PREVISTOS (tudo planejado — para semáforo e projeções)
   const despPrevTotal = despPrev + despReal;
   const divsPrevTotal = divsPrev + divsReal;
-  const rendaPrevTotal = rendaMesVal > 0 ? rendaMesVal : (rendaPrev + rendaReal);
+  // I25 FIX: rendaMes substitui renda base, não os lançamentos extras de entrada
+  const rendaPrevTotal = (rendaMesVal > 0 ? rendaMesVal : rendaPrev) + rendaReal;
   const saldoPrev = rendaPrevTotal - despPrevTotal - divsPrevTotal;
 
   // Totais que aparecem nos cards: só confirmados ✅
@@ -5252,10 +5350,13 @@ function getDadosPeriodo(mes, ano) {
   const manuaisM = appData.lancamentos.filter(l => l.mes === mes && (!l.ano || l.ano === ano));
   const entBase = todosM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0)
                + manuaisM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
-  // Se o usuário informou renda real do mês (campo rendaMes), usa ela como entrada
+  // Se o usuário informou renda real do mês (campo rendaMes), ela substitui a renda base
+  // I25 FIX: lançamentos manuais de entrada são sempre somados por cima
   const rendaMesStr = cfgM.rendaMes;
   const rendaMesVal = rendaMesStr ? parseFloat(rendaMesStr) : 0;
-  const ent = rendaMesVal > 0 ? rendaMesVal : entBase;
+  const entSoBase = todosM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
+  const entSoManuais = manuaisM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
+  const ent = rendaMesVal > 0 ? (rendaMesVal + entSoManuais) : entBase;
   const sai = todosM.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0)
             + manuaisM.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0);
   const div = todosM.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0)
@@ -5560,7 +5661,8 @@ function getGrafTooltip() {
   if (!t) {
     t = document.createElement('div');
     t.id = 'graf-tooltip-html';
-    t.style.cssText = 'position:fixed;pointer-events:none;z-index:9999;display:none;background:rgba(18,18,28,0.97);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 14px;font-size:12px;color:#fff;line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,0.45);backdrop-filter:blur(8px);min-width:160px';
+    // M19 FIX: -webkit-backdrop-filter para Safari/iOS
+    t.style.cssText = 'position:fixed;pointer-events:none;z-index:9999;display:none;background:rgba(18,18,28,0.97);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 14px;font-size:12px;color:#fff;line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,0.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);min-width:160px';
     document.body.appendChild(t);
   }
   return t;
@@ -6642,13 +6744,15 @@ function renderLancamentos() {
     }
     return l.tipo;
   };
-  const totalEnt = baseVis.filter(l=>tipoEf(l)==='entrada').reduce((s,l)=>s+l.val,0)
-    + extras.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
-  const totalSai = baseVis.filter(l=>tipoEf(l)==='saida').reduce((s,l)=>s+l.val,0)
-    + extras.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0);
-  const totalDiv = baseVis.filter(l=>tipoEf(l)==='divida').reduce((s,l)=>s+l.val,0)
-    + extras.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0);
-  const saldo = totalEnt - totalSai - totalDiv;
+  // M14 FIX: arredondar cada acumulação para 2 casas para evitar erros de ponto flutuante
+  const r2 = v => Math.round(v * 100) / 100;
+  const totalEnt = r2(baseVis.filter(l=>tipoEf(l)==='entrada').reduce((s,l)=>s+l.val,0)
+    + extras.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0));
+  const totalSai = r2(baseVis.filter(l=>tipoEf(l)==='saida').reduce((s,l)=>s+l.val,0)
+    + extras.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0));
+  const totalDiv = r2(baseVis.filter(l=>tipoEf(l)==='divida').reduce((s,l)=>s+l.val,0)
+    + extras.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0));
+  const saldo = r2(totalEnt - totalSai - totalDiv);
 
   // ── Mini KPIs ────────────────────────────────────────────────────
   const saldoCor = saldo >= 0 ? 'var(--green)' : 'var(--red)';
@@ -6703,7 +6807,15 @@ function renderLancamentos() {
   const baseFiltrada = base.filter((l, renderIdx) => {
     const idx = l._baseIdx !== undefined ? l._baseIdx : renderIdx;
     const isOculta = (cfg.ocultas && cfg.ocultas[String(idx)]) || (appCfg.ocultas && appCfg.ocultas[String(idx)]);
-    return !isOculta;
+    if (isOculta) return false;
+    // M6 FIX: ocultar itens base com val=0 que nunca foram configurados pelo usuário
+    // (despesas-modelo do template com val:0 poluem a lista de novos usuários)
+    if (!l._extra && l.val === 0) {
+      const temOverride = (cfg.overrides && cfg.overrides[String(idx)] !== undefined)
+                       || (appCfg.overrides && appCfg.overrides[String(idx)] !== undefined);
+      if (!temOverride) return false;
+    }
+    return true;
   });
 
   if (baseFiltrada.length > 0) {
@@ -6958,7 +7070,7 @@ function saveCfg(cfg) {
   if (dbRef) {
     try {
       userCol('config').doc('cfg_full').set({ json, ts: cfg._ts });
-    } catch(e) {}
+    } catch(e) { console.error('[Finanvô] saveCfg Firestore:', e); } // I16 FIX
   }
 }
 
@@ -7705,7 +7817,9 @@ window.salvarLancamentoSynced = function() {
   // Item 12: verificar limite do plano antes de salvar (mesmo check que salvarLancamento)
   if (typeof verificarLimiteLancamentos === 'function' && !verificarLimiteLancamentos()) return;
   const desc = document.getElementById('f-desc').value.trim();
-  const val  = parseFloat(document.getElementById('f-val').value);
+  const val  = typeof parseBRL === 'function'
+    ? parseBRL(document.getElementById('f-val').value)
+    : parseFloat(document.getElementById('f-val').value);
   const tipo = document.getElementById('f-tipo').value;
   const mes  = document.getElementById('f-mes').value;
   // Item 11: usar getCatValue para capturar categoria customizada (campo livre)
@@ -7722,6 +7836,28 @@ window.salvarLancamentoSynced = function() {
   // Item 13: Recorrência — gerar lançamentos para meses seguintes
   const recorrente = document.getElementById('f-recorrente')?.checked;
   const qtdRec = recorrente ? (parseInt(document.getElementById('f-recorrencia-qtd')?.value) || 1) : 1;
+
+  // I27 FIX: verificar limite do plano para cada mês da recorrência
+  if (qtdRec > 1) {
+    const limite = typeof getLimit === 'function' ? getLimit('lancamentosMes') : null;
+    if (limite) {
+      const lancs = (appData && appData.lancamentos) ? appData.lancamentos : [];
+      const MESES_LIST_ = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                           'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const mesBaseIdx = MESES_LIST_.indexOf(mes);
+      for (let i = 0; i < qtdRec; i++) {
+        const mesIdxR = (mesBaseIdx + i) % 12;
+        const anoRec  = ano + Math.floor((mesBaseIdx + i) / 12);
+        const mesTxt  = MESES_LIST_[mesIdxR];
+        const cont = lancs.filter(l => l.ano === anoRec && l.mes && l.mes.toLowerCase() === mesTxt.toLowerCase()).length;
+        if (cont >= limite) {
+          mostrarModalUpgrade && mostrarModalUpgrade('lancamentos', 'pro');
+          mostrarToast && mostrarToast(`⚠️ Limite de lançamentos atingido em ${mesTxt}/${anoRec}`);
+          return;
+        }
+      }
+    }
+  }
 
   const MESES_LIST = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                       'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -7769,14 +7905,14 @@ function loadDividas() {
 }
 function saveDividas(arr) {
   try { localStorage.setItem(DIV_KEY, JSON.stringify(arr)); } catch(e) {}
-  if (dbRef) { try { userCol('dividas').doc('lista').set({itens: arr}); } catch(e) {} }
+  if (dbRef) { try { userCol('dividas').doc('lista').set({itens: arr}); } catch(e) { console.error('[Finanvô] saveDividas:', e); } } // I16 FIX
 }
 function loadInvestimentos() {
   try { return JSON.parse(localStorage.getItem(INV_KEY)||'[]'); } catch(e) { return []; }
 }
 function saveInvestimentos(arr) {
   try { localStorage.setItem(INV_KEY, JSON.stringify(arr)); } catch(e) {}
-  if (dbRef) { try { userCol('investimentos').doc('lista').set({itens: arr}); } catch(e) {} }
+  if (dbRef) { try { userCol('investimentos').doc('lista').set({itens: arr}); } catch(e) { console.error('[Finanvô] saveInvestimentos:', e); } } // I16 FIX
 }
 
 // ── Semáforo inteligente ──────────────────────────────────────────
@@ -8568,12 +8704,12 @@ const OBJ_KEY = 'ftav_objetivos';
 function loadCriptos() { try { return JSON.parse(localStorage.getItem(CRIPTO_KEY)||'[]'); } catch(e) { return []; } }
 function saveCriptos(arr) {
   try { localStorage.setItem(CRIPTO_KEY, JSON.stringify(arr)); } catch(e) {}
-  if (dbRef) { try { userCol('criptos').doc('lista').set({itens: arr}); } catch(e) {} }
+  if (dbRef) { try { userCol('criptos').doc('lista').set({itens: arr}); } catch(e) { console.error('[Finanvô] saveCriptos:', e); } } // I16 FIX
 }
 function loadObjetivos() { try { return JSON.parse(localStorage.getItem(OBJ_KEY)||'[]'); } catch(e) { return []; } }
 function saveObjetivos(arr) {
   try { localStorage.setItem(OBJ_KEY, JSON.stringify(arr)); } catch(e) {}
-  if (dbRef) { try { userCol('objetivos').doc('lista').set({itens: arr}); } catch(e) {} }
+  if (dbRef) { try { userCol('objetivos').doc('lista').set({itens: arr}); } catch(e) { console.error('[Finanvô] saveObjetivos:', e); } } // I16 FIX
 }
 
 function renderCriptos() {
@@ -8756,7 +8892,7 @@ const ACOES_KEY = 'ftav_acoes';
 function loadAcoes() { try { return JSON.parse(localStorage.getItem(ACOES_KEY)||'[]'); } catch(e) { return []; } }
 function saveAcoes(arr) {
   try { localStorage.setItem(ACOES_KEY, JSON.stringify(arr)); } catch(e) {}
-  if (dbRef) { try { userCol('acoes').doc('lista').set({itens: arr}); } catch(e) {} }
+  if (dbRef) { try { userCol('acoes').doc('lista').set({itens: arr}); } catch(e) { console.error('[Finanvô] saveAcoes:', e); } } // I16 FIX
 }
 
 function renderAcoes() {
@@ -9089,7 +9225,8 @@ function salvarMeta() {
   const mes   = document.getElementById('meta-mes').value;
   const ano   = parseInt(document.getElementById('meta-ano')?.value) || anoSelecionado;
   const cat   = document.getElementById('meta-cat').value;
-  if (!desc || !valor) { mostrarToast('⚠️ Preencha a descrição e o valor alvo.'); return; }
+  // M15 FIX: recusar valor zero ou negativo
+  if (!desc || !valor || valor <= 0) { mostrarToast('⚠️ Preencha a descrição e informe um valor maior que zero.'); return; }
   const metas = loadMetas();
   const editId = document.getElementById('meta-edit-id').value;
   if (editId) {
@@ -9183,7 +9320,8 @@ function renderMetasDash() {
         window[chave + '_80'] = true;
         setTimeout(() => mostrarToast(`⚡ "${m.desc}" está em ${pct}% do limite — falta pouco!`, 'warning'), 1200);
       }
-      if (pct >= 100 && !window[chave + '_100']) {
+      // M3 FIX: "estourado" só quando > 100% (não quando exatamente 100%)
+      if (pct > 100 && !window[chave + '_100']) {
         window[chave + '_100'] = true;
         setTimeout(() => mostrarToast(`🔴 Limite "${m.desc}" estourado (${pct}%)!`, 'error'), 800);
       }
@@ -9197,13 +9335,17 @@ function renderMetasDash() {
     const pctBar = Math.min(100, pct); // barra nunca passa de 100%
     let cor, emoji, barCor, alertTag;
     if (isLimite) {
-      cor   = pct >= 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : '#22c55e';
-      emoji = pct >= 100 ? '🔴' : pct >= 80 ? '⚡' : '✅';
-      barCor = pct >= 100 ? 'linear-gradient(90deg,#ef4444,#f87171)'
+      // M3 FIX: vermelho só acima de 100%; exatamente 100% fica laranja
+      cor   = pct > 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : '#22c55e';
+      emoji = pct > 100 ? '🔴' : pct >= 80 ? '⚡' : '✅';
+      barCor = pct > 100 ? 'linear-gradient(90deg,#ef4444,#f87171)'
              : pct >= 80  ? 'linear-gradient(90deg,#f59e0b,#fbbf24)'
              :               'linear-gradient(90deg,#22c55e,#4ade80)';
-      alertTag = pct >= 100
+      // M3 FIX: "estourado" só acima de 100%; exatamente 100% mostra "No limite"
+      alertTag = pct > 100
         ? `<div style="font-size:10px;font-weight:700;color:#ef4444;margin-top:3px">🔴 Limite estourado!</div>`
+        : pct === 100
+        ? `<div style="font-size:10px;font-weight:700;color:#f59e0b;margin-top:3px">⚠️ No limite!</div>`
         : pct >= 80
         ? `<div style="font-size:10px;font-weight:700;color:#f59e0b;margin-top:3px">⚡ Perto do limite</div>`
         : '';
@@ -9300,13 +9442,25 @@ function renderResumaSemana() {
   const fimSemanaAnt = new Date(inicioSemana);
   fimSemanaAnt.setMilliseconds(-1);
 
-  // Filtra lançamentos manuais por data (precisa de campo `data` ou usa o id como timestamp)
+  // Filtra lançamentos manuais por data
+  // I23 FIX: usar a data real do lançamento (dia/mes/ano), não o timestamp de criação (id)
   const todos = (appData.lancamentos || []);
+  function lancDataReal(l) {
+    // Preferência: campo dataTs (data explícita do lançamento)
+    if (l.dataTs) return new Date(Number(l.dataTs));
+    // Segundo: reconstruir de dia/mes/ano se disponível
+    if (l.dia && l.mes && l.ano) {
+      const mesIdx = MESES.indexOf(l.mes);
+      if (mesIdx >= 0) return new Date(l.ano, mesIdx, Number(l.dia));
+    }
+    // Fallback: id como timestamp de criação (impreciso, mas melhor que nada)
+    if (l.id) return new Date(Number(l.id));
+    return null;
+  }
   function gastosNoPeriodo(inicio, fim) {
     return todos.filter(l => {
-      const ts = l.dataTs || l.id; // id é Date.now()
-      if (!ts) return false;
-      const d = new Date(Number(ts));
+      const d = lancDataReal(l);
+      if (!d || isNaN(d)) return false;
       return d >= inicio && d <= fim && (l.tipo === 'saida' || l.tipo === 'divida');
     }).reduce((s,l) => s + l.val, 0);
   }
@@ -9329,10 +9483,11 @@ function renderResumaSemana() {
   });
   const maxDia = Math.max(...gastosDia, 1);
 
-  // Semana atual tem lançamentos manuais com timestamp?
+  // Semana atual tem lançamentos com data real?
+  // I23 FIX: usar lancDataReal() em vez de l.id (timestamp de criação)
   const temDados = todos.some(l => {
-    const ts = l.dataTs || l.id;
-    return ts && new Date(Number(ts)) >= inicioSemana;
+    const d = lancDataReal(l);
+    return d && !isNaN(d) && d >= inicioSemana;
   });
 
   if (!temDados && gastosSemAtual === 0 && gastosSemAnt === 0) {
@@ -9647,7 +9802,8 @@ function renderSaudeFamiliar() {
   const rendaMesVal2 = parseFloat((appCfg.periodos||{})[`${anoSelecionado}/${mesSelecionado}`]?.rendaMes || 0);
   const rendaBaseConf2 = baseVis.filter((l,i) => tipoEfetivo(l)==='entrada' && stMap2[String(i)]==='pago').reduce((s,l)=>s+l.val,0);
   const rendaManConf2  = lanMes.filter(l=>l.tipo==='entrada'&&stMap2[`lanc_${l.id}`]==='pago').reduce((s,l)=>s+l.val,0);
-  const renda2 = rendaMesVal2 > 0 ? rendaMesVal2 : (rendaBaseConf2 + rendaManConf2);
+  // I25 FIX: rendaMes substitui a renda base confirmada, mas soma lançamentos manuais de entrada
+  const renda2 = rendaMesVal2 > 0 ? (rendaMesVal2 + rendaManConf2) : (rendaBaseConf2 + rendaManConf2);
 
   const despBaseConf2 = baseVis.filter((l,i) => tipoEfetivo(l)==='saida' && stMap2[String(i)]==='pago').reduce((s,l)=>s+l.val,0);
   const despManConf2  = lanMes.filter(l=>l.tipo==='saida'&&stMap2[`lanc_${l.id}`]==='pago').reduce((s,l)=>s+l.val,0);
@@ -9732,6 +9888,9 @@ function navMesDash(dir) {
 function atualizarPeriodoLabel() {
   const label = document.getElementById('dhc-periodo-label');
   if (!label) return;
+  // M2 FIX: não sobrescrever o label se renderDashboard já definiu "Saldo previsto" ou "Saldo confirmado"
+  // renderDashboard usa innerHTML com texto diferente de "Saldo disponível este mês"
+  if (label.innerHTML && !label.innerHTML.startsWith('Saldo disponível') && !label.innerHTML.startsWith('Saldo —')) return;
   const hoje = new Date();
   const mesAtualIdx = hoje.getMonth();
   const anoAtual = hoje.getFullYear();
@@ -9866,7 +10025,8 @@ function exportarPDF() {
   const rendaMesVal = cfg.rendaMes ? parseFloat(cfg.rendaMes) : 0;
   const rendaBase = baseVis.filter(l => (appCfg.tipos?.[String(l._baseIdx)] || l.tipo) === 'entrada').reduce((s,l) => s+l.val, 0);
   const rendaLan  = lanMes.filter(l => l.tipo === 'entrada').reduce((s,l) => s+l.val, 0);
-  const renda = rendaMesVal > 0 ? rendaMesVal : (rendaBase + rendaLan);
+  // I25 FIX: rendaMes substitui a renda base, mas lançamentos manuais de entrada são sempre somados
+  const renda = rendaMesVal > 0 ? (rendaMesVal + rendaLan) : (rendaBase + rendaLan);
 
   const despBase = baseVis.filter(l => (appCfg.tipos?.[String(l._baseIdx)] || l.tipo) === 'saida').reduce((s,l) => s+l.val, 0);
   const despLan  = lanMes.filter(l => l.tipo === 'saida').reduce((s,l) => s+l.val, 0);
@@ -10116,6 +10276,7 @@ style.textContent = `
   width: min(400px, calc(100vw - 32px));
   position: relative; z-index: 1;
   box-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 28px 60px rgba(0,0,0,.65), 0 0 50px rgba(79,127,255,.07);
+  -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
 }
 .ob-steps {
@@ -10320,13 +10481,15 @@ function obRender() {
   if (obStep === 0) {
     // Passo 1: Boas-vindas + nome
     const nome = fbAuth.currentUser?.displayName || fbAuth.currentUser?.email?.split('@')[0] || 'você';
+    // I1 FIX: usar esc() para evitar XSS via nome do Google/e-mail
+    const nomeEsc = typeof esc === 'function' ? esc(nome) : nome.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     content.innerHTML = `
       <div class="ob-icon" style="background:linear-gradient(135deg,#4f7fff,#7c3aed)">👋</div>
       <div class="ob-title">Bem-vindo ao Finanvô!</div>
-      <div class="ob-sub">Olá, <strong style="color:#a0b0d0">${nome}</strong>! Vamos configurar o financeiro do seu lar em 2 minutos.<br>Pronto para começar?</div>
+      <div class="ob-sub">Olá, <strong style="color:#a0b0d0">${nomeEsc}</strong>! Vamos configurar o financeiro do seu lar em 2 minutos.<br>Pronto para começar?</div>
       <div class="ob-field">
         <label>Como quer ser chamado?</label>
-        <input id="ob-nome" type="text" placeholder="Seu nome" value="${nome}" autocomplete="given-name">
+        <input id="ob-nome" type="text" placeholder="Seu nome" value="${nomeEsc}" autocomplete="given-name">
       </div>
       <button class="ob-btn" onclick="obNext()">Vamos lá! →</button>
     `;
@@ -10646,11 +10809,71 @@ window.obFinalizar = function() {
     ).catch(() => {});
   }
 
+  // M18 FIX: cancela animação do canvas do onboarding antes de fechar
+  if (typeof window._obCancelCanvas === 'function') window._obCancelCanvas();
   // Fecha onboarding e mostra app
   document.getElementById('onboarding-screen').classList.add('hidden');
   mostrarToast('🎉 Tudo pronto! Bem-vindo ao Finanvô!');
   renderDashboard();
 };
+
+// M25 FIX: importar dados do onboarding.html separado (fnv_renda_padrao / fnv_categorias_pref)
+// Essa função roda uma vez na inicialização e migra os dados para appCfg
+function _importarDadosOnboardingExterno() {
+  try {
+    const rendaStr = localStorage.getItem('fnv_renda_padrao');
+    const catsStr  = localStorage.getItem('fnv_categorias_pref');
+    if (!rendaStr && !catsStr) return; // nada a migrar
+    if (appCfg._ob_externo_importado) return; // já importou antes
+
+    let importou = false;
+
+    // Importar renda padrão
+    if (rendaStr) {
+      const renda = parseFloat(rendaStr);
+      if (renda > 0) {
+        if (!appCfg.overrides) appCfg.overrides = {};
+        // índice 0 = salário base em DESPESAS_BASE (entrada principal)
+        if (!appCfg.overrides['0']) appCfg.overrides['0'] = renda;
+        // Salvar no período atual se ainda não tiver renda
+        const mesAtual = MESES[new Date().getMonth()];
+        const anoAtual = new Date().getFullYear();
+        const pKey = `${anoAtual}/${mesAtual}`;
+        if (!appCfg.periodos) appCfg.periodos = {};
+        if (!appCfg.periodos[pKey]) appCfg.periodos[pKey] = {};
+        if (!appCfg.periodos[pKey].rendaMes) appCfg.periodos[pKey].rendaMes = String(renda);
+        importou = true;
+      }
+    }
+
+    // Importar categorias preferidas (selecionar grupos correspondentes)
+    if (catsStr) {
+      try {
+        const cats = JSON.parse(catsStr); // array de strings
+        if (Array.isArray(cats) && cats.length > 0) {
+          const catSet = new Set(cats.map(c => String(c).toLowerCase()));
+          if (!appCfg.ocultas) appCfg.ocultas = {};
+          DESPESAS_BASE.forEach((item, idx) => {
+            if (item.tipo !== 'entrada') {
+              const cat = (item.cat || '').toLowerCase();
+              // Ocultar itens cujas categorias NÃO foram selecionadas
+              if (!catSet.has(cat)) appCfg.ocultas[String(idx)] = true;
+            }
+          });
+          importou = true;
+        }
+      } catch(e) {}
+    }
+
+    if (importou) {
+      appCfg._ob_externo_importado = true;
+      saveCfg(appCfg);
+      // Limpar as chaves do onboarding externo após migrar
+      localStorage.removeItem('fnv_renda_padrao');
+      localStorage.removeItem('fnv_categorias_pref');
+    }
+  } catch(e) {}
+}
 
 // Verifica se deve mostrar onboarding
 window._checkOnboarding = function() {
@@ -10660,12 +10883,30 @@ window._checkOnboarding = function() {
     // Verifica local E Firestore (window._perfil) para suportar múltiplos dispositivos
     const doneLocal    = !!appCfg._onboardingDone;
     const doneFirebase = !!(window._perfil && window._perfil.onboardingDone);
+    // M4 FIX: contas antigas não têm onboardingDone — inferir pelo campo "criado".
+    // Se o perfil tem "criado" anterior a esta versão do onboarding (antes de out/2026)
+    // ou se já há lançamentos locais, considerar que o onboarding já foi feito.
+    const criado = window._perfil && window._perfil.criado;
+    const contaAntiga = criado && new Date(criado) < new Date('2026-10-01T00:00:00Z');
+    const temDadosLocais = appData && appData.lancamentos && appData.lancamentos.length > 0;
     if (!doneLocal && !doneFirebase) {
-      document.getElementById('onboarding-screen').classList.remove('hidden');
-      obStep = 0;
-      obRender();
-      // Mini canvas decorativo
-      _obCanvas();
+      if (contaAntiga || temDadosLocais) {
+        // Conta antiga ou com dados — marcar como feito e não mostrar onboarding
+        appCfg._onboardingDone = true;
+        saveCfg(appCfg);
+        // Persistir também no Firestore para outros dispositivos
+        try {
+          if (usuarioAtivo && window.fbDb) {
+            window.fbDb.collection('users').doc(usuarioAtivo).update({ onboardingDone: true });
+          }
+        } catch(e) {}
+      } else {
+        document.getElementById('onboarding-screen').classList.remove('hidden');
+        obStep = 0;
+        obRender();
+        // Mini canvas decorativo
+        _obCanvas();
+      }
     } else if (!doneLocal && doneFirebase) {
       // Já concluiu em outro dispositivo — marcar localmente e não mostrar de novo
       appCfg._onboardingDone = true;
@@ -10696,21 +10937,28 @@ function _obCanvas() {
   function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
   window.addEventListener('resize', resize); resize();
   const pts = Array.from({length:12},(_,i)=>({ x:(W/11)*i, y:H*.5+Math.sin(i*.8)*H*.12 }));
+  // M18 FIX: guardar o RAF para cancelar quando o onboarding fechar
+  let _obRafId = null;
   function draw() {
     ctx.clearRect(0,0,W,H);
     ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
     pts.forEach(p=>ctx.lineTo(p.x,p.y));
     ctx.strokeStyle='rgba(79,127,255,0.3)'; ctx.lineWidth=2; ctx.stroke();
     pts.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fillStyle='rgba(79,127,255,0.5)'; ctx.fill(); });
-    requestAnimationFrame(draw);
+    _obRafId = requestAnimationFrame(draw);
   }
-  draw();
+  _obRafId = requestAnimationFrame(draw);
+  // Expõe o cancelador para ser chamado ao fechar o onboarding
+  window._obCancelCanvas = function() {
+    if (_obRafId) { cancelAnimationFrame(_obRafId); _obRafId = null; }
+  };
 }
 
 // Hook no onAuthStateChanged — após iniciarSync, checa onboarding
 const _origIniciarSync = iniciarSync;
 window.iniciarSync = function() {
   _origIniciarSync();
+  _importarDadosOnboardingExterno(); // M25 FIX: migrar dados do onboarding.html externo
   _checkOnboarding();
 };
 
@@ -11039,30 +11287,25 @@ window.criarFamilia = async function() {
   try {
     const codigo = gerarCodigo();
 
-    // Garante que o documento do usuário existe antes de tudo
-    // Nota: "criado" só é escrito na criação inicial (em fazerLogin/onAuthStateChanged).
-    // Aqui apenas atualizamos campos que o usuário pode alterar.
-    await fbDb.collection('users').doc(usuarioAtivo).set({
-      email: window.usuarioEmail || '',
-      uid: usuarioAtivo,
-      codigoIndicacao: usuarioAtivo.substring(0,8).toUpperCase()
-    }, { merge: true });
-
-    // Salva família no Firestore
+    // C1 FIX: Cria o documento da família com donoUid e membros.
+    // Não atualiza campos protegidos do usuário (email, codigoIndicacao)
+    // pois esses já foram gravados no cadastro e são imutáveis após criação.
     await fbDb.collection('familias').doc(codigo).set({
       criado: new Date().toISOString(),
       criador: usuarioAtivo,
+      donoUid: usuarioAtivo,
       membros: [usuarioAtivo],
       nomes: { [usuarioAtivo]: window.usuarioEmail || usuarioAtivo }
     });
 
-    // Registra membro no documento do usuário
+    // Registra membro no documento do usuário (campo não protegido)
     await fbDb.collection('users').doc(usuarioAtivo).set({ familiaAtiva: codigo }, { merge: true });
 
     // Migra dados existentes para a família
+    // C1 FIX: só troca o caminho se a migração for confirmada (await sem try/catch externo)
     await migrarDadosParaFamilia(codigo);
 
-    // Ativa família localmente
+    // Ativa família localmente (só chega aqui se migração não lançou exceção)
     setFamiliaCodigo(codigo);
     _familiaAtiva = codigo;
 
@@ -11084,23 +11327,27 @@ window.criarFamilia = async function() {
 };
 
 // ── Migrar dados do usuário para a família ───────────────────────
+// C1 FIX: propaga erros para o chamador (criarFamilia) não trocar o caminho se falhar
 async function migrarDadosParaFamilia(codigo) {
+  // Migrar lançamentos
+  const lancSnap = await fbDb.collection('users').doc(usuarioAtivo).collection('lancamentos').get();
+  const batch = fbDb.batch();
+  lancSnap.forEach(doc => {
+    const ref = fbDb.collection('familias').doc(codigo).collection('lancamentos').doc(doc.id);
+    batch.set(ref, doc.data());
+  });
+  // Migrar config
+  const cfgSnap = await fbDb.collection('users').doc(usuarioAtivo).collection('config').doc('cfg_full').get();
+  if (cfgSnap.exists) {
+    const ref = fbDb.collection('familias').doc(codigo).collection('config').doc('cfg_full');
+    batch.set(ref, cfgSnap.data());
+  }
   try {
-    // Migrar lançamentos
-    const lancSnap = await fbDb.collection('users').doc(usuarioAtivo).collection('lancamentos').get();
-    const batch = fbDb.batch();
-    lancSnap.forEach(doc => {
-      const ref = fbDb.collection('familias').doc(codigo).collection('lancamentos').doc(doc.id);
-      batch.set(ref, doc.data());
-    });
-    // Migrar config
-    const cfgSnap = await fbDb.collection('users').doc(usuarioAtivo).collection('config').doc('cfg_full').get();
-    if (cfgSnap.exists) {
-      const ref = fbDb.collection('familias').doc(codigo).collection('config').doc('cfg_full');
-      batch.set(ref, cfgSnap.data());
-    }
     await batch.commit();
-  } catch(e) {}
+  } catch(e) {
+    console.error('[Finanvô] migrarDadosParaFamilia:', e);
+    throw e; // C1 FIX: propaga para criarFamilia não ativar familiaAtiva
+  }
 }
 
 // ── Entrar em família existente ──────────────────────────────────
@@ -11174,7 +11421,7 @@ window.sairFamilia = function() {
   confirmarAcao('Sair da família? Você voltará a ver apenas seus dados individuais.', async () => {
     try {
       await fbDb.collection('users').doc(usuarioAtivo).set({ familiaAtiva: null }, { merge: true });
-    } catch(e) {}
+    } catch(e) { console.error('[Finanvô] sairFamilia:', e); } // I16 FIX
     setFamiliaCodigo(null);
     _familiaAtiva = null;
     iniciarSync();
@@ -11368,6 +11615,7 @@ const PLANOS = {
     precoAnual: 'R$ 12,99/mês',
     precoAnualMes: 'R$ 12,99/mês',
     hotmartUrl: 'https://pay.hotmart.com/U108262502C',
+    hotmartOfferKeyAnual: '', // M7 FIX: preencher com offer_hash anual do painel Hotmart
     limites: {
       despesasFixas: 16,      // 12–16, usa max
       lancamentosMes: 20,     // 15–20, usa max
@@ -11394,6 +11642,7 @@ const PLANOS = {
     precoAnual: 'R$ 22,99/mês',
     precoAnualMes: 'R$ 22,99/mês',
     hotmartUrl: 'https://pay.hotmart.com/U108265754P',
+    hotmartOfferKeyAnual: '', // M7 FIX: preencher com offer_hash anual do painel Hotmart
     limites: {
       despesasFixas: 30,      // 17–30, usa max
       lancamentosMes: 30,     // 21–30, usa max
@@ -11420,6 +11669,7 @@ const PLANOS = {
     precoAnual: 'R$ 32,99/mês',
     precoAnualMes: 'R$ 32,99/mês',
     hotmartUrl: 'https://pay.hotmart.com/A108265910E',
+    hotmartOfferKeyAnual: '', // M7 FIX: preencher com offer_hash anual do painel Hotmart
     limites: {
       despesasFixas: null,    // ilimitado
       lancamentosMes: null,
@@ -11478,7 +11728,11 @@ window.testeAtivo = function() {
     const c = p.criado; // Timestamp do Firestore (server-side, não manipulável)
     if (!c) return false; // sem data confiável = sem teste
     const criado = c.toDate ? c.toDate() : new Date(c);
-    return (Date.now() - criado) <= 7 * 864e5;
+    const diff = Date.now() - criado.getTime();
+    // C2 FIX: data no futuro (diff negativo) ou diferença > 7 dias = teste inativo
+    // Impede manipulação do campo "criado" colocando data futura (ex: 2099)
+    if (diff < 0) return false;
+    return diff <= 7 * 864e5;
   } catch(e) { return false; }
 };
 
@@ -11489,7 +11743,10 @@ window.prazoAssinarAtivo = function() {
     const c = p.criado;
     if (!c) return false;
     const criado = c.toDate ? c.toDate() : new Date(c);
-    return (Date.now() - criado) <= 15 * 864e5;
+    const diff = Date.now() - criado.getTime();
+    // C2 FIX: data no futuro = prazo inativo
+    if (diff < 0) return false;
+    return diff <= 15 * 864e5;
   } catch(e) { return false; }
 };
 
@@ -11550,6 +11807,27 @@ window.getLimit = function(campo) {
   return PLANOS[plano] ? PLANOS[plano].limites[campo] : 0;
 };
 
+// ── Montar URL Hotmart com UTM e dados do usuário ────────────────
+// I8 FIX: adicionar src, sck, UTM e e-mail pré-preenchido nos links Hotmart
+// M7 FIX: Hotmart usa ?off=<offerKey> para selecionar oferta específica (ex: anual).
+// O offerKey é obtido em: Hotmart > Produtor > Produto > Ofertas > copiar "offer_hash".
+// Enquanto o offerKey não for configurado, o link abre a página padrão do produto.
+function hotmartUrl(baseUrl, offKey) {
+  const params = new URLSearchParams();
+  // off=<offerKey> seleciona a oferta anual (configurar com o hash correto da Hotmart)
+  if (offKey && offKey !== 'anual') params.set('off', offKey);
+  // UTM para rastrear origem (app interno)
+  params.set('utm_source', 'finanvo_app');
+  params.set('utm_medium', 'in_app_upgrade');
+  params.set('utm_campaign', 'upgrade_modal');
+  // Hotmart aceita sck e src para identificar origem
+  params.set('src', 'finanvo_app');
+  // Pré-preencher email do usuário logado (Hotmart suporta o parâmetro checkoutContactEmail)
+  const email = window.usuarioEmail || (window._perfil && window._perfil.email) || '';
+  if (email) params.set('checkoutContactEmail', email);
+  return baseUrl + '?' + params.toString();
+}
+
 // ── Modal de upgrade ─────────────────────────────────────────────
 window.mostrarModalUpgrade = function(feature, planoNecessario) {
   const plano = PLANOS[planoNecessario] || PLANOS['pro'];
@@ -11599,11 +11877,11 @@ window.mostrarModalUpgrade = function(feature, planoNecessario) {
           <span style="color:var(--fg3)"> · equivale a ${plano.precoAnualMes}/mês</span>
         </div>
       </div>` : ''}
-      <a href="${plano.hotmartUrl}" target="_blank" rel="noopener"
+      <a href="${hotmartUrl(plano.hotmartUrl)}" target="_blank" rel="noopener"
          style="display:block;background:${plano.cor};color:#fff;border-radius:10px;padding:14px;font-weight:700;font-size:15px;text-decoration:none;margin-bottom:8px">
         🚀 Assinar ${plano.nome} — ${plano.preco}
       </a>
-      <a href="${plano.hotmartUrl}?offertag=anual" target="_blank" rel="noopener"
+      <a href="${hotmartUrl(plano.hotmartUrl, plano.hotmartOfferKeyAnual)}" target="_blank" rel="noopener"
          style="display:block;background:transparent;color:${plano.cor};border:1.5px solid ${plano.cor};border-radius:10px;padding:10px;font-weight:600;font-size:13px;text-decoration:none;margin-bottom:10px">
         📅 Ver plano anual (economize até 20%)
       </a>
@@ -11647,17 +11925,39 @@ function verificarLimiteLancamentos() {
 window.verificarLimiteLancamentos = verificarLimiteLancamentos;
 
 // ── Banner de plano expirado ─────────────────────────────────────
-// Exibido quando: plano gratuito + 15 dias de cortesia já passaram
+// I5 FIX: distingue "plano pago vencido" de "fim do teste grátis"
 window.verificarPlanoExpirado = function() {
   try {
     const plano = getPlanoAtual();
-    if (plano !== 'gratuito') return false; // tem plano pago
+    if (plano !== 'gratuito') return false; // tem plano pago ativo
     if (testeAtivo() || prazoAssinarAtivo()) return false; // ainda no período de cortesia
 
     // Expirado! Mostrar banner no topo do dashboard
     const alertEl = document.getElementById('dash-alerta');
     if (!alertEl) return true;
     if (document.getElementById('banner-plano-expirado')) return true; // já existe
+
+    // Verificar se o usuário já teve um plano pago que venceu
+    const perfil = window._perfil || {};
+    const planoAnterior = perfil.plano;
+    const planoExpira = perfil.planoExpira;
+    const tevePlanoPago = planoAnterior && planoAnterior !== 'gratuito' && planoExpira;
+
+    let titulo, descricao, btnTexto;
+    if (tevePlanoPago) {
+      // I5: plano pago vencido — mensagem de renovação específica
+      const expiraDate = new Date(planoExpira);
+      const expiraFmt = isNaN(expiraDate) ? '' : expiraDate.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'});
+      const nomePlano = (PLANOS[planoAnterior] && PLANOS[planoAnterior].nome) || planoAnterior;
+      titulo = `Seu plano ${nomePlano} venceu${expiraFmt ? ' em ' + expiraFmt : ''}`;
+      descricao = 'Renove sua assinatura para continuar com todos os recursos do seu plano.';
+      btnTexto = '🔄 Renovar plano';
+    } else {
+      // Fim do período de cortesia (nunca teve plano pago)
+      titulo = 'Período de cortesia encerrado';
+      descricao = 'Seus dados estão seguros! Para continuar adicionando lançamentos e acessar todos os recursos, escolha um plano Finanvô.';
+      btnTexto = '🚀 Ver planos';
+    }
 
     const banner = document.createElement('div');
     banner.id = 'banner-plano-expirado';
@@ -11666,10 +11966,10 @@ window.verificarPlanoExpirado = function() {
       <div style="display:flex;align-items:flex-start;gap:12px">
         <span style="font-size:28px;line-height:1">⏰</span>
         <div style="flex:1">
-          <div style="font-size:14px;font-weight:700;color:var(--fg1);margin-bottom:4px">Período de cortesia encerrado</div>
-          <div style="font-size:12px;color:var(--fg2);line-height:1.5;margin-bottom:12px">Seus dados estão seguros! Para continuar adicionando lançamentos e acessar todos os recursos, escolha um plano Finanvô.</div>
+          <div style="font-size:14px;font-weight:700;color:var(--fg1);margin-bottom:4px">${titulo}</div>
+          <div style="font-size:12px;color:var(--fg2);line-height:1.5;margin-bottom:12px">${descricao}</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button onclick="mostrarModalUpgrade('upgrade','pro')" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🚀 Ver planos</button>
+            <button onclick="mostrarModalUpgrade('upgrade','${tevePlanoPago ? planoAnterior : 'pro'}')" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">${btnTexto}</button>
             <button onclick="document.getElementById('banner-plano-expirado').style.display='none'" style="padding:8px 14px;background:transparent;color:var(--fg3);border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer">Depois</button>
           </div>
         </div>
@@ -12809,7 +13109,9 @@ function renderAnaliseIA(a, mes, ano) {
 // ═══════════════════════════════════════════════════════════════════
 
 // Utilitários
-function parseBRL(str) {
+// I2 FIX: expor parseBRL globalmente para que salvarLancamento possa usá-la
+// (estava dentro do IIFE e não acessível como global)
+window.parseBRL = function parseBRL(str) {
   if (!str) return 0;
   let s = String(str).replace(/R\$\s*/g,'').replace(/\s/g,'').trim();
   // Detecta separador decimal:
@@ -12839,8 +13141,9 @@ function parseBRL(str) {
     }
     // "45.9", "1234.56" → ponto já é decimal, não faz nada
   }
-  return parseFloat(s) || 0;
-}
+  // M14 FIX: arredondar para centavos inteiros (evita 0,1+0,2 = 0,30000000000000004)
+  return Math.round((parseFloat(s) || 0) * 100) / 100;
+};
 
 function parseDataBR(str) {
   if (!str) return null;
@@ -13138,6 +13441,15 @@ function parseGenerico(rows, sep) {
 function detectarBanco(text, rows, sep) {
   const header = rows[0] ? rows[0].map(h => h.toLowerCase().trim()).join('|') : '';
   const textLow = text.slice(0, 500).toLowerCase();
+  // I22 FIX: Itaú CSV tem linhas de metadados antes do cabeçalho real —
+  // verificar as primeiras 10 linhas, não só rows[0]
+  const itauHeaderIdx = rows.slice(0, 10).findIndex(r =>
+    r.some(h => (h||'').toLowerCase().includes('débit') || (h||'').toLowerCase().includes('debit')) &&
+    r.some(h => (h||'').toLowerCase().includes('crédit') || (h||'').toLowerCase().includes('credit'))
+  );
+  if (itauHeaderIdx >= 0) {
+    return { banco: 'Itaú', parser: parseItau };
+  }
 
   // Nubank Cartão: date,title,amount
   if (header.includes('date') && header.includes('title') && header.includes('amount')) {
@@ -13596,39 +13908,36 @@ window.compartilharNativo = function() {
 })();
 
 // Após login, registrar indicação se houver código salvo
+// I3 FIX: não faz .where() na coleção 'users' (regras bloqueiam listagem).
+// Usa coleção /indicacoes com docId = refCode (o próprio codigoIndicacao).
+// O código de indicação é o uid.slice(0,8).toUpperCase() — gravado em /users/{uid}.codigoIndicacao.
+// Para lookup direto sem query, o link de convite (?ref=CODIGO) já contém o código.
+// Salvamos em /indicacoes/{refCode} os dados do indicado; o backend/Cloud Function
+// processa e aplica o bônus consultando /users por uid depois.
 async function registrarIndicacaoSeExistir(uid, email, nome) {
   try {
     const ref = localStorage.getItem('finRefCode');
-    if (!ref) return;
+    if (!ref || ref === uid.slice(0, 8).toUpperCase()) return; // não auto-indica
 
     const db = firebase.firestore();
-    // Buscar por campo indexado (mais eficiente — evita leitura de toda a coleção)
-    const snap = await db.collection('users').where('codigoIndicacao', '==', ref).limit(1).get();
-    for (const doc of snap.docs) {
-      const docUid = doc.id;
-      if (docUid !== uid) {
-        // Encontrou o indicador — adicionar indicação
-        const dados = doc.data() || {};
-        const indicacoes = dados.indicacoes || [];
-        const jaExiste = indicacoes.some(i => i.uid === uid);
-        if (!jaExiste) {
-          indicacoes.push({
-            uid, email: email || '', nome: nome || 'Usuário',
-            data: new Date().toLocaleDateString('pt-BR'),
-            dataCadastroIndicado: new Date().toISOString(),
-            ativo: false // será ativado após 7 dias de uso (verificarIndicacoesAtivas)
-          });
-          await db.collection('users').doc(docUid).update({ indicacoes });
-
-          // Dar 30 dias ao indicado — apenas campos não-protegidos.
-          // planoBonus/planoBonusExpira são escritos pelo Worker/Cloud Function.
-          // Aqui registramos apenas o bônus local para cálculo de prazo.
-          await db.collection('users').doc(uid).update({
-            bonusDias: firebase.firestore.FieldValue.increment(30)
-          });
-        }
-        break;
-      }
+    // Documento de indicação: refCode como ID, indicadoUid como campo
+    const docId = ref + '_' + uid; // uniqueness: mesmo ref não registra duas vezes
+    const docRef = db.collection('indicacoes').doc(docId);
+    const snap = await docRef.get();
+    if (!snap.exists) {
+      await docRef.set({
+        codigoIndicador: ref,
+        indicadoUid: uid,
+        indicadoEmail: email || '',
+        indicadoNome: nome || 'Usuário',
+        dataCadastro: firebase.firestore.FieldValue.serverTimestamp(),
+        ativo: false
+      });
+      // Registrar bônus local para cálculo de prazo (campo não-protegido)
+      await db.collection('users').doc(uid).set(
+        { bonusDias: firebase.firestore.FieldValue.increment(30) },
+        { merge: true }
+      );
     }
     localStorage.removeItem('finRefCode');
   } catch(e) {
@@ -14003,7 +14312,7 @@ async function ckSalvarFirestore() {
   if (!usuarioAtivo || !fbDb) return;
   try {
     await userCol('checklist').doc('dados').set({ json: JSON.stringify(_ckDados), ts: Date.now() });
-  } catch(e) {}
+  } catch(e) { console.error('[Finanvô] ckSalvarFirestore:', e); } // I16 FIX
 }
 async function ckCarregarFirestore() {
   if (!usuarioAtivo || !fbDb) return;
@@ -14013,7 +14322,7 @@ async function ckCarregarFirestore() {
       const data = doc.data();
       if (data && data.json) _ckDados = JSON.parse(data.json);
     }
-  } catch(e) {}
+  } catch(e) { console.error('[Finanvô] ckCarregarFirestore:', e); } // I16 FIX
 }
 
 function ckSalvar() {
@@ -14702,6 +15011,7 @@ window.$crisp=[];window.CRISP_WEBSITE_ID="76981913-2052-4a13-8705-c2f0f906fc4d";
 <!-- ── Chatbot Finanvô (IA de Suporte) ───────────────────────────── -->
 <style>
 #fnv-chat-bubble {
+  /* I15 FIX: posição padrão (desktop) */
   position: fixed; bottom: 24px; right: 24px; z-index: 9998;
   width: 56px; height: 56px; border-radius: 50%;
   background: linear-gradient(135deg, #6c63ff 0%, #48cfad 100%);
@@ -14722,8 +15032,15 @@ window.$crisp=[];window.CRISP_WEBSITE_ID="76981913-2052-4a13-8705-c2f0f906fc4d";
 }
 #fnv-chat-bubble .fnv-notif.show { opacity: 1; transform: scale(1); }
 
+/* I15 FIX: no mobile, o botão sobe acima da bottom nav (60px + safe-area) */
+@media (max-width: 768px) {
+  #fnv-chat-bubble {
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 12px);
+  }
+}
+
 #fnv-chat-box {
-  position: fixed; bottom: 90px; right: 24px; z-index: 9999;
+  position: fixed; bottom: 90px; right: 24px; z-index: 9999; /* desktop */
   width: 340px; max-width: calc(100vw - 32px);
   background: var(--card-bg, #1e2132); border-radius: 20px;
   box-shadow: 0 8px 40px rgba(0,0,0,.35);

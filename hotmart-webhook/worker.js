@@ -3,9 +3,39 @@
  * Recebe webhooks do Hotmart e atualiza o plano no Firebase Firestore
  */
 
+// ── Rate limit: máx 20 requisições por IP a cada 60 segundos ────────
+// Usa KV do Cloudflare (configure: wrangler kv namespace create "RATE_LIMIT_KV")
+// Se KV não estiver configurado, rate limit é ignorado (graceful degradation).
+async function checkRateLimit(env, ip) {
+  if (!env.RATE_LIMIT_KV) return true; // KV não configurado → permite
+  const key = `rl:${ip}`;
+  try {
+    const raw = await env.RATE_LIMIT_KV.get(key);
+    const count = raw ? parseInt(raw) : 0;
+    if (count >= 20) return false; // bloqueado
+    // Incrementa contador; expira em 60s
+    await env.RATE_LIMIT_KV.put(key, String(count + 1), { expirationTtl: 60 });
+    return true;
+  } catch (_) {
+    return true; // em caso de erro no KV, permite a requisição
+  }
+}
+
 export default {
   async fetch(request, env) {
     if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+
+    // I6 FIX: rate limit por IP — evita flood/abuso do webhook
+    const ip = request.headers.get('CF-Connecting-IP')
+            || request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim()
+            || 'unknown';
+    const allowed = await checkRateLimit(env, ip);
+    if (!allowed) {
+      return new Response('Too Many Requests', {
+        status: 429,
+        headers: { 'Retry-After': '60' }
+      });
+    }
 
     // Ler body como texto para validar HMAC antes de parsear
     const rawBody = await request.text();

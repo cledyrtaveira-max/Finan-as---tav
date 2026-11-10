@@ -85,6 +85,8 @@ input:checked+.toggle-slider:before{transform:translateX(22px)}
   .plan-free{max-width:100%}
   h1{font-size:30px}
 }
+/* I14 FIX: texto visível apenas para leitores de tela */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 </style>
 </head>
 <body>
@@ -110,10 +112,13 @@ input:checked+.toggle-slider:before{transform:translateX(22px)}
     <div class="trust-item"><span>✓</span> Dados 100% seguros</div>
   </div>
 
-  <div class="toggle-wrap">
+  <!-- I14 FIX: seletor mensal/anual com rótulo acessível -->
+  <div class="toggle-wrap" role="group" aria-labelledby="toggle-periodo-label">
+    <span id="toggle-periodo-label" class="sr-only">Período de cobrança</span>
     <span class="toggle-label" id="lbl-mensal">Mensal</span>
-    <label class="toggle">
-      <input type="checkbox" id="toggle-anual" onchange="togglePeriodo(this.checked)">
+    <label class="toggle" title="Alternar entre cobrança mensal e anual">
+      <input type="checkbox" id="toggle-anual" onchange="togglePeriodo(this.checked)"
+             aria-label="Cobrança anual (economize até 12%)" role="switch" aria-checked="false">
       <span class="toggle-slider"></span>
     </label>
     <span class="toggle-label active" id="lbl-anual">Anual <span class="badge-anual">até 12% OFF</span></span>
@@ -253,6 +258,9 @@ function togglePeriodo(anual) {
   const lblA = document.getElementById('lbl-anual');
   lblM.classList.toggle('active', !anual);
   lblA.classList.toggle('active', anual);
+  // I14 FIX: atualizar aria-checked para leitores de tela
+  const inp = document.getElementById('toggle-anual');
+  if (inp) inp.setAttribute('aria-checked', anual ? 'true' : 'false');
 
   // Básico
   document.getElementById('price-basico').querySelector('span').textContent = anual ? '12,40' : '12,99';
@@ -277,6 +285,29 @@ function togglePeriodo(anual) {
 }
 // Inicia com anual selecionado
 document.getElementById('toggle-anual').checked = true;
+togglePeriodo(true);
+
+// I8 FIX: adicionar UTM e src a todos os links Hotmart para rastreamento
+(function adicionarUTM() {
+  const params = new URLSearchParams();
+  params.set('utm_source', 'finanvo_preview_planos');
+  params.set('utm_medium', 'in_app_page');
+  params.set('utm_campaign', 'preview_planos');
+  params.set('src', 'finanvo_app');
+  // Tentar obter email do localStorage (usuário vem do app)
+  try {
+    const uid = localStorage.getItem('finvo_uid') || '';
+    // O email pode não estar disponível aqui; deixamos sem ele para manter simplicidade
+  } catch(_) {}
+  const baseIds = ['btn-basico-mensal','btn-basico-anual','btn-familia-mensal','btn-familia-anual','btn-premium-mensal','btn-premium-anual'];
+  baseIds.forEach(id => {
+    const a = document.getElementById(id);
+    if (!a) return;
+    const url = new URL(a.href);
+    params.forEach((v, k) => { if (!url.searchParams.has(k)) url.searchParams.set(k, v); });
+    a.href = url.toString();
+  });
+})();
 </script>
 </body>
 </html>

@@ -1,6 +1,8 @@
 /* Finanvô — Service Worker v9 — network-first para shell + notificação de update */
 const CACHE_NAME = 'finanvo-v9';
-const CACHE_CDN  = 'finanvo-cdn-v9';
+// M29 FIX: cache do CDN com nome fixo (sem versão) — bibliotecas raramente mudam
+// e não precisam ser re-baixadas a cada deploy do app.
+const CACHE_CDN  = 'finanvo-cdn';
 
 const SHELL = [self.registration.scope + 'finapp.html'];
 
@@ -98,11 +100,12 @@ self.addEventListener('push', e => {
   try { data = e.data ? e.data.json() : {}; } catch { data = { title: 'Finanvô', body: e.data?.text() || '' }; }
   const title = data.notification?.title || data.title || 'Finanvô 💰';
   const body  = data.notification?.body  || data.body  || '';
-  const icon  = data.notification?.icon  || '/logo.svg';
+  // M12 FIX: Android exige PNG para icon/badge — SVG é ignorado na bandeja de notificações
+  const icon  = data.notification?.icon  || '/icons/icon-192.png';
   e.waitUntil(
     self.registration.showNotification(title, {
       body, icon,
-      badge: '/logo.svg',
+      badge: '/icons/icon-192.png',
       tag: 'finanvo-push',
       requireInteraction: false,
       data: { url: data.url || '/finapp.html' }

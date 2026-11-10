@@ -160,20 +160,38 @@ Responda em no máximo 3 frases curtas.` },
     let body;
     try { body = await request.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
 
-    // SEC-05: Verificar Firebase ID token na rota de análise
+    // SEC-05 + C5 FIX: Verificar Firebase ID token e buscar plano real do Firestore.
+    // plano vindo do body do cliente é SEMPRE ignorado — evita escalação de privilégio.
     const idToken = body.idToken || request.headers.get('Authorization')?.replace('Bearer ', '');
+    let verifiedUid = null;
     if (env.FIREBASE_PROJECT_ID && idToken) {
-      const verifiedUid = await verifyFirebaseToken(idToken, env.FIREBASE_PROJECT_ID);
+      verifiedUid = await verifyFirebaseToken(idToken, env.FIREBASE_PROJECT_ID);
       if (!verifiedUid) {
         return new Response(JSON.stringify({ error: 'Não autorizado' }), { status: 401, headers: cors });
       }
     }
 
-    const { mes, ano, entradas, saidas, saldo, categorias, lancamentos, plano } = body;
+    const { mes, ano, entradas, saidas, saldo, categorias, lancamentos } = body;
+
+    // C5 FIX: buscar plano real do Firestore via Service Account (nunca via body do cliente)
+    let plano = 'gratuito';
+    if (verifiedUid && env.FIREBASE_PROJECT_ID) {
+      try {
+        const saToken = await getToken(env);
+        const docR = await fetch(
+          `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${verifiedUid}`,
+          { headers: { 'Authorization': 'Bearer ' + saToken } }
+        );
+        if (docR.ok) {
+          const docData = await docR.json();
+          plano = docData.fields?.plano?.stringValue || 'gratuito';
+        }
+      } catch (_) { /* fallback: gratuito */ }
+    }
 
     // Plano gratuito → análise local apenas (sem consumir cota de IA)
     if (!PLANOS_IA.includes(plano)) {
-      return new Response(JSON.stringify(analisarLocal(body)), {
+      return new Response(JSON.stringify(analisarLocal({ ...body, plano })), {
         headers: { ...cors, 'Content-Type': 'application/json' }
       });
     }
@@ -216,7 +234,8 @@ Responda em JSON com exatamente este formato (sem markdown, só JSON puro):
 }`;
 
     // Cache de 24h por usuário+mês — evita rechamadas desnecessárias
-    const uid = body.uid || null;
+    // C5 FIX: usar verifiedUid (do token), nunca body.uid (pode ser forjado)
+    const uid = verifiedUid || null;
     const cacheKey = uid
       ? `finanvo-ia-${uid}-${body.ano}-${body.mes}`
       : null;

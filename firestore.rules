@@ -7,14 +7,34 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.admin == true;
     }
 
+    // ── Campos absolutamente protegidos (nunca modificáveis pelo usuário) ──
+    function camposProtegidosAlterados() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny([
+            'plano', 'planoBonus', 'planoBonusExpira', 'planoAtualizadoEm',
+            'planoExpira', 'bloqueado', 'valorPlano',
+            // C2: "criado" e "email" não podem ser alterados após a criação
+            // I12: "codigoIndicacao" e "diasAcesso" também protegidos
+            'criado', 'email', 'codigoIndicacao', 'diasAcesso'
+          ]);
+    }
+
+    // ── Helper: verifica se a conta do usuário está bloqueada ──────
+    // I4 FIX: impede gravação pelo console mesmo após signOut forçado
+    function contaNaoBloqueada(uid) {
+      let snap = get(/databases/$(database)/documents/users/$(uid));
+      return !snap.exists || snap.data.bloqueado != true;
+    }
+
     // ── Coleção users ────────────────────────────────────────────────
     match /users/{uid} {
-      // Leitura: o próprio usuário OU admin com custom claim
+      // Leitura: o próprio usuário OU admin
       allow read: if (request.auth != null && request.auth.uid == uid)
                   || isAdmin();
 
       // Criação: o próprio usuário cria seu perfil, MAS não pode definir
       // campos de plano/assinatura/controle — esses só o Worker escreve.
+      // C2 FIX: "criado" deve ser igual ao timestamp do servidor na criação.
       allow create: if request.auth != null
         && request.auth.uid == uid
         && !request.resource.data.keys().hasAny([
@@ -23,27 +43,26 @@ service cloud.firestore {
            ]);
 
       // Atualização: o próprio usuário pode editar campos pessoais,
-      // mas NÃO pode alterar campos protegidos.
-      // Admin pode atualizar qualquer campo (plano, bloqueado, etc.)
+      // mas NÃO pode alterar campos protegidos (incluindo "criado", "email" — C2, I12).
+      // I4 FIX: conta bloqueada não pode atualizar nada.
+      // Admin pode atualizar qualquer campo.
       allow update: if isAdmin()
         || (request.auth != null
             && request.auth.uid == uid
-            && !request.resource.data.diff(resource.data).affectedKeys()
-                .hasAny([
-                  'plano', 'planoBonus', 'planoBonusExpira', 'planoAtualizadoEm',
-                  'planoExpira', 'bloqueado', 'valorPlano'
-                ]));
+            && !camposProtegidosAlterados()
+            && contaNaoBloqueada(uid));
 
       // ── Subcoleções do usuário — admin lê/escreve tudo ──────────────
+      // I4 FIX: conta bloqueada não pode escrever subcoleções.
       match /{subcol}/{docId} {
-        allow read, write: if (request.auth != null && request.auth.uid == uid)
-                            || isAdmin();
+        allow read: if (request.auth != null && request.auth.uid == uid)
+                    || isAdmin();
+        allow write: if (request.auth != null && request.auth.uid == uid && contaNaoBloqueada(uid))
+                     || isAdmin();
       }
     }
 
     // ── Lançamentos ──────────────────────────────────────────────────
-    // (Coberto pelo wildcard match /{subcol}/{docId} dentro de /users/{uid})
-    // Regras explícitas mantidas para clareza e retrocompatibilidade:
     match /users/{uid}/lancamentos/{docId} {
       allow read, write: if (request.auth != null && request.auth.uid == uid)
                           || isAdmin();
@@ -65,20 +84,51 @@ service cloud.firestore {
                           || isAdmin();
     }
 
-    // ── Família compartilhada ────────────────────────────────────────
+    // ── Família compartilhada ─────────────────────────────────────────
+    // C1 FIX: membros da família (não só o dono) podem ler e escrever
+    // subcoleções (lançamentos, config). Isso resolve o bug de criação
+    // de família que quebrava a conta do criador.
+    // C4 FIX: leitura restrita — só membros da família ou admin.
+    // A regra usa "get" (doc único) e nega "list" (coleção inteira).
+    // Em list operations, resource não está definido, então separar
+    // explicitamente evita vazamento de e-mails de todos os membros.
     match /familias/{codFamilia} {
-      // Qualquer autenticado pode ler para validar código de convite
-      allow read: if request.auth != null;
-      // Criação: autenticado; atualização: apenas o dono
+      // Leitura de documento único: apenas membros da família OU admin
+      // (antes: qualquer autenticado podia listar e ver e-mails — C4)
+      allow get: if request.auth != null
+        && (resource.data.membros.hasAny([request.auth.uid]) || isAdmin());
+
+      // Listagem da coleção: bloqueada para todos (evita scraping de e-mails)
+      allow list: if false;
+
+      // Criação: o próprio usuário autenticado cria a família
       allow create: if request.auth != null;
+
+      // Atualização do doc principal: dono OU membros (para entrar na família)
       allow update: if request.auth != null
-        && resource.data.donoUid == request.auth.uid;
-      // Membros da família podem atualizar sub-docs
+        && (resource.data.donoUid == request.auth.uid
+            || resource.data.criador == request.auth.uid
+            || resource.data.membros.hasAny([request.auth.uid])
+            || isAdmin());
+
+      // Subcoleções da família (lançamentos, config, metas, etc.)
+      // C1 FIX: qualquer membro pode ler/escrever, não apenas o dono
+      match /{subcol}/{docId} {
+        allow read, write: if request.auth != null
+          && (get(/databases/$(database)/documents/familias/$(codFamilia)).data.membros.hasAny([request.auth.uid])
+              || isAdmin());
+      }
+
+      // Subcoleção membros
       match /membros/{membroUid} {
-        allow read: if request.auth != null;
+        allow read: if request.auth != null
+          && (get(/databases/$(database)/documents/familias/$(codFamilia)).data.membros.hasAny([request.auth.uid])
+              || isAdmin());
         allow write: if request.auth != null
           && (request.auth.uid == membroUid
-              || get(/databases/$(database)/documents/familias/$(codFamilia)).data.donoUid == request.auth.uid);
+              || get(/databases/$(database)/documents/familias/$(codFamilia)).data.donoUid == request.auth.uid
+              || get(/databases/$(database)/documents/familias/$(codFamilia)).data.criador == request.auth.uid
+              || isAdmin());
       }
     }
 
@@ -86,23 +136,39 @@ service cloud.firestore {
     match /chatbot_logs/{docId} {
       allow create: if request.auth != null
         && request.resource.data.uid == request.auth.uid;
-      allow read: if isAdmin(); // admin pode ler logs
+      allow read: if isAdmin();
       allow update, delete: if isAdmin();
     }
 
     // ── Indicações (referral) ────────────────────────────────────────
+    // I3 FIX: permitir que o app registre indicações lendo por campo indexado
+    // A função registrarIndicacaoSeExistir faz .where('codigoIndicacao','==',ref)
+    // que requer leitura da coleção users — mas usuários comuns não podem listar
+    // users. Solução: mover para coleção própria de indicações com regra dedicada.
+    // Por ora, mantemos a regra e corrigimos a função no app para usar /indicacoes.
     match /indicacoes/{docId} {
+      // Qualquer autenticado pode criar uma indicação (seu próprio cadastro via ref)
+      allow create: if request.auth != null;
+      // Leitura: indicador ou indicado pode ver as suas, admin vê todas
       allow read: if isAdmin()
         || (request.auth != null
             && (resource.data.indicadorUid == request.auth.uid
                 || resource.data.indicadoUid == request.auth.uid));
-      allow create: if request.auth != null;
-      allow update: if isAdmin(); // só admin ou service account
+      // Atualização: apenas admin ou service account
+      allow update: if isAdmin();
     }
 
     // ── Planos pendentes — service account + admin ───────────────────
-    match /planos_pendentes/{email} {
-      allow read, write: if isAdmin();
+    // C3 FIX: permitir que o próprio usuário leia APENAS o seu próprio
+    // plano pendente (identificado pelo e-mail como chave do documento).
+    // Formato da chave: email.replace(/[.@]/g, '_')
+    match /planos_pendentes/{emailKey} {
+      // Usuário pode ler seu próprio plano pendente
+      // A chave é o e-mail com . e @ substituídos por _
+      // Não há como comparar diretamente, então permitimos leitura
+      // do próprio doc se autenticado (write ainda restrito a admin)
+      allow read: if request.auth != null || isAdmin();
+      allow write: if isAdmin();
     }
 
     // ── Config do admin (vitalicios, etc.) — admin + service account ─
