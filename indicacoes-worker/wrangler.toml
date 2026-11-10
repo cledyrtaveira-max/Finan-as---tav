@@ -12,3 +12,4 @@ crons = ["0 3 * * *"]
 #   FIREBASE_CLIENT_EMAIL
 #   FIREBASE_PRIVATE_KEY
 #   ADMIN_SECRET   — senha para o endpoint /processar (qualquer string segura)
+# Tue Nov 10 20:48:42 -03 2026
