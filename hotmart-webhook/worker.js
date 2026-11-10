@@ -21,8 +21,28 @@ async function checkRateLimit(env, ip) {
   }
 }
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': 'https://appfinanvo.com.br',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+
+    // OPTIONS preflight
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: CORS_HEADERS });
+    }
+
+    // ── C3 FIX: Endpoint /ativar-pendente ────────────────────────────
+    // Chamado pelo app quando o usuário faz login e há um plano pendente.
+    // Autentica via Firebase ID token; ativa o plano pendente no perfil.
+    if (url.pathname === '/ativar-pendente' && request.method === 'POST') {
+      return handleAtivarPendente(request, env);
+    }
+
     if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
     // I6 FIX: rate limit por IP — evita flood/abuso do webhook
@@ -101,6 +121,103 @@ export default {
     return new Response('OK', { status: 200 });
   }
 };
+
+// ── C3 FIX: Ativar plano pendente quando usuário cria conta após a compra ──
+// O app chama POST /ativar-pendente com { idToken } após login.
+// O worker verifica o token, lê planos_pendentes e aplica o plano.
+async function handleAtivarPendente(request, env) {
+  let body;
+  try { body = await request.json(); } catch {
+    return new Response('Invalid JSON', { status: 400, headers: CORS_HEADERS });
+  }
+
+  const idToken = body.idToken || request.headers.get('Authorization')?.replace('Bearer ', '');
+  if (!idToken) return new Response('Missing idToken', { status: 401, headers: CORS_HEADERS });
+
+  // Verificar token Firebase
+  const uid = await verifyFirebaseToken(idToken, env.FIREBASE_PROJECT_ID);
+  if (!uid) return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS });
+
+  try {
+    const token = await getToken(env);
+
+    // Buscar email do usuário
+    const r1 = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/accounts:lookup`,
+      { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ localId: [uid] }) }
+    );
+    const d1 = await r1.json();
+    const email = d1.users?.[0]?.email;
+    if (!email) return new Response('User not found', { status: 404, headers: CORS_HEADERS });
+
+    // Buscar plano pendente
+    const key = email.replace(/[.@]/g, '_');
+    const r2 = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/planos_pendentes/${key}`,
+      { headers: { 'Authorization': 'Bearer ' + token } }
+    );
+    if (r2.status === 404) {
+      return new Response(JSON.stringify({ ok: true, msg: 'sem_pendente' }), {
+        status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+      });
+    }
+    const d2 = await r2.json();
+    const plano = d2.fields?.plano?.stringValue;
+    if (!plano || plano === 'gratuito') {
+      return new Response(JSON.stringify({ ok: true, msg: 'sem_pendente' }), {
+        status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Aplicar plano no perfil do usuário
+    const planoExpira = d2.fields?.planoExpira?.stringValue || null;
+    const maskFields = ['plano', 'planoAtualizadoEm', 'planoExpira'];
+    const maskQuery  = maskFields.map(f => `updateMask.fieldPaths=${f}`).join('&');
+    const fields = {
+      plano:             { stringValue: plano },
+      planoAtualizadoEm: { stringValue: new Date().toISOString() },
+      planoExpira:       planoExpira ? { stringValue: planoExpira } : { nullValue: null }
+    };
+
+    await fetch(
+      `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${uid}?${maskQuery}`,
+      { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields }) }
+    );
+
+    // Remover plano pendente
+    await fetch(
+      `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/planos_pendentes/${key}`,
+      { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } }
+    );
+
+    // Atualizar planoDono em famílias se necessário
+    await atualizarPlanoDono(env, token, uid, plano);
+
+    return new Response(JSON.stringify({ ok: true, plano, msg: 'ativado' }), {
+      status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+    });
+  } catch(e) {
+    console.error('[ativar-pendente]', e.message);
+    return new Response('Erro: ' + e.message, { status: 500, headers: CORS_HEADERS });
+  }
+}
+
+// ── Verificar Firebase ID token via Google Public Keys ──────────────
+async function verifyFirebaseToken(idToken, projectId) {
+  try {
+    // Decodificar header e payload (sem verificar assinatura aqui — usamos a API do Firebase)
+    const r = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=AIzaSyCy4hUoPKlAuutoSZhliLetovHr9EK1JvA`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }) }
+    );
+    const d = await r.json();
+    if (d.error || !d.users?.length) return null;
+    return d.users[0].localId;
+  } catch { return null; }
+}
 
 async function setPlano(env, email, plano, compra) {
   const token = await getToken(env);

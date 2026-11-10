@@ -1,5 +1,8 @@
-/* Finanvô — Service Worker v9 — network-first para shell + notificação de update */
-const CACHE_NAME = 'finanvo-v9';
+/* Finanvô — Service Worker — network-first para shell + notificação de update */
+// M23 FIX: versão sincronizada com APP_VERSION via query param (?v=<ver>).
+// O browser re-registra o SW quando a URL muda, limpando caches antigos.
+const _SW_VER   = new URL(self.location.href).searchParams.get('v') || 'v9';
+const CACHE_NAME = 'finanvo-' + _SW_VER;
 // M29 FIX: cache do CDN com nome fixo (sem versão) — bibliotecas raramente mudam
 // e não precisam ser re-baixadas a cada deploy do app.
 const CACHE_CDN  = 'finanvo-cdn';

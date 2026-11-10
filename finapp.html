@@ -75,7 +75,10 @@
   if ('serviceWorker' in navigator) {
     const swPath = (function() {
       const p = window.location.pathname;
-      return p.replace(/[^/]*$/, '') + 'sw.js';
+      // M23 FIX: passar APP_VERSION como query param para o SW — força re-registro
+      // quando a versão muda e mantém o CACHE_NAME sincronizado com o app.
+      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.0').replace(/[^a-z0-9.]/gi, '');
+      return p.replace(/[^/]*$/, '') + 'sw.js?v=' + ver;
     })();
 
     // M1 FIX: helper para exibir toast de atualização com duração longa
@@ -11211,10 +11214,25 @@ async function verificarPlanoPendente(email) {
       return;
     }
 
-    // C3 FIX: mostrar banner persistente e aguardar via onSnapshot (até 5 min)
-    // O Worker do Hotmart escreve em users/{uid}.plano quando processa.
+    // C3 FIX: mostrar banner persistente e chamar o worker para ativar imediatamente
+    // O worker verifica o token do usuário e aplica o plano pendente no Firestore.
     mostrarBannerPlanoPendente(nomeExibicao);
 
+    // Tentar ativação imediata via worker (caso usuário acabou de criar conta)
+    try {
+      const idToken = await fbAuth.currentUser.getIdToken();
+      const resp = await fetch(WEBHOOK_WORKER_URL + '/ativar-pendente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+        body: JSON.stringify({ idToken })
+      });
+      const resultado = await resp.json().catch(() => ({}));
+      console.log('[Finanvô] C3 ativar-pendente:', resultado.msg || resp.status);
+    } catch(e) {
+      console.warn('[Finanvô] C3 ativar-pendente falhou (worker indisponível):', e.message);
+    }
+
+    // onSnapshot continua como fallback: detecta quando o worker ativar o plano
     const unsubPendente = fbDb.collection('users').doc(usuarioAtivo).onSnapshot(doc => {
       const p = doc.exists ? (doc.data().plano || 'gratuito') : 'gratuito';
       if (p === data.plano) {
@@ -12407,7 +12425,9 @@ window.renderConfig = function() {
 <script>
 (function() {
 
-const IA_WORKER_URL = 'https://finanvo-ia.cledyrtaveira.workers.dev';
+const IA_WORKER_URL      = 'https://finanvo-ia.cledyrtaveira.workers.dev';
+// C3 FIX: URL do worker Hotmart para ativar plano pendente quando usuário cria conta
+const WEBHOOK_WORKER_URL = 'https://finanvo-webhook.cledyrtaveira.workers.dev';
 const MESES_IA = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 window.iniciarViewIA = function() {

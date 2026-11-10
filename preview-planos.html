@@ -75,6 +75,11 @@ input:checked+.toggle-slider:before{transform:translateX(22px)}
 /* Gratuito */
 .plan-free{grid-column:1/-1;max-width:360px;margin:0 auto;width:100%}
 
+/* Vitalício — M8 FIX */
+.plan-vitalicio{grid-column:1/-1;max-width:480px;margin:0 auto;width:100%;border-color:rgba(250,204,21,0.5)!important;background:rgba(250,204,21,0.04)!important;position:relative;overflow:hidden}
+.plan-vitalicio::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at top center,rgba(250,204,21,0.08) 0%,transparent 70%);pointer-events:none}
+.badge-vitalicio{background:linear-gradient(135deg,#b45309,#f59e0b,#fde68a);color:#1a0a00;font-weight:800}
+
 /* Footer */
 .footer{text-align:center;padding:20px;border-top:1px solid rgba(255,255,255,0.05);font-size:12px;color:#3a4560}
 .footer a{color:#4f7fff;text-decoration:none}
@@ -161,7 +166,9 @@ input:checked+.toggle-slider:before{transform:translateX(22px)}
     <a id="btn-basico-mensal" href="https://pay.hotmart.com/U108262502C" target="_blank" class="plan-btn" style="background:linear-gradient(135deg,#2563eb,#4f7fff);color:#fff">
       Assinar Básico
     </a>
-    <a id="btn-basico-anual" href="https://pay.hotmart.com/U108262502C?offertag=anual" target="_blank" class="plan-btn-outline" style="color:#4f7fff;border:1.5px solid #4f7fff">
+    <!-- M7 FIX: off=<offerKey> correto; offertag=anual é inválido.
+         Substituir BASICO_ANUAL_KEY pela offer_hash do painel Hotmart → Ofertas -->
+    <a id="btn-basico-anual" href="https://pay.hotmart.com/U108262502C" data-off-key="BASICO_ANUAL_KEY" target="_blank" class="plan-btn-outline" style="color:#4f7fff;border:1.5px solid #4f7fff">
       📅 Plano anual (economize 12%)
     </a>
     <hr class="plan-divider">
@@ -194,7 +201,8 @@ input:checked+.toggle-slider:before{transform:translateX(22px)}
     <a id="btn-familia-mensal" href="https://pay.hotmart.com/U108265754P" target="_blank" class="plan-btn" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff">
       Assinar Família →
     </a>
-    <a id="btn-familia-anual" href="https://pay.hotmart.com/U108265754P?offertag=anual" target="_blank" class="plan-btn-outline" style="color:#8b5cf6;border:1.5px solid #8b5cf6">
+    <!-- M7 FIX: Substituir FAMILIA_ANUAL_KEY pela offer_hash do painel Hotmart → Ofertas -->
+    <a id="btn-familia-anual" href="https://pay.hotmart.com/U108265754P" data-off-key="FAMILIA_ANUAL_KEY" target="_blank" class="plan-btn-outline" style="color:#8b5cf6;border:1.5px solid #8b5cf6">
       📅 Plano anual (economize 12%)
     </a>
     <hr class="plan-divider">
@@ -213,6 +221,33 @@ input:checked+.toggle-slider:before{transform:translateX(22px)}
     </ul>
   </div>
 
+  <!-- Vitalício — M8 FIX: plano lifetime na preview -->
+  <div class="plan-card plan-vitalicio">
+    <div class="plan-badge badge-vitalicio">⭐ ACESSO VITALÍCIO</div>
+    <div class="plan-emoji">⭐</div>
+    <div class="plan-tag" style="color:#fbbf24">FINANVÔ</div>
+    <div class="plan-name" style="color:#fde68a">Vitalício</div>
+    <div class="plan-price-wrap">
+      <div class="plan-price" style="color:#fbbf24">R$<span>497</span><sub style="font-size:12px"> único</sub></div>
+      <div class="plan-price-note">Pague uma vez, use para sempre</div>
+      <div class="plan-price-annual" style="color:#fbbf24">💰 Equivale a ~1,4 anos de Premium</div>
+    </div>
+    <a href="mailto:suporte@appfinanvo.com.br?subject=Interesse+no+Plano+Vitalício+Finanvô&body=Olá!+Tenho+interesse+no+Plano+Vitalício.+Por+favor+me+envie+mais+informações."
+       class="plan-btn" style="background:linear-gradient(135deg,#b45309,#f59e0b,#fde68a);color:#1a0a00">
+      Quero o Vitalício ✉️
+    </a>
+    <hr class="plan-divider">
+    <div class="plan-limits">Inclui tudo do Premium +</div>
+    <ul class="plan-features">
+      <li><span class="icon">⭐</span> Acesso <strong style="color:#fbbf24">vitalício</strong> — sem mensalidade</li>
+      <li><span class="icon">⭐</span> Sem renovações ou cobranças futuras</li>
+      <li><span class="icon">⭐</span> Todas as features atuais e futuras</li>
+      <li><span class="icon">⭐</span> 12 usuários simultâneos</li>
+      <li><span class="icon">⭐</span> Suporte prioritário</li>
+    </ul>
+    <p style="font-size:11px;color:#5a6480;margin-top:14px;text-align:center">Disponibilidade limitada · Fechar por e-mail ou WhatsApp</p>
+  </div>
+
   <!-- Premium -->
   <div class="plan-card recommended">
     <div class="plan-badge badge-recommended">👑 RECOMENDADO</div>
@@ -227,7 +262,8 @@ input:checked+.toggle-slider:before{transform:translateX(22px)}
     <a id="btn-premium-mensal" href="https://pay.hotmart.com/A108265910E" target="_blank" class="plan-btn" style="background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff">
       Assinar Premium →
     </a>
-    <a id="btn-premium-anual" href="https://pay.hotmart.com/A108265910E?offertag=anual" target="_blank" class="plan-btn-outline" style="color:#f59e0b;border:1.5px solid #f59e0b">
+    <!-- M7 FIX: Substituir PREMIUM_ANUAL_KEY pela offer_hash do painel Hotmart → Ofertas -->
+    <a id="btn-premium-anual" href="https://pay.hotmart.com/A108265910E" data-off-key="PREMIUM_ANUAL_KEY" target="_blank" class="plan-btn-outline" style="color:#f59e0b;border:1.5px solid #f59e0b">
       📅 Plano anual (economize 12%)
     </a>
     <hr class="plan-divider">
@@ -304,6 +340,10 @@ togglePeriodo(true);
     const a = document.getElementById(id);
     if (!a) return;
     const url = new URL(a.href);
+    // M7 FIX: usar off=<offerKey> (parâmetro correto da Hotmart), não offertag
+    const offKey = a.dataset.offKey;
+    if (offKey && !offKey.includes('_KEY')) url.searchParams.set('off', offKey);
+    // demais UTMs
     params.forEach((v, k) => { if (!url.searchParams.has(k)) url.searchParams.set(k, v); });
     a.href = url.toString();
   });

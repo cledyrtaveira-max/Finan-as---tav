@@ -1,0 +1,13 @@
+name = "finanvo-indicacoes"
+main = "worker.js"
+compatibility_date = "2024-06-01"
+
+# Cron diário às 3h UTC (meia-noite no Brasil)
+[triggers]
+crons = ["0 3 * * *"]
+
+# Secrets necessários (configure com wrangler secret put <nome>):
+#   FIREBASE_PROJECT_ID
+#   FIREBASE_CLIENT_EMAIL
+#   FIREBASE_PRIVATE_KEY
+#   ADMIN_SECRET   — senha para o endpoint /processar (qualquer string segura)
