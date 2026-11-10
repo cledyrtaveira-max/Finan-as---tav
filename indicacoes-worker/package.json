@@ -1,0 +1,8 @@
+{
+  "name": "finanvo-indicacoes",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
