@@ -1,7 +1,8 @@
 {
+  "id": "/finapp.html",
   "name": "Finanvô — Controle Familiar",
   "short_name": "Finanvô",
-  "description": "Controle financeiro inteligente para sua família",
+  "description": "Controle financeiro inteligente para sua família. Lançamentos, metas, planejamento e visão familiar em um só lugar.",
   "start_url": "/finapp.html",
   "scope": "/",
   "display": "standalone",
@@ -37,14 +38,38 @@
       "purpose": "any"
     }
   ],
+  "shortcuts": [
+    {
+      "name": "Novo lançamento",
+      "short_name": "Lançamento",
+      "description": "Adicionar um novo lançamento financeiro rapidamente",
+      "url": "/finapp.html#lancamentos",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Ver o resumo financeiro do mês",
+      "url": "/finapp.html#dashboard",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Metas",
+      "short_name": "Metas",
+      "description": "Acompanhar o progresso das metas financeiras",
+      "url": "/finapp.html#metas",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
   "screenshots": [
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Dashboard Finanvô"
+      "label": "Dashboard com resumo financeiro do mês"
     }
   ],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "related_applications": []
 }
