@@ -95,7 +95,7 @@
       const p = window.location.pathname;
       // M23 FIX: passar APP_VERSION como query param para o SW — força re-registro
       // quando a versão muda e mantém o CACHE_NAME sincronizado com o app.
-      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.13').replace(/[^a-z0-9.]/gi, '');
+      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.14').replace(/[^a-z0-9.]/gi, '');
       return p.replace(/[^/]*$/, '') + 'sw.js?v=' + ver;
     })();
 
@@ -2959,6 +2959,8 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
 
         <!-- Alerta inteligente (semáforo) -->
         <div id="dash-alerta" style="margin-bottom:16px"></div>
+        <!-- M43: aviso de dinheiro sobrando -->
+        <div id="dash-sobra" style="display:none;margin-bottom:16px"></div>
 
         <!-- Onboarding card (usuário novo sem lançamentos) -->
         <div id="dash-onboarding" style="display:none;margin-bottom:20px"></div>
@@ -4227,7 +4229,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.13'; // M36: fix tela preta no PC (menu mobile sem estilo cobrindo o app)
+const APP_VERSION = 'v5.14'; // M36: fix tela preta no PC (menu mobile sem estilo cobrindo o app)
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',
@@ -5756,6 +5758,26 @@ function renderDashboard() {
   const saldoAcum = saldo + saldoAnt;
   if (dhcSaldoD) dhcSaldoD.textContent = brl(saldoAcum);
   if (dhcSaldoD) dhcSaldoD.style.color = saldoAcum < 0 ? '#ff8080' : '#fff';
+  // M43: avisa quando há dinheiro sobrando e leva para o plano da IA
+  const dashSobra = document.getElementById('dash-sobra');
+  if (dashSobra) {
+    const _hj = new Date();
+    const _ehMesAtual = mesSelecionado === MESES[_hj.getMonth()] && anoSelecionado === _hj.getFullYear();
+    if (_ehMesAtual && saldoAcum > 0) {
+      dashSobra.style.display = 'block';
+      dashSobra.innerHTML = `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 16px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:12px">
+        ${catIconHtml('Investimento', 38)}
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:14px;font-weight:700;color:var(--fg1)">Você tem <span class="valor-ocultavel">${brl(saldoAcum)}</span> sobrando</div>
+          <div style="font-size:12px;color:var(--fg2);margin-top:2px">Esse dinheiro pode estar trabalhando por você. Veja o plano da IA para ele.</div>
+        </div>
+        <button class="btn btn-primary" onclick="abrirPlanoSobraIA()" style="white-space:nowrap">Ver o que fazer</button>
+      </div>`;
+    } else {
+      dashSobra.style.display = 'none';
+      dashSobra.innerHTML = '';
+    }
+  }
   const dhcAcum = document.getElementById('dhc-saldo-acum');
   if (dhcAcum) {
     dhcAcum.style.display = saldoAnt !== 0 ? 'block' : 'none';
@@ -13248,6 +13270,18 @@ window.selecionarAnaliseIA = function(modo, el) {
   document.getElementById('ia-resultado').innerHTML = '';
 };
 
+// M43: atalho do Dashboard — abre a Análise IA já no raio-x com o plano da sobra
+window.abrirPlanoSobraIA = function() {
+  const nav = document.querySelector(".sidebar .nav-item[onclick*=\"navTo('ia'\"]") || document.querySelector(".nav-item[onclick*=\"navTo('ia'\"]");
+  if (nav) nav.click();
+  setTimeout(() => {
+    if (!document.getElementById('view-ia') || !document.getElementById('view-ia').classList.contains('active')) return; // navegação bloqueada (ex.: plano)
+    const card = document.querySelector(".ia-card-sel[onclick*=\"raioxdinheiro\"]");
+    if (card) card.click();
+    if (typeof window.rodarAnaliseIA === 'function') window.rodarAnaliseIA();
+  }, 250);
+};
+
 window.rodarAnaliseIA = async function() {
   // Lê do nav de período (novo) ou fallback para selects legados
   const _navIa = document.getElementById('ia-nav-periodo');
@@ -13279,7 +13313,8 @@ window.rodarAnaliseIA = async function() {
   // Item 34/35: para raioxdinheiro, tentar Worker de IA; fallback local imediato
   if (_iaModeSelecionado === 'raioxdinheiro') {
     // Sempre renderiza análise local primeiro (instantânea)
-    const analiseLocal = analisarLocalIA(dadosMes, mes, ano);
+    const ctxIA = coletarContextoIA(mes, ano, dadosMes);
+    const analiseLocal = analisarLocalIA(dadosMes, mes, ano, ctxIA);
     renderAnaliseIA(analiseLocal, mes, ano);
     if (btn) btn.disabled = false;
 
@@ -13304,7 +13339,17 @@ window.rodarAnaliseIA = async function() {
         saldo: dadosMes.saldo,
         categorias: dadosMes.categorias,
         lancamentos: dadosMes.lancamentos,
-        historico3m: dados3m
+        historico3m: dados3m,
+        // M43: contexto completo para a IA do servidor
+        dividasMes: dadosMes.dividasMes,
+        historico6m: ctxIA.historico6m,
+        saldoAnterior: ctxIA.saldoAnterior,
+        acumulado: ctxIA.acumulado,
+        despMedia: ctxIA.despMedia,
+        sobraMedia: ctxIA.sobraMedia,
+        dividas: ctxIA.dividas,
+        investido: ctxIA.investido,
+        objetivos: ctxIA.objetivos
       };
       fetch(IA_WORKER_URL + '/analise', {
         method: 'POST',
@@ -13316,7 +13361,9 @@ window.rodarAnaliseIA = async function() {
       .then(data => {
         if (data && data.insights) {
           // Exibe resposta do Worker se vier com dados extras
-          renderAnaliseIA({ ...analiseLocal, ...data }, mes, ano);
+          // M43: a resposta do servidor complementa, não apaga, os insights e o plano locais
+          const _ins = [...(analiseLocal.insights || []), ...(Array.isArray(data.insights) ? data.insights : [])];
+          renderAnaliseIA({ ...analiseLocal, ...data, insights: _ins, planoSobra: analiseLocal.planoSobra, cats: analiseLocal.cats, pct: analiseLocal.pct }, mes, ano);
         }
       })
       .catch(() => {}); // silencia erros — análise local já está visível
@@ -13336,43 +13383,155 @@ window.rodarAnaliseIA = async function() {
 };
 
 function coletarDadosMesIA(mes, ano) {
-  // Aplica overrides do período (igual a despesasEfetivas mas para mes/ano específicos)
+  // M43 FIX: a coleta ignorava a renda informada do mês, os cartões benefício, as
+  // despesas fixas sem campo "mes" e as dívidas. Agora usa a mesma regra do resto do app.
   const cfgKey = `${ano}/${mes}`;
   const cfgM = (appCfg?.periodos && appCfg.periodos[cfgKey]) || {};
-  const baseComOverrides = DESPESAS_BASE.map((item, idx) => ({
+  const doMes = d => { const m = d.mesAtivo || d.mes; return !m || m === 'Todos' || m === mes; };
+  const base = DESPESAS_BASE.map((item, idx) => ({
     ...item,
     val: (cfgM.overrides && cfgM.overrides[String(idx)] !== undefined)
       ? cfgM.overrides[String(idx)]
       : (appCfg?.overrides && appCfg.overrides[String(idx)] !== undefined ? appCfg.overrides[String(idx)] : item.val),
+    cat: (cfgM.cats && cfgM.cats[String(idx)]) || (appCfg?.cats && appCfg.cats[String(idx)]) || item.cat,
     tipo: (cfgM.tipos && cfgM.tipos[String(idx)]) || (appCfg?.tipos && appCfg.tipos[String(idx)]) || item.tipo
   })).filter((_,idx) =>
     !(cfgM.ocultas && cfgM.ocultas[String(idx)]) &&
     !(appCfg?.ocultas && appCfg.ocultas[String(idx)])
-  );
-  const base = baseComOverrides.filter(d => {
-    const dmA = d.mesAtivo || d.mes;
-    return dmA === 'Todos' || dmA === mes;
-  });
-  const extras = [...(cfgM.extras || []), ...(appCfg?.extras || [])].filter(e => e.mes === 'Todos' || e.mes === mes);
-  const lancMes = (appData?.lancamentos || []).filter(l => l.mes === mes && l.ano === ano);
+  ).filter(doMes);
+  const extras = [...(cfgM.extras || []), ...(appCfg?.extras || [])].filter(doMes);
+  const lancMes = (appData?.lancamentos || []).filter(l => l.mes === mes && String(l.ano || ano) === String(ano));
+  const num = v => Number(v) || 0;
+  const soma = (arr, tipo) => arr.filter(d => d.tipo === tipo).reduce((s,d) => s + num(d.val), 0);
 
-  const todos = [...base, ...extras, ...lancMes];
-  const entradas = todos.filter(d => d.tipo === 'entrada').reduce((s,d) => s+d.val, 0);
-  const saidas   = todos.filter(d => d.tipo === 'saida').reduce((s,d) => s+d.val, 0);
-  const saldo    = entradas - saidas;
+  const fixos = [...base, ...extras];
+  const todos = [...fixos, ...lancMes];
+  const entradasManuais = soma(lancMes, 'entrada');
+  const rendaInformada = (typeof rendaMesEfetiva === 'function') ? rendaMesEfetiva(mes, ano) : 0;
+  const entradas = rendaInformada > 0 ? rendaInformada + entradasManuais : soma(fixos, 'entrada') + entradasManuais;
+  const gastos     = soma(todos, 'saida');
+  const dividasMes = soma(todos, 'divida');
+  const saidas = gastos + dividasMes;          // tudo que saiu no mês (gastos + parcelas de dívida)
+  const saldo  = entradas - saidas;
 
   const catMap = {};
   todos.forEach(l => {
-    if (l.tipo !== 'saida') return;
+    if (l.tipo !== 'saida' || !(num(l.val) > 0)) return;
     const c = l.cat || 'Outros';
-    catMap[c] = (catMap[c] || 0) + l.val;
+    catMap[c] = (catMap[c] || 0) + num(l.val);
   });
+  if (dividasMes > 0) catMap['Parcelas de dívidas'] = dividasMes;
   const categorias = Object.entries(catMap).map(([nome, val]) => ({ nome, val }));
-  const lancamentos = todos.filter(l => l.tipo === 'saida');
+  const lancamentos = todos.filter(l => l.tipo === 'saida' && num(l.val) > 0);
 
   const rendaMensal = parseFloat((appCfg?.periodos||{})[`${ano}/${mes}`]?.rendaMes || 0);
 
-  return { entradas, saidas, saldo, categorias, lancamentos, numLanc: lancMes.length, rendaMensal };
+  return { entradas, saidas, gastos, dividasMes, saldo, categorias, lancamentos, numLanc: lancMes.length, rendaMensal };
+}
+
+// M43: contexto completo para a análise — acumulado, histórico de 6 meses, dívidas,
+// investimentos e objetivos. É o que permite dizer "tem dinheiro sobrando para aplicar".
+function coletarContextoIA(mes, ano, dadosMes) {
+  const num = v => Number(v) || 0;
+  const idx = MESES_IA.indexOf(mes);
+  const hist = [];
+  for (let i = 5; i >= 0; i--) {
+    let mi = idx - i, a = ano;
+    while (mi < 0) { mi += 12; a--; }
+    const d = (i === 0 && dadosMes) ? dadosMes : coletarDadosMesIA(MESES_IA[mi], a);
+    hist.push({ mes: MESES_IA[mi], ano: a, entradas: d.entradas, saidas: d.saidas, saldo: d.saldo });
+  }
+  const comDados = hist.filter(h => h.entradas > 0 || h.saidas > 0);
+  const comGasto = comDados.filter(h => h.saidas > 0);
+  const despMedia = comGasto.length ? comGasto.reduce((s,h) => s + h.saidas, 0) / comGasto.length : 0;
+  const sobraMedia = comDados.length ? comDados.reduce((s,h) => s + h.saldo, 0) / comDados.length : 0;
+  let mesesPositivos = 0;
+  for (let i = hist.length - 1; i >= 0 && hist[i].saldo > 0; i--) mesesPositivos++;
+
+  const saldoAnterior = (typeof saldoAcumuladoAnterior === 'function') ? saldoAcumuladoAnterior(mes, ano) : 0;
+  const dividas = coletarDividasIA();
+  let invs = [], objs = [];
+  try { invs = loadInvestimentos() || []; } catch(e) {}
+  try { objs = loadObjetivos() || []; } catch(e) {}
+  const investido = invs.reduce((s,i) => s + num(i.atual || i.aplicado), 0);
+  const guardadoObjetivos = objs.reduce((s,o) => s + num(o.atual), 0);
+  const objetivos = objs.filter(o => num(o.meta) > num(o.atual))
+    .map(o => ({ nome: o.nome || 'Objetivo', falta: num(o.meta) - num(o.atual), aporte: num(o.aporte) }));
+
+  return {
+    historico6m: hist, mesesComDados: comDados.length, despMedia, sobraMedia, mesesPositivos,
+    saldoAnterior, acumulado: saldoAnterior + (dadosMes ? dadosMes.saldo : 0),
+    dividas, totalDividas: dividas.reduce((s,d) => s + num(d.saldo), 0),
+    investido, guardadoObjetivos, objetivos
+  };
+}
+
+// M43: plano para o dinheiro que sobra. Ordem: dívida cara → reserva de emergência →
+// objetivos → longo prazo. Texto educativo, sem prometer rentabilidade.
+function montarPlanoSobraIA(d, ctx, mes) {
+  const R = v => 'R$ ' + (Math.round(v * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const passos = [];
+  const avisos = [];
+  const sobraMes = d.saldo;
+  const acum = ctx.acumulado;
+  let disp = Math.max(0, acum);
+
+  if (disp <= 0) {
+    if (sobraMes > 0 && acum <= 0) {
+      avisos.push(`Sobraram <b>${R(sobraMes)}</b> em ${mes}, mas o acumulado ainda está em <b>${R(acum)}</b> por causa de meses anteriores. Essa sobra cobre o negativo antes de qualquer aplicação.`);
+    }
+    return { disponivel: 0, sobraMes, acumulado: acum, passos, avisos, titulo: '' };
+  }
+
+  if (sobraMes < 0) avisos.push(`${mes} fechou com <b>${R(sobraMes)}</b> e consumiu parte do que estava guardado. Ainda restam <b>${R(acum)}</b> acumulados.`);
+  if (ctx.investido <= 0 && ctx.guardadoObjetivos <= 0) avisos.push(`Você não tem nenhum investimento ou objetivo cadastrado: os <b>${R(acum)}</b> acumulados estão parados.`);
+
+  // 1. dívidas com juros altos (2% ao mês ou mais)
+  ctx.dividas.filter(x => x.taxa >= 2 && x.saldo > 0).forEach(x => {
+    if (disp <= 0) return;
+    const usar = Math.min(disp, x.saldo);
+    passos.push({ icone: '🧯', titulo: `Abater a dívida "${esc(x.nome)}"`, valor: usar,
+      txt: `Ela cobra <b>${x.taxa}% ao mês</b>. Quitar ${usar >= x.saldo ? 'essa dívida inteira' : 'parte dela'} com <b>${R(usar)}</b> rende mais do que qualquer aplicação segura.` });
+    disp -= usar;
+  });
+
+  // 2. reserva de emergência = 6 meses de gastos
+  if (disp > 0 && ctx.despMedia > 0) {
+    const alvo = ctx.despMedia * 6;
+    const falta = alvo - ctx.investido;
+    if (falta > 0) {
+      const usar = Math.min(disp, falta);
+      const pct = Math.min(100, Math.round(((ctx.investido + usar) / alvo) * 100));
+      passos.push({ icone: '🛟', titulo: 'Reserva de emergência', valor: usar,
+        txt: `Sua meta de reserva é <b>${R(alvo)}</b> (6 meses do seu gasto médio de ${R(ctx.despMedia)}). Você tem ${R(ctx.investido)} investidos. Separando <b>${R(usar)}</b> você chega a <b>${pct}%</b> da meta. Reserva costuma ficar em aplicações com resgate no mesmo dia, como Tesouro Selic ou CDB de liquidez diária.` });
+      disp -= usar;
+    }
+  } else if (disp > 0 && ctx.despMedia <= 0) {
+    avisos.push('Ainda não há gastos lançados para calcular sua reserva de emergência (6 meses de gastos). Lance suas despesas para a análise ficar completa.');
+  }
+
+  // 3. objetivos em aberto
+  ctx.objetivos.slice(0, 3).forEach(o => {
+    if (disp <= 0) return;
+    const usar = Math.min(disp, o.falta);
+    passos.push({ icone: '🎯', titulo: `Objetivo "${esc(o.nome)}"`, valor: usar,
+      txt: `Faltam ${R(o.falta)} para esse objetivo. Com <b>${R(usar)}</b> ${usar >= o.falta ? 'você completa a meta' : 'você adianta ' + Math.round((usar / o.falta) * 100) + '% do que falta'}.` });
+    disp -= usar;
+  });
+
+  // 4. o que restar
+  if (disp > 0) {
+    passos.push({ icone: '📈', titulo: 'Livre para investir no longo prazo', valor: disp,
+      txt: `Depois das prioridades acima ainda sobram <b>${R(disp)}</b> sem destino. É o valor que pode ir para investimentos de prazo maior. A análise "Primeiro milhão" mostra onde esse aporte pode chegar.` });
+  }
+
+  // ritmo
+  if (ctx.mesesComDados >= 2 && ctx.sobraMedia > 0) {
+    avisos.push(`Nos últimos ${ctx.mesesComDados} meses com dados, sua sobra média foi de <b>${R(ctx.sobraMedia)}</b> por mês. Mantendo esse ritmo, em 12 meses você junta <b>${R(ctx.sobraMedia * 12)}</b>, sem contar rendimentos.`);
+  }
+
+  return { disponivel: Math.max(0, acum), sobraMes, acumulado: acum, passos, avisos,
+    titulo: `Você tem ${R(Math.max(0, acum))} sobrando` };
 }
 
 function coletarDados3MesesIA(mesAtual, anoAtual) {
@@ -13940,7 +14099,7 @@ function renderPrimeiroMilhao(d, mes, ano) {
 }
 
 // ── Análise geral (mantida para compatibilidade) ──────────────────────
-function analisarLocalIA({ entradas = 0, saidas = 0, saldo = 0, categorias = [], lancamentos: numLanc = 0 }, mes, ano) {
+function analisarLocalIA({ entradas = 0, saidas = 0, saldo = 0, categorias = [], numLanc = 0 }, mes, ano, ctx) {
   const pct = entradas > 0 ? Math.round((saidas / entradas) * 100) : 0;
   const semaforo = pct <= 65 ? 'verde' : pct <= 85 ? 'amarelo' : 'vermelho';
   const cats = [...categorias].sort((a, b) => b.val - a.val);
@@ -14036,13 +14195,26 @@ function analisarLocalIA({ entradas = 0, saidas = 0, saldo = 0, categorias = [],
     if (saldo >= reservaIdeal) dicas.push('Sua reserva de emergência deve ter 6 meses de gastos. Está no caminho certo!');
   }
 
+  // M43: plano para a sobra + alerta de dinheiro parado
+  let planoSobra = null;
+  if (ctx) {
+    planoSobra = montarPlanoSobraIA({ saldo }, ctx, mes);
+    if (planoSobra.disponivel > 0) {
+      insights.unshift({ icone: '💵', txt: `<b>${planoSobra.titulo}</b> somando ${mes} e os meses anteriores. O plano acima mostra o que fazer com esse dinheiro.` });
+    }
+    if (ctx.totalDividas > 0) {
+      insights.push({ icone: '💳', txt: `Você tem <b>R$${ctx.totalDividas.toFixed(2)}</b> em dívidas cadastradas${ctx.dividas[0] && ctx.dividas[0].taxa > 0 ? `, a mais cara é <b>${esc(ctx.dividas[0].nome)}</b> (${ctx.dividas[0].taxa}% ao mês)` : ''}.` });
+    }
+  }
+
   return {
+    planoSobra,
     semaforo,
     pct,
     pctPoupanca,
     titulo: semaforo === 'verde' ? '✅ Mês equilibrado!' : semaforo === 'amarelo' ? '⚠️ Atenção com os gastos' : '🔴 Mês no vermelho',
     resumo: `Entradas de <b>R$${entradas.toFixed(2)}</b> e saídas de <b>R$${saidas.toFixed(2)}</b>, saldo ${saldo >= 0 ? 'positivo' : 'negativo'} de <b>R$${Math.abs(saldo).toFixed(2)}</b>.`,
-    insights: insights.slice(0, 6),
+    insights: insights.slice(0, 8),
     alertas,
     dicas,
     cats
@@ -14100,6 +14272,34 @@ function renderAnaliseIA(a, mes, ano) {
     </div>`;
   }).join('');
 
+  // M43: plano para a sobra
+  const ps = a.planoSobra;
+  const fmtR = v => 'R$ ' + (Math.round(v * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  let planoHTML = '';
+  if (ps && (ps.passos.length || ps.avisos.length)) {
+    const passosHTML = ps.passos.map((p, i) => `
+      <div style="display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border)">
+        <span style="width:26px;height:26px;border-radius:8px;background:#16A34A;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i + 1}</span>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:3px">
+            <span style="font-size:13px;font-weight:700;color:var(--fg1)">${p.titulo}</span>
+            <span class="mono" style="font-size:13px;font-weight:800;color:var(--green)">${fmtR(p.valor)}</span>
+          </div>
+          <div style="font-size:12px;color:var(--fg2);line-height:1.55">${p.txt}</div>
+        </div>
+      </div>`).join('');
+    const avisosHTML = ps.avisos.map(t => `<div style="font-size:12px;color:var(--fg2);line-height:1.55;padding:8px 0;border-bottom:1px solid var(--border)">${t}</div>`).join('');
+    planoHTML = `
+    <div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.3);border-radius:14px;padding:16px;margin-bottom:16px">
+      <div style="font-size:10px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">${ps.disponivel > 0 ? 'Dinheiro sobrando' : 'Sobra do mês'}</div>
+      ${ps.disponivel > 0 ? `<div style="font-size:19px;font-weight:800;color:var(--fg1);margin-bottom:2px">${ps.titulo}</div>
+      <div style="font-size:12px;color:var(--fg3);margin-bottom:6px">Este mês: ${ps.sobraMes >= 0 ? '+' : ''}${fmtR(ps.sobraMes)} · Acumulado: ${fmtR(ps.acumulado)}</div>` : ''}
+      ${passosHTML ? `<div style="font-size:11px;font-weight:700;color:var(--fg2);margin-top:8px">O que fazer com esse dinheiro, em ordem de prioridade:</div>${passosHTML}` : ''}
+      ${avisosHTML}
+      <div style="font-size:10px;color:var(--fg3);margin-top:10px">Sugestões educativas calculadas com os seus dados. Não são recomendação de investimento.</div>
+    </div>`;
+  }
+
   resultado.innerHTML = `
     <!-- Cabeçalho / Semáforo -->
     <div style="background:${bg};border:1px solid ${bd};border-radius:16px;padding:20px;margin-bottom:16px">
@@ -14116,6 +14316,9 @@ function renderAnaliseIA(a, mes, ano) {
         </div>
       </div>` : ''}
     </div>
+
+    <!-- M43: plano para o dinheiro que sobra -->
+    ${planoHTML}
 
     <!-- Alertas -->
     ${alertasHTML}

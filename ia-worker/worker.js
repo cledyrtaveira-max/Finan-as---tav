@@ -206,6 +206,40 @@ Responda em no máximo 3 frases curtas.` },
     const pct = entradas > 0 ? Math.round((saidas / entradas) * 100) : 0;
     const status = saldo >= 0 ? 'positivo' : 'negativo';
 
+    // M43: contexto completo enviado pelo app (campos opcionais — apps antigos não enviam)
+    const n = v => (Number(v) || 0).toFixed(2);
+    const hist6 = Array.isArray(body.historico6m) ? body.historico6m.slice(-6)
+      .map(h => `  - ${String(h.mes).slice(0, 12)}/${Number(h.ano) || ''}: entradas R$${n(h.entradas)}, saídas R$${n(h.saidas)}, saldo R$${n(h.saldo)}`).join('\n') : '';
+    const dividasTxt = Array.isArray(body.dividas) ? body.dividas.slice(0, 6)
+      .map(d => `  - ${String(d.nome).slice(0, 40)}: saldo R$${n(d.saldo)}, juros ${Number(d.taxa) || 0}% ao mês`).join('\n') : '';
+    const objetivosTxt = Array.isArray(body.objetivos) ? body.objetivos.slice(0, 5)
+      .map(o => `  - ${String(o.nome).slice(0, 40)}: faltam R$${n(o.falta)}`).join('\n') : '';
+    const temContexto = body.acumulado !== undefined;
+    const contexto = temContexto ? `
+SITUAÇÃO GERAL:
+- Saldo acumulado (meses anteriores + este mês): R$${n(body.acumulado)}
+- Saldo que veio dos meses anteriores: R$${n(body.saldoAnterior)}
+- Gasto médio mensal: R$${n(body.despMedia)}
+- Sobra média mensal: R$${n(body.sobraMedia)}
+- Total já investido: R$${n(body.investido)}
+- Parcelas de dívida pagas no mês: R$${n(body.dividasMes)}
+
+ÚLTIMOS 6 MESES:
+${hist6 || '(sem dados)'}
+
+DÍVIDAS EM ABERTO:
+${dividasTxt || '(nenhuma)'}
+
+OBJETIVOS EM ABERTO:
+${objetivosTxt || '(nenhum)'}
+
+REGRAS PARA OS INSIGHTS:
+- Se o saldo acumulado for positivo, diga claramente quanto está sobrando e que esse dinheiro pode ser aplicado.
+- Prioridade para a sobra: 1) quitar dívida com juros de 2% ao mês ou mais; 2) completar reserva de emergência de 6 meses de gastos; 3) objetivos; 4) investimento de longo prazo.
+- Compare o mês com os meses anteriores (melhorou ou piorou).
+- Use os números reais acima. Não invente valores nem prometa rentabilidade.
+` : '';
+
     const prompt = `Você é o consultor financeiro do app Finanvô, um aplicativo brasileiro de controle financeiro familiar.
 Analise os dados financeiros de ${mes}/${ano} e forneça insights práticos em português brasileiro informal.
 
@@ -218,7 +252,7 @@ DADOS DO MÊS:
 
 GASTOS POR CATEGORIA:
 ${catResume || '(sem dados)'}
-
+${contexto}
 Responda em JSON com exatamente este formato (sem markdown, só JSON puro):
 {
   "semaforo": "verde" | "amarelo" | "vermelho",
@@ -227,7 +261,8 @@ Responda em JSON com exatamente este formato (sem markdown, só JSON puro):
   "insights": [
     "insight 1 específico (máx 15 palavras)",
     "insight 2 específico (máx 15 palavras)",
-    "insight 3 específico (máx 15 palavras)"
+    "insight 3 específico (máx 15 palavras)",
+    "insight 4 sobre o que fazer com o dinheiro que sobra, se houver (máx 25 palavras)"
   ],
   "alerta": "alerta principal se houver problema, ou null",
   "dica": "dica prática e acionável para o próximo mês (máx 20 palavras)"
