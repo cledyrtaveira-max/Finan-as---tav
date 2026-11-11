@@ -95,7 +95,7 @@
       const p = window.location.pathname;
       // M23 FIX: passar APP_VERSION como query param para o SW — força re-registro
       // quando a versão muda e mantém o CACHE_NAME sincronizado com o app.
-      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.5').replace(/[^a-z0-9.]/gi, '');
+      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.7').replace(/[^a-z0-9.]/gi, '');
       return p.replace(/[^/]*$/, '') + 'sw.js?v=' + ver;
     })();
 
@@ -1209,6 +1209,10 @@ body {
 
 /* ── Mobile: esconde sidebar, mostra bottom nav ── */
 .bottom-nav { display: none }
+/* M36 FIX: o menu "Mais" do mobile só tinha estilo dentro do @media (max-width:640px).
+   No PC ele ficava visível, sem estilo, com ícones SVG gigantes (forma preta) e
+   empurrava o .layout para altura 0 — a tela preta pós-login. */
+.bn-more-menu { display: none }
 
 @media (max-width: 640px) {
   :root { --sidebar-w: 0px }
@@ -4209,7 +4213,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.6'; // M35: fix layout PC (height) + try/catch renderDashboard + diagnóstico tela preta
+const APP_VERSION = 'v5.7'; // M36: fix tela preta no PC (menu mobile sem estilo cobrindo o app)
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',
