@@ -87,7 +87,7 @@
       const p = window.location.pathname;
       // M23 FIX: passar APP_VERSION como query param para o SW — força re-registro
       // quando a versão muda e mantém o CACHE_NAME sincronizado com o app.
-      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.2').replace(/[^a-z0-9.]/gi, '');
+      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.4').replace(/[^a-z0-9.]/gi, '');
       return p.replace(/[^/]*$/, '') + 'sw.js?v=' + ver;
     })();
 
@@ -2064,6 +2064,77 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
 /* ── Utilitários ── */
 .text-right { text-align: right }
 .mono { font-family: 'JetBrains Mono', monospace }
+
+/* ══ M33 FIX: Layout adaptado para PC (≥1024px) ══════════════════════════
+   Objetivo: melhorar aproveitamento do espaço em telas largas sem quebrar
+   o layout mobile. Todas as regras aqui são min-width, não afetam mobile. */
+
+/* Dashboard 2 colunas — layout base (mobile: coluna única) */
+.dash-pc-layout {
+  display: flex;
+  flex-direction: column;
+}
+.dash-col-main  { min-width: 0 }
+.dash-col-side  { min-width: 0 }
+
+@media (min-width: 1024px) {
+  /* Sidebar um pouco maior */
+  :root { --sidebar-w: 240px; }
+
+  /* Conteúdo com largura máxima e centralizado */
+  .content {
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  /* Topbar alinhada com mesmo padding do content */
+  .topbar { padding: 0 32px; }
+
+  /* Modais um pouco mais largos em PC */
+  .modal { max-width: 480px !important; }
+}
+
+@media (min-width: 1280px) {
+  :root { --sidebar-w: 256px; }
+
+  .content {
+    max-width: 1280px;
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+
+  .topbar { padding: 0 40px; }
+
+  /* Dashboard 2 colunas no PC */
+  .dash-pc-layout {
+    flex-direction: row;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  .dash-col-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dash-col-side {
+    width: 320px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+  }
+}
+
+@media (min-width: 1600px) {
+  :root { --sidebar-w: 272px; }
+
+  .content { max-width: 1500px; }
+
+  .dash-col-side { width: 360px; }
+}
 </style>
 
 <!-- MODAL editar lançamento manual -->
@@ -2859,66 +2930,80 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
         <!-- Banner de alertas de vencimento (preenchido por renderBannerVencimentos) -->
         <div id="dash-notif-venc"></div>
 
-        <!-- KPI cards -->
-        <div class="kpi-row" id="dash-kpis"></div>
+        <!-- M33 FIX: wrapper de 2 colunas para PC -->
+        <div class="dash-pc-layout">
 
-        <!-- Gastos por categoria -->
-        <div id="dash-categorias-wrap" style="margin-bottom:20px"></div>
+          <!-- Coluna principal (esquerda no PC) -->
+          <div class="dash-col-main">
 
-        <!-- Comprometimento -->
-        <div class="section-title" style="margin-top:20px">Comprometimento da renda</div>
-        <div class="table-wrap" style="padding:16px 16px 12px" id="dash-barras"></div>
+            <!-- KPI cards -->
+            <div class="kpi-row" id="dash-kpis"></div>
 
-        <!-- Tendência: Previsto vs Real -->
-        <div id="dash-tendencia" style="margin-top:20px"></div>
+            <!-- Gastos por categoria -->
+            <div id="dash-categorias-wrap" style="margin-bottom:20px"></div>
 
-        <!-- Gráfico últimos 7 dias -->
-        <div id="dash-7dias-wrap" style="margin-bottom:14px"></div>
+            <!-- Comprometimento -->
+            <div class="section-title" style="margin-top:20px">Comprometimento da renda</div>
+            <div class="table-wrap" style="padding:16px 16px 12px" id="dash-barras"></div>
 
-        <!-- Resumo semanal -->
-        <div id="dash-semana-wrap" style="margin-bottom:4px"></div>
+            <!-- Tendência: Previsto vs Real -->
+            <div id="dash-tendencia" style="margin-top:20px"></div>
 
-        <!-- Alertas de categoria -->
-        <div id="dash-alertas-cat" style="margin-bottom:4px"></div>
+            <!-- Gráfico últimos 7 dias -->
+            <div id="dash-7dias-wrap" style="margin-bottom:14px"></div>
 
-        <!-- Saúde Financeira Familiar -->
-        <div style="margin-top:20px;margin-bottom:12px">
-          <div class="section-title" style="margin-bottom:10px">❤️ Saúde financeira da família</div>
-          <div id="dash-saude-familiar"></div>
-        </div>
+            <!-- Resumo semanal -->
+            <div id="dash-semana-wrap" style="margin-bottom:4px"></div>
 
-        <!-- Metas do mês -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:10px">
-          <div class="section-title" style="margin:0">🎯 Metas do mês</div>
-          <button onclick="abrirModalMeta()" style="background:rgba(79,127,255,0.1);border:1px solid rgba(79,127,255,0.3);color:var(--accent);font-size:11px;border-radius:6px;padding:4px 10px;cursor:pointer">+ Nova meta</button>
-        </div>
-        <div id="dash-metas-wrap"></div>
+            <!-- Alertas de categoria -->
+            <div id="dash-alertas-cat" style="margin-bottom:4px"></div>
 
-        <!-- Termômetro de Paz Financeira -->
-        <div style="margin-top:20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
-          <div class="section-title" style="margin:0">🕊️ Paz Financeira</div>
-          <span id="paz-score-badge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(79,127,255,.1);color:var(--accent)">—</span>
-        </div>
-        <div id="dash-paz-financeira"></div>
+            <!-- Botão exportar -->
+            <div style="margin-top:16px;margin-bottom:4px">
+              <button onclick="abrirModalExportarDash()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(79,127,255,0.08);border:1px solid rgba(79,127,255,0.2);color:var(--accent);border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(79,127,255,0.15)'" onmouseout="this.style.background='rgba(79,127,255,0.08)'">
+                📤 Exportar relatório de <span id="btn-exp-label" style="text-decoration:underline;text-underline-offset:2px"></span>
+              </button>
+            </div>
 
-        <!-- Botão exportar -->
-        <div style="margin-top:16px;margin-bottom:4px">
-          <button onclick="abrirModalExportarDash()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(79,127,255,0.08);border:1px solid rgba(79,127,255,0.2);color:var(--accent);border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(79,127,255,0.15)'" onmouseout="this.style.background='rgba(79,127,255,0.08)'">
-            📤 Exportar relatório de <span id="btn-exp-label" style="text-decoration:underline;text-underline-offset:2px"></span>
-          </button>
-        </div>
+            <!-- Lançamentos recentes -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:6px">
+              <div class="section-title" style="margin:0">Últimos lançamentos</div>
+              <button onclick="limparHistorico()" style="background:rgba(255,80,80,0.08);border:1px solid rgba(255,80,80,0.25);color:var(--red);font-size:11px;border-radius:6px;padding:4px 10px;cursor:pointer">🗑 Limpar histórico</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Descrição</th><th>Categoria</th><th>Mês</th><th class="text-right">Valor</th><th>Status</th><th></th></tr></thead>
+                <tbody id="tbody-recentes"></tbody>
+              </table>
+            </div>
+          </div><!-- /dash-col-main -->
 
-        <!-- Lançamentos recentes -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:6px">
-          <div class="section-title" style="margin:0">Últimos lançamentos</div>
-          <button onclick="limparHistorico()" style="background:rgba(255,80,80,0.08);border:1px solid rgba(255,80,80,0.25);color:var(--red);font-size:11px;border-radius:6px;padding:4px 10px;cursor:pointer">🗑 Limpar histórico</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Descrição</th><th>Categoria</th><th>Mês</th><th class="text-right">Valor</th><th>Status</th><th></th></tr></thead>
-            <tbody id="tbody-recentes"></tbody>
-          </table>
-        </div>
+          <!-- Coluna lateral (direita no PC, abaixo no mobile) -->
+          <div class="dash-col-side">
+
+            <!-- Saúde Financeira Familiar -->
+            <div style="margin-top:0;margin-bottom:12px">
+              <div class="section-title" style="margin-bottom:10px">❤️ Saúde financeira da família</div>
+              <div id="dash-saude-familiar"></div>
+            </div>
+
+            <!-- Metas do mês -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:10px">
+              <div class="section-title" style="margin:0">🎯 Metas do mês</div>
+              <button onclick="abrirModalMeta()" style="background:rgba(79,127,255,0.1);border:1px solid rgba(79,127,255,0.3);color:var(--accent);font-size:11px;border-radius:6px;padding:4px 10px;cursor:pointer">+ Nova meta</button>
+            </div>
+            <div id="dash-metas-wrap"></div>
+
+            <!-- Termômetro de Paz Financeira -->
+            <div style="margin-top:20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+              <div class="section-title" style="margin:0">🕊️ Paz Financeira</div>
+              <span id="paz-score-badge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(79,127,255,.1);color:var(--accent)">—</span>
+            </div>
+            <div id="dash-paz-financeira"></div>
+
+          </div><!-- /dash-col-side -->
+
+        </div><!-- /dash-pc-layout -->
       </div>
 
       <!-- ══ VIEW: MÊS A MÊS ══ -->
@@ -4101,7 +4186,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.3';
+const APP_VERSION = 'v5.4'; // M33: layout PC adaptado
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',
