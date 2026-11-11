@@ -95,7 +95,7 @@
       const p = window.location.pathname;
       // M23 FIX: passar APP_VERSION como query param para o SW — força re-registro
       // quando a versão muda e mantém o CACHE_NAME sincronizado com o app.
-      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.14').replace(/[^a-z0-9.]/gi, '');
+      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.15').replace(/[^a-z0-9.]/gi, '');
       return p.replace(/[^/]*$/, '') + 'sw.js?v=' + ver;
     })();
 
@@ -1586,6 +1586,7 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
 .cat-bar-item:last-child { border-bottom: none }
 .cat-bar-icon { font-size: 20px; width: 32px; text-align: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center }
 /* M38: bloco de ícone estilo app */
+@keyframes gamePop { from { opacity: 0; transform: translateX(-50%) scale(.8) } to { opacity: 1; transform: translateX(-50%) scale(1) } }
 .cat-tile { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,.18) }
 .cat-bar-body { flex: 1; min-width: 0 }
 .cat-bar-top { display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline }
@@ -2961,6 +2962,8 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
         <div id="dash-alerta" style="margin-bottom:16px"></div>
         <!-- M43: aviso de dinheiro sobrando -->
         <div id="dash-sobra" style="display:none;margin-bottom:16px"></div>
+        <!-- M44: jornada (sequência de dias e conquistas) -->
+        <div id="dash-jogo" style="margin-bottom:16px"></div>
 
         <!-- Onboarding card (usuário novo sem lançamentos) -->
         <div id="dash-onboarding" style="display:none;margin-bottom:20px"></div>
@@ -4229,7 +4232,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.14'; // M36: fix tela preta no PC (menu mobile sem estilo cobrindo o app)
+const APP_VERSION = 'v5.15'; // M36: fix tela preta no PC (menu mobile sem estilo cobrindo o app)
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',
@@ -5274,6 +5277,214 @@ function getCatValue(selId, inputId) {
   return sel ? sel.value : 'Outros';
 }
 
+// ══ M44: JORNADA — sequência de dias, conquistas, comemoração e sons ══════════
+// Estado em appCfg.game = { streak, best, lastDay:'AAAA-MM-DD', badges:{id:ts}, som:bool }
+const GAME_BADGES = [
+  { id:'inicio',   nome:'Primeiro passo',      desc:'Informou a renda de um mês ou fez o primeiro lançamento', cor:'#4F7FFF', g:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>', ok:c => c.nLanc >= 1 || c.temRenda },
+  { id:'lanc10',   nome:'Organizado',          desc:'10 lançamentos registrados',  cor:'#0EA5E9', g:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>', ok:c => c.nLanc >= 10 },
+  { id:'lanc50',   nome:'Mestre do registro',  desc:'50 lançamentos registrados',  cor:'#7C3AED', g:'<path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6-5.4-3-5.4 3 1.1-6-4.5-4.2 6.1-.8z"/>', ok:c => c.nLanc >= 50 },
+  { id:'streak3',  nome:'Aquecendo',           desc:'3 dias seguidos cuidando das finanças',  cor:'#F97316', g:'<path d="M12 3c1 3 4.5 5 4.5 9a4.5 4.5 0 0 1-9 0c0-1.7.7-3 1.8-4 .2 1.3.9 2 1.7 2.3C10.8 8 11.2 5.5 12 3z"/>', ok:c => c.best >= 3 },
+  { id:'streak7',  nome:'Semana perfeita',     desc:'7 dias seguidos cuidando das finanças',  cor:'#EA580C', g:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/>', ok:c => c.best >= 7 },
+  { id:'streak30', nome:'Hábito formado',      desc:'30 dias seguidos cuidando das finanças', cor:'#DC2626', g:'<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 3M16 6h3a3 3 0 0 1-3 3M12 13v4M9 20h6"/>', ok:c => c.best >= 30 },
+  { id:'azul1',    nome:'Mês no azul',         desc:'Fechou um mês com sobra',                cor:'#16A34A', g:'<path d="M4 12l5 5L20 6"/>', ok:c => c.mesesAzuis >= 1 },
+  { id:'azul3',    nome:'Trimestre no azul',   desc:'3 meses seguidos com sobra',             cor:'#059669', g:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>', ok:c => c.mesesAzuis >= 3 },
+  { id:'sobra1k',  nome:'Primeiro mil',        desc:'R$ 1.000 de saldo acumulado',            cor:'#CA8A04', g:'<circle cx="12" cy="12" r="9"/><path d="M12 7v10M14.5 9.5H11a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3H9.5"/>', ok:c => c.acum >= 1000 },
+  { id:'sobra5k',  nome:'Cinco mil guardados', desc:'R$ 5.000 de saldo acumulado',            cor:'#B45309', g:'<circle cx="12" cy="12" r="9"/><path d="M12 7v10M14.5 9.5H11a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3H9.5"/>', ok:c => c.acum >= 5000 },
+  { id:'objetivo', nome:'Sonho no papel',      desc:'Criou um objetivo em Estratégia',        cor:'#DB2777', g:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>', ok:c => c.nObjetivos >= 1 },
+  { id:'investidor', nome:'Investidor',        desc:'Cadastrou o primeiro investimento',      cor:'#0D9488', g:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>', ok:c => c.nInvest >= 1 }
+];
+function _gameTile(b, size, on) {
+  const g = Math.round(size * 0.54);
+  return `<span class="cat-tile" aria-hidden="true" style="width:${size}px;height:${size}px;border-radius:${Math.round(size*0.27)}px;background:${on ? b.cor : 'var(--surface2)'};${on ? '' : 'box-shadow:none;border:1px dashed var(--border2)'}"><svg width="${g}" height="${g}" viewBox="0 0 24 24" fill="none" stroke="${on ? '#fff' : 'var(--fg3)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${b.g}</svg></span>`;
+}
+function _gameState() {
+  if (!appCfg.game || typeof appCfg.game !== 'object') appCfg.game = { streak: 0, best: 0, lastDay: '', badges: {}, som: true };
+  if (!appCfg.game.badges) appCfg.game.badges = {};
+  return appCfg.game;
+}
+function _gameHoje(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+
+// ── Sons (sintetizados, sem arquivos) ──
+let _gameAudio = null;
+function _gameCtx() {
+  try {
+    if (!_gameAudio) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; _gameAudio = new AC(); }
+    if (_gameAudio.state === 'suspended') _gameAudio.resume().catch(() => {});
+    return _gameAudio;
+  } catch(e) { return null; }
+}
+document.addEventListener('pointerdown', () => { _gameCtx(); }, { once: true, passive: true });
+function gameSfx(nome) {
+  try {
+    if (_gameState().som === false) return;
+    const ctx = _gameCtx(); if (!ctx || ctx.state !== 'running') return;
+    const notas = {
+      coin:   [[988, 0, .07, 'triangle'], [1319, .07, .22, 'triangle']],
+      tick:   [[660, 0, .06, 'sine'], [880, .05, .10, 'sine']],
+      streak: [[523, 0, .10, 'triangle'], [659, .09, .10, 'triangle'], [784, .18, .22, 'triangle']],
+      win:    [[523, 0, .11, 'triangle'], [659, .10, .11, 'triangle'], [784, .20, .11, 'triangle'], [1047, .30, .38, 'triangle'], [1319, .30, .38, 'sine']]
+    }[nome];
+    if (!notas) return;
+    const t0 = ctx.currentTime + 0.01;
+    notas.forEach(([f, ini, dur, tipo]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = tipo; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t0 + ini);
+      g.gain.exponentialRampToValueAtTime(0.16, t0 + ini + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + ini + dur);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t0 + ini); o.stop(t0 + ini + dur + 0.03);
+    });
+  } catch(e) {}
+}
+function gameToggleSom() {
+  const st = _gameState();
+  st.som = st.som === false;
+  saveCfg(appCfg);
+  gameRender();
+  if (st.som) gameSfx('tick');
+}
+
+// ── Confete ──
+function gameConfete() {
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const c = document.createElement('canvas');
+    c.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:99998;pointer-events:none';
+    c.width = window.innerWidth; c.height = window.innerHeight;
+    document.body.appendChild(c);
+    const x = c.getContext('2d');
+    const cores = ['#4F7FFF','#22C55E','#F59E0B','#EC4899','#A855F7','#06B6D4'];
+    const ps = Array.from({ length: 110 }, () => ({
+      x: c.width / 2 + (Math.random() - .5) * c.width * .3, y: c.height * .35,
+      vx: (Math.random() - .5) * 13, vy: -Math.random() * 12 - 4,
+      w: 5 + Math.random() * 6, h: 3 + Math.random() * 4, r: Math.random() * 6.28, vr: (Math.random() - .5) * .4,
+      cor: cores[Math.floor(Math.random() * cores.length)]
+    }));
+    const t0 = performance.now();
+    (function frame(t) {
+      const el = t - t0;
+      x.clearRect(0, 0, c.width, c.height);
+      ps.forEach(p => {
+        p.vy += .32; p.x += p.vx; p.y += p.vy; p.vx *= .99; p.r += p.vr;
+        x.save(); x.translate(p.x, p.y); x.rotate(p.r);
+        x.globalAlpha = Math.max(0, 1 - el / 2200); x.fillStyle = p.cor;
+        x.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); x.restore();
+      });
+      if (el < 2200) requestAnimationFrame(frame); else c.remove();
+    })(t0);
+  } catch(e) {}
+}
+
+// ── Comemoração de conquista ──
+const _gameCelebrados = new Set();
+function gameCelebrar(novas, msgExtra) {
+  const antigo = document.getElementById('game-celebra'); if (antigo) antigo.remove();
+  const d = document.createElement('div');
+  d.id = 'game-celebra';
+  d.setAttribute('role', 'status');
+  d.style.cssText = 'position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:99999;max-width:min(92vw,380px);width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.45);text-align:center;cursor:pointer;animation:gamePop .35s cubic-bezier(.2,1.4,.4,1)';
+  d.onclick = () => d.remove();
+  d.innerHTML = `
+    <div style="font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent);margin-bottom:10px">${novas.length > 1 ? novas.length + ' conquistas desbloqueadas' : novas.length === 1 ? 'Conquista desbloqueada' : 'Sequência'}</div>
+    ${novas.slice(0, 4).map(b => `<div style="display:flex;align-items:center;gap:12px;text-align:left;padding:7px 0">${_gameTile(b, 44, true)}<div><div style="font-size:15px;font-weight:800;color:var(--fg1)">${b.nome}</div><div style="font-size:12px;color:var(--fg2)">${b.desc}</div></div></div>`).join('')}
+    ${novas.length > 4 ? `<div style="font-size:12px;color:var(--fg3);margin-top:4px">e mais ${novas.length - 4}</div>` : ''}
+    ${msgExtra ? `<div style="font-size:14px;font-weight:700;color:var(--fg1);margin-top:6px">${msgExtra}</div>` : ''}
+    <div style="font-size:10px;color:var(--fg3);margin-top:10px">Toque para fechar</div>`;
+  document.body.appendChild(d);
+  setTimeout(() => { if (d.parentNode) d.remove(); }, 5500);
+  gameConfete();
+  gameSfx(novas.length ? 'win' : 'streak');
+}
+
+// ── Contexto para as conquistas ──
+function _gameContexto(st) {
+  const hj = new Date(); const mi = hj.getMonth(), ano = hj.getFullYear();
+  let mesesAzuis = 0;
+  try {
+    for (let k = 1; k <= 12; k++) {       // meses já fechados, do mais recente para trás
+      let m = mi - k, a = ano; while (m < 0) { m += 12; a--; }
+      const d = getDadosPeriodo(MESES[m], a);
+      if (d.ent > 0 && d.saldo > 0) mesesAzuis++; else break;
+    }
+  } catch(e) {}
+  let acum = 0;
+  try { acum = saldoAcumuladoAnterior(MESES[mi], ano) + getDadosPeriodo(MESES[mi], ano).saldo; } catch(e) {}
+  let nObjetivos = 0, nInvest = 0;
+  try { nObjetivos = (loadObjetivos() || []).length; } catch(e) {}
+  try { nInvest = (loadInvestimentos() || []).length; } catch(e) {}
+  const temRenda = Object.values(appCfg.periodos || {}).some(p => p && parseFloat(p.rendaMes) > 0);
+  return { nLanc: (appData.lancamentos || []).length, temRenda, best: st.best || 0, mesesAzuis, acum, nObjetivos, nInvest };
+}
+
+// ── Atualização (chamada a cada render do Dashboard) ──
+let _gamePronto = false, _gameTimer = null;
+function gameAtualizar() {
+  if (typeof usuarioAtivo === 'undefined' || !usuarioAtivo || !appCfg._onboardingDone) { gameRender(); return; }
+  // Espera a sincronização inicial assentar antes de avaliar (evita comemorar duas vezes)
+  if (!_gamePronto) {
+    gameRender();
+    if (!_gameTimer) _gameTimer = setTimeout(() => { _gamePronto = true; gameAtualizar(); }, 3000);
+    return;
+  }
+  const st = _gameState();
+  let mudou = false, streakSubiu = false;
+  const hoje = _gameHoje();
+  if (st.lastDay !== hoje) {
+    const ontem = new Date(); ontem.setDate(ontem.getDate() - 1);
+    st.streak = (st.lastDay === _gameHoje(ontem)) ? (st.streak || 0) + 1 : 1;
+    st.best = Math.max(st.best || 0, st.streak);
+    st.lastDay = hoje;
+    mudou = true; streakSubiu = st.streak > 1;
+  }
+  const ctx = _gameContexto(st);
+  const novas = GAME_BADGES.filter(b => !st.badges[b.id] && b.ok(ctx));
+  novas.forEach(b => { st.badges[b.id] = Date.now(); });
+  if (novas.length) mudou = true;
+  if (mudou) saveCfg(appCfg);
+  gameRender();
+  const ineditas = novas.filter(b => !_gameCelebrados.has(b.id));
+  ineditas.forEach(b => _gameCelebrados.add(b.id));
+  if (ineditas.length) gameCelebrar(ineditas, streakSubiu ? `${st.streak} dias seguidos` : '');
+  else if (streakSubiu && !_gameCelebrados.has('dia-' + hoje)) { _gameCelebrados.add('dia-' + hoje); gameCelebrar([], `${st.streak} dias seguidos cuidando das suas finanças`); }
+}
+
+function gameRender() {
+  const el = document.getElementById('dash-jogo');
+  if (!el) return;
+  if (typeof usuarioAtivo === 'undefined' || !usuarioAtivo) { el.innerHTML = ''; return; }
+  const st = _gameState();
+  const ganhas = GAME_BADGES.filter(b => st.badges[b.id]).length;
+  const pct = Math.round((ganhas / GAME_BADGES.length) * 100);
+  const proxima = GAME_BADGES.find(b => !st.badges[b.id]);
+  const flame = { cor: '#F97316', g: GAME_BADGES[3].g };
+  const somOn = st.som !== false;
+  el.innerHTML = `
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      ${_gameTile(flame, 46, (st.streak || 0) > 0)}
+      <div style="flex:1;min-width:150px">
+        <div style="font-size:18px;font-weight:800;color:var(--fg1);line-height:1.15">${st.streak || 0} ${(st.streak || 0) === 1 ? 'dia seguido' : 'dias seguidos'}</div>
+        <div style="font-size:12px;color:var(--fg2)">Recorde: ${st.best || 0} ${(st.best || 0) === 1 ? 'dia' : 'dias'} · volte amanhã para manter a sequência</div>
+      </div>
+      <button class="btn btn-ghost" onclick="gameToggleSom()" aria-pressed="${somOn}" title="${somOn ? 'Desligar sons' : 'Ligar sons'}" style="padding:7px 12px;font-size:12px;display:inline-flex;align-items:center;gap:6px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/>${somOn ? '<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>' : '<path d="M17 9l5 6M22 9l-5 6"/>'}</svg>
+        Sons ${somOn ? 'ligados' : 'desligados'}
+      </button>
+    </div>
+    <div style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--fg2);margin-bottom:5px">
+        <span style="font-weight:700">Conquistas ${ganhas}/${GAME_BADGES.length}</span>
+        <span>${proxima ? 'Próxima: ' + proxima.nome + ' — ' + proxima.desc : 'Todas desbloqueadas!'}</span>
+      </div>
+      <div style="height:7px;border-radius:6px;background:var(--surface2);overflow:hidden"><div style="height:7px;width:${pct}%;border-radius:6px;background:linear-gradient(90deg,#4F7FFF,#A855F7);transition:width .6s"></div></div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px 6px;margin-top:14px">
+      ${GAME_BADGES.map(b => { const on = !!st.badges[b.id]; return `<div title="${b.desc}" style="width:74px;text-align:center;${on ? '' : 'opacity:.55'}">${_gameTile(b, 40, on)}<div style="font-size:10px;line-height:1.2;margin-top:4px;color:${on ? 'var(--fg1)' : 'var(--fg3)'};font-weight:${on ? 700 : 500}">${b.nome}</div></div>`; }).join('')}
+    </div>
+  </div>`;
+}
+
 function salvarLancamento() {
   const desc = document.getElementById('f-desc').value.trim();
   const val  = typeof parseBRL === 'function'
@@ -5294,6 +5505,7 @@ function salvarLancamento() {
   saveData(appData);
   fecharModal();
   renderDashboard();
+  gameSfx(tipo === 'entrada' ? 'coin' : 'tick'); // M44
   document.getElementById('f-desc').value = '';
   document.getElementById('f-val').value = '';
 }
@@ -5778,6 +5990,7 @@ function renderDashboard() {
       dashSobra.innerHTML = '';
     }
   }
+  try { gameAtualizar(); } catch(e) { console.error('[Finanvô] jornada:', e); } // M44
   const dhcAcum = document.getElementById('dhc-saldo-acum');
   if (dhcAcum) {
     dhcAcum.style.display = saldoAnt !== 0 ? 'block' : 'none';
@@ -7584,6 +7797,7 @@ function getStatusLanc(itemKey) {
 }
 
 function setStatusLanc(itemKey, novoStatus) {
+  if (novoStatus === 'pago') gameSfx('coin'); // M44
   const cfg = cfgPeriodo();
   if (!cfg.status) cfg.status = {};
   cfg.status[String(itemKey)] = novoStatus;
