@@ -95,7 +95,7 @@
       const p = window.location.pathname;
       // M23 FIX: passar APP_VERSION como query param para o SW — força re-registro
       // quando a versão muda e mantém o CACHE_NAME sincronizado com o app.
-      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.12').replace(/[^a-z0-9.]/gi, '');
+      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.13').replace(/[^a-z0-9.]/gi, '');
       return p.replace(/[^/]*$/, '') + 'sw.js?v=' + ver;
     })();
 
@@ -2111,7 +2111,11 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
   :root { --sidebar-w: 240px; }
 
   /* Conteúdo com largura máxima e centralizado */
+  /* M42 FIX: width:100% — com margin auto dentro de um flex em coluna o conteúdo
+     encolhia para a largura do próprio conteúdo (coluna estreita no meio da tela). */
   .content {
+    width: 100%;
+    padding-bottom: 96px; /* espaço para o botão de chat não cobrir o fim da página */
     max-width: 1100px;
     margin-left: auto;
     margin-right: auto;
@@ -4223,7 +4227,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.12'; // M36: fix tela preta no PC (menu mobile sem estilo cobrindo o app)
+const APP_VERSION = 'v5.13'; // M36: fix tela preta no PC (menu mobile sem estilo cobrindo o app)
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',
