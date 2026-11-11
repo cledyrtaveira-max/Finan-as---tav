@@ -13,3 +13,4 @@ crons = ["0 3 * * *"]
 #   FIREBASE_PRIVATE_KEY
 #   ADMIN_SECRET   — senha para o endpoint /processar (qualquer string segura)
 # Tue Nov 10 20:48:42 -03 2026
+# retrigger Tue Nov 10 21:01:47 -03 2026
