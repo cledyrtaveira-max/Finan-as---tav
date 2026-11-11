@@ -95,7 +95,7 @@
       const p = window.location.pathname;
       // M23 FIX: passar APP_VERSION como query param para o SW — força re-registro
       // quando a versão muda e mantém o CACHE_NAME sincronizado com o app.
-      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.9').replace(/[^a-z0-9.]/gi, '');
+      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.10').replace(/[^a-z0-9.]/gi, '');
       return p.replace(/[^/]*$/, '') + 'sw.js?v=' + ver;
     })();
 
@@ -2736,8 +2736,9 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
   </nav>
 
   <!-- Botão flutuante instalar PWA (Android) -->
-  <div id="pwa-install-fab" onclick="mostrarInstalacao()" style="display:none;position:fixed;bottom:24px;right:20px;z-index:900;align-items:center;gap:8px;background:linear-gradient(135deg,#4f7fff,#7c3aed);color:#fff;border-radius:50px;padding:11px 18px 11px 14px;font-size:13px;font-weight:700;box-shadow:0 4px 20px rgba(79,127,255,0.5);cursor:pointer;letter-spacing:.2px;animation:fab-bounce .6s ease">
-    📲 Instalar app
+  <div id="pwa-install-fab" onclick="mostrarInstalacao()" style="display:none;position:fixed;z-index:900;align-items:center;gap:8px;background:linear-gradient(135deg,#4f7fff,#7c3aed);color:#fff;border-radius:50px;padding:11px 18px 11px 14px;font-size:13px;font-weight:700;box-shadow:0 4px 20px rgba(79,127,255,0.5);cursor:pointer;letter-spacing:.2px;animation:fab-bounce .6s ease">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+    Instalar app
   </div>
   <style>
     @keyframes fab-bounce { 0%{transform:translateY(40px);opacity:0} 70%{transform:translateY(-4px)} 100%{transform:translateY(0);opacity:1} }
@@ -4221,7 +4222,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.9'; // M36: fix tela preta no PC (menu mobile sem estilo cobrindo o app)
+const APP_VERSION = 'v5.10'; // M36: fix tela preta no PC (menu mobile sem estilo cobrindo o app)
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',
@@ -16023,6 +16024,15 @@ window.initCrispSeElegivel = function() {
     window.$crisp.push(['set', 'user:nickname', [window._perfil.nome]]);
   }
   window.$crisp.push(['set', 'session:data', [[ ['plano', plano] ]]]);
+  // M39 FIX: o botão do Crisp ficava em cima do chat do Finanvô. Ele fica oculto e a
+  // janela do Crisp só aparece quando aberta pelo chat ("falar com atendente") ou
+  // quando o atendente responde; ao fechar, volta a ficar oculto.
+  window.$crisp.push(['do', 'chat:hide']);
+  window.$crisp.push(['on', 'chat:closed', function() { window.$crisp.push(['do', 'chat:hide']); }]);
+  window.$crisp.push(['on', 'message:received', function() {
+    window.$crisp.push(['do', 'chat:show']);
+    window.$crisp.push(['do', 'chat:open']);
+  }]);
 
   (function() {
     const d = document;
@@ -16045,6 +16055,11 @@ window.initCrispSeElegivel = function() {
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: transform .2s, box-shadow .2s;
   border: none; outline: none;
+}
+/* M39 FIX: botão "Instalar app" fica à esquerda do chat, sem sobrepor */
+#pwa-install-fab { bottom: 32px; right: 92px; }
+@media (max-width: 768px) {
+  #pwa-install-fab { bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 20px); }
 }
 #fnv-chat-bubble:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(108,99,255,.55); }
 #fnv-chat-bubble svg { width: 26px; height: 26px; fill: #fff; }
@@ -16295,7 +16310,7 @@ window.initCrispSeElegivel = function() {
 
   window.fnvAbrirCrisp = function() {
     try {
-      if (window.$crisp) { window.$crisp.push(['do', 'chat:open']); }
+      if (window.$crisp) { window.$crisp.push(['do', 'chat:show']); window.$crisp.push(['do', 'chat:open']); }
       else { window.open('https://appfinanvo.com.br', '_blank'); }
     } catch(_) {}
     fnvToggleChat();
