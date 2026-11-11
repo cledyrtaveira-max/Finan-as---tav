@@ -1842,15 +1842,185 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
 }
 .est-analise-box strong { color: var(--accent) }
 
+/* ══════════════════════════════════════════════════════════════
+   MOBILE KAIZEN — componentes e melhorias responsivas
+   Breakpoints centralizados:
+     --bp-mobile:  640px  (celular)
+     --bp-tablet:  1024px (tablet / notebook pequeno)
+   Desktop (>1024px): layout original sem alterações.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Gaveta lateral (drawer) ───────────────────────────────── */
+.drawer-backdrop {
+  display: none;
+  position: fixed; inset: 0; z-index: 290;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+.drawer-backdrop.open { display: block; opacity: 1 }
+
+.drawer {
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 300;
+  width: min(280px, 85vw);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transform: translateX(-100%);
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+  will-change: transform;
+  /* safe area: notch e barra Android */
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+.drawer.open { transform: translateX(0) }
+
+.drawer-header {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.drawer-logo {
+  display: flex; align-items: center; gap: 10px;
+}
+.drawer-close {
+  width: 36px; height: 36px; border-radius: 8px;
+  border: 1px solid var(--border2); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--fg2);
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.drawer-close svg { width: 18px; height: 18px; stroke: currentColor; fill: none }
+
+.drawer-nav {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 8px 0;
+}
+.drawer-nav::-webkit-scrollbar { display: none }
+
+.drawer-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  padding: 10px 12px 10px;
+}
+
+/* ── Topbar mobile ─────────────────────────────────────────── */
+.topbar-menu-btn {
+  display: none;
+  width: 40px; height: 40px; border-radius: 10px;
+  border: 1px solid var(--border2); background: transparent;
+  align-items: center; justify-content: center;
+  cursor: pointer; color: var(--fg2);
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .12s;
+}
+.topbar-menu-btn:active { background: var(--surface2) }
+.topbar-menu-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-linecap: round }
+
+/* ── Bottom sheet (folha inferior) ────────────────────────── */
+.bottom-sheet-backdrop {
+  display: none;
+  position: fixed; inset: 0; z-index: 490;
+  background: rgba(0,0,0,.5);
+}
+.bottom-sheet-backdrop.open { display: block }
+
+.bottom-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 500;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  display: flex; flex-direction: column;
+  max-height: 92svh;
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  overscroll-behavior: contain;
+}
+.bottom-sheet.open { transform: translateY(0) }
+
+.bottom-sheet-handle {
+  flex-shrink: 0;
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--border2);
+  margin: 10px auto 0;
+}
+.bottom-sheet-title-bar {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.bottom-sheet-title { font-size: 15px; font-weight: 700; color: var(--fg) }
+.bottom-sheet-close {
+  width: 32px; height: 32px; border-radius: 8px;
+  border: none; background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--fg2);
+}
+.bottom-sheet-close svg { width: 16px; height: 16px; stroke: currentColor; fill: none }
+.bottom-sheet-body {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 16px 20px;
+}
+.bottom-sheet-footer {
+  flex-shrink: 0;
+  padding: 12px 20px 8px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 10px;
+}
+.bottom-sheet-footer .btn { flex: 1 }
+
 /* ── Responsive mobile ── */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   :root { --sidebar-w: 0px }
   .sidebar { display: none }
-  .content { padding: 16px }
+  .content { padding: 16px; padding-bottom: 84px }
   .kpi-row { grid-template-columns: 1fr 1fr }
   .divida-grid { grid-template-columns: 1fr }
   .ano-grid { grid-template-columns: 1fr 1fr }
   .page-title { font-size: 14px }
+
+  /* Topbar mobile: hamburguer + título + ações */
+  .topbar-menu-btn { display: flex }
+  .topbar { padding: 0 12px; gap: 8px }
+  .topbar-left { flex: 1; min-width: 0 }
+  .page-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px }
+  .topbar-right .sync-label { display: none } /* esconde "Atualizado agora" no mobile */
+
+  /* Modais viram bottom sheets no mobile */
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 92svh !important;
+    overflow-y: auto;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
+  }
+
+  /* Formulários: 1 campo por linha */
+  .form-row, .form-grid, [style*="display:grid"], [style*="display: grid"] {
+    grid-template-columns: 1fr !important;
+  }
+  .form-group { grid-column: auto !important }
+
+  /* Altura dinâmica em vez de 100vh */
+  .main { min-height: 100svh }
 }
 
 @media (max-width: 390px) {
@@ -2457,6 +2627,91 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
     @keyframes fab-bounce { 0%{transform:translateY(40px);opacity:0} 70%{transform:translateY(-4px)} 100%{transform:translateY(0);opacity:1} }
   </style>
 
+  <!-- ═══ GAVETA LATERAL (drawer) — mobile only ═══════════════════ -->
+  <div class="drawer-backdrop" id="drawer-backdrop" onclick="fecharGaveta()"></div>
+  <nav class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Menu de navegação">
+    <div class="drawer-header">
+      <div class="drawer-logo">
+        <div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#4f7fff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:16px">💰</div>
+        <span style="font-size:16px;font-weight:800;background:linear-gradient(135deg,#4f7fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Finanvô</span>
+      </div>
+      <button class="drawer-close" id="drawer-close-btn" onclick="fecharGaveta()" aria-label="Fechar menu">
+        <svg viewBox="0 0 18 18"><path d="M14 4L4 14M4 4l10 10" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-nav" id="drawer-nav">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Controle</div>
+        <div class="nav-item" onclick="navTo('dashboard',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg></span> Dashboard
+        </div>
+        <div class="nav-item" onclick="navTo('mensal',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 2v3M13 2v3"/></svg></span> Mês a Mês
+        </div>
+        <div class="nav-item" onclick="navTo('lancamentos',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6h10M5 10h10M5 14h6"/></svg></span> Lançamentos
+        </div>
+        <div class="nav-item" onclick="navTo('grafico',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,14 7,9 11,11 17,5"/><path d="M17 5h-4M17 5v4"/></svg></span> Gráficos
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Planejamento</div>
+        <div class="nav-item" onclick="navTo('dividas',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="16" height="11" rx="2"/><path d="M6 6V5a4 4 0 0 1 8 0v1M10 12v.01"/></svg></span> Dívidas
+        </div>
+        <div class="nav-item" onclick="navTo('estrategia',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><circle cx="10" cy="10" r="4"/><circle cx="10" cy="10" r="1" fill="currentColor" stroke="none"/></svg></span> Estratégia
+        </div>
+        <div class="nav-item" onclick="navTo('ia',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2C6.69 2 4 4.69 4 8c0 2.07 1 3.9 2.56 5.08L6 16l2.5-1.25A6.03 6.03 0 0 0 10 15c3.31 0 6-2.69 6-6s-2.69-7-6-7z"/><path d="M8 9h4M8 11h2"/></svg></span> Análise IA
+        </div>
+        <div class="nav-item" onclick="navTo('checklist',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l2 2 4-4"/><rect x="3" y="4" width="14" height="13" rx="2"/></svg></span> Checklist Mensal
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Comunidade</div>
+        <div class="nav-item" onclick="navTo('indicacao',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H9.5a3.5 3.5 0 1 1 0-7H10v7M20 7v4M20 7H15.5a3.5 3.5 0 1 0 0 7H16v-7" transform="scale(0.85) translate(1.5,1.5)"/></svg></span> Indique e Ganhe
+        </div>
+        <div class="nav-item" onclick="navTo('afiliados',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v16M6 6l4-4 4 4M6 14l4 4 4-4"/></svg></span> Afiliados
+        </div>
+        <div class="nav-item" onclick="navTo('familia',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="6" r="2.5"/><circle cx="13" cy="6" r="2.5"/><path d="M2 17c0-3.31 2.24-5 5-5h6c2.76 0 5 1.69 5 5"/></svg></span> Modo Família
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sistema</div>
+        <div class="nav-item" onclick="navTo('config',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/></svg></span> Configurações
+        </div>
+        <div class="nav-item" onclick="mostrarInstalacao();fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="1" width="8" height="14" rx="2"/><path d="M9 15v3M7 18h6M10 5v4M8 7l2 2 2-2"/></svg></span> Instalar App
+        </div>
+        <div class="nav-item" onclick="alternarTema()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="4"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/></svg></span> <span id="drawer-tema-label">Tema claro</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <button onclick="resetarConta();fecharGaveta()" style="width:100%;background:rgba(255,80,80,0.07);border:1px solid rgba(255,80,80,0.18);color:#f87171;border-radius:8px;padding:7px 10px;font-size:11px;cursor:pointer;text-align:left;margin-bottom:8px">🔄 Reiniciar configuração do zero</button>
+      <div class="user-card" style="cursor:pointer" onclick="logout()" title="Sair">
+        <div class="avatar" id="drawer-avatar" style="background:#4f7fff">CT</div>
+        <div class="user-info">
+          <div class="user-name" id="drawer-name">Meu Perfil</div>
+          <div class="user-role" id="drawer-role">Titular · Sair 🔒</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
   <!-- MAIN -->
   <div class="main">
     <!-- Loading overlay — visível enquanto o Firestore carrega os dados iniciais -->
@@ -2473,6 +2728,16 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
       @keyframes spin-load { to { transform: rotate(360deg); } }
     </style>
     <div class="topbar">
+      <!-- Hamburguer — visível apenas no mobile via CSS -->
+      <button class="topbar-menu-btn" id="topbar-menu-btn"
+              onclick="abrirGaveta()"
+              aria-label="Abrir menu"
+              aria-expanded="false"
+              aria-controls="drawer">
+        <svg viewBox="0 0 20 20" stroke-width="1.8">
+          <path d="M3 5h14M3 10h14M3 15h14"/>
+        </svg>
+      </button>
       <div class="topbar-left">
         <div class="breadcrumb" id="breadcrumb">Controle</div>
         <div class="page-title" id="page-title">Dashboard</div>
@@ -3820,7 +4085,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.1';
+const APP_VERSION = 'v5.2';
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',
@@ -4561,6 +4826,112 @@ const DESPESAS_BASE = [
   {desc:'INSS / Previdência PJ', cat:'PJ', tipo:'saida', val:0, mes:'Todos'},
   {desc:'Contador', cat:'PJ', tipo:'saida', val:0, mes:'Todos'},
 ];
+
+// ══════════════════════════════════════════════════════════════════
+// GAVETA LATERAL (drawer) — mobile kaizen
+// ══════════════════════════════════════════════════════════════════
+(function() {
+  const drawer      = document.getElementById('drawer');
+  const backdrop    = document.getElementById('drawer-backdrop');
+  const menuBtn     = document.getElementById('topbar-menu-btn');
+  const closeBtn    = document.getElementById('drawer-close-btn');
+  let   _scrollY    = 0;
+  let   _touchStartX = 0;
+  let   _touchStartY = 0;
+  let   _drawerOpen  = false;
+
+  window.abrirGaveta = function() {
+    if (_drawerOpen) return;
+    _drawerOpen = true;
+    _scrollY = window.scrollY;
+    // Bloqueia scroll da página de fundo
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top      = '-' + _scrollY + 'px';
+    document.body.style.width    = '100%';
+
+    backdrop.classList.add('open');
+    drawer.classList.add('open');
+    menuBtn && menuBtn.setAttribute('aria-expanded', 'true');
+
+    // Foco na gaveta para acessibilidade
+    setTimeout(() => { closeBtn && closeBtn.focus(); }, 100);
+
+    // Histórico — Android back fecha a gaveta
+    history.pushState({ gaveta: true }, '');
+  };
+
+  window.fecharGaveta = function() {
+    if (!_drawerOpen) return;
+    _drawerOpen = false;
+
+    backdrop.classList.remove('open');
+    drawer.classList.remove('open');
+    menuBtn && menuBtn.setAttribute('aria-expanded', 'false');
+
+    // Restaura scroll
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top      = '';
+    document.body.style.width    = '';
+    window.scrollTo(0, _scrollY);
+
+    // Foco de volta ao botão hamburguer
+    menuBtn && menuBtn.focus();
+  };
+
+  // ESC fecha a gaveta
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && _drawerOpen) fecharGaveta();
+  });
+
+  // Android back / iPhone swipe-back — popstate fecha gaveta
+  window.addEventListener('popstate', e => {
+    if (_drawerOpen) fecharGaveta();
+  });
+
+  // Swipe para fechar — arrastar gaveta para a esquerda
+  drawer.addEventListener('touchstart', e => {
+    _touchStartX = e.touches[0].clientX;
+    _touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  drawer.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - _touchStartX;
+    const dy = Math.abs(e.changedTouches[0].clientY - _touchStartY);
+    // Swipe horizontal para a esquerda, mais horizontal que vertical
+    if (dx < -48 && dy < 60) fecharGaveta();
+  }, { passive: true });
+
+  // Sincroniza nome/avatar do usuário na gaveta quando o sidebar atualizar
+  function syncDrawerUser() {
+    const src = document.getElementById('sidebar-name');
+    const rol = document.getElementById('sidebar-role');
+    const av  = document.getElementById('sidebar-avatar');
+    if (src) document.getElementById('drawer-name').textContent  = src.textContent;
+    if (rol) document.getElementById('drawer-role').textContent  = rol.textContent;
+    if (av)  {
+      const dav = document.getElementById('drawer-avatar');
+      dav.textContent   = av.textContent;
+      dav.style.background = av.style.background;
+    }
+    // tema label
+    const tl = document.getElementById('tema-nav-label');
+    if (tl) document.getElementById('drawer-tema-label').textContent = tl.textContent;
+  }
+
+  // Observa mudanças no sidebar para manter gaveta sincronizada
+  const sidebarName = document.getElementById('sidebar-name');
+  if (sidebarName && window.MutationObserver) {
+    new MutationObserver(syncDrawerUser).observe(
+      document.querySelector('.sidebar-footer') || document.body,
+      { subtree: true, childList: true, characterData: true }
+    );
+  }
+  // Sincroniza ao carregar
+  document.addEventListener('DOMContentLoaded', syncDrawerUser);
+  setTimeout(syncDrawerUser, 1500);
+})();
 
 // ── Navegação ──────────────────────────────────────────────────────
 function navTo(view, el) {
