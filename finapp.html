@@ -49,6 +49,10 @@
   form-action 'self';
   upgrade-insecure-requests;
 ">
+<!-- M34 FIX: evita cache do browser para o HTML principal — força busca da versão mais recente -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="application-name" content="Finanvô">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -87,7 +91,7 @@
       const p = window.location.pathname;
       // M23 FIX: passar APP_VERSION como query param para o SW — força re-registro
       // quando a versão muda e mantém o CACHE_NAME sincronizado com o app.
-      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.4').replace(/[^a-z0-9.]/gi, '');
+      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.5').replace(/[^a-z0-9.]/gi, '');
       return p.replace(/[^/]*$/, '') + 'sw.js?v=' + ver;
     })();
 
@@ -122,6 +126,10 @@
             }
           });
         });
+
+        // M34 FIX: força verificação de update imediatamente ao registrar o SW
+        // Isso garante que versões novas são detectadas logo ao abrir o app
+        reg.update().catch(function(){});
 
         // M1 FIX: verifica update a cada 60 minutos (apps abertos por horas nunca saberiam)
         setInterval(function() { reg.update().catch(function(){}); }, 60 * 60 * 1000);
@@ -4186,7 +4194,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.4'; // M33: layout PC adaptado
+const APP_VERSION = 'v5.5'; // M34: fix cache PC + no-cache headers + SW update imediato
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',

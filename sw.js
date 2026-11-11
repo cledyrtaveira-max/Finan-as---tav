@@ -1,7 +1,7 @@
 /* Finanvô — Service Worker — network-first para shell + notificação de update */
 // M23 FIX: versão sincronizada com APP_VERSION via query param (?v=<ver>).
 // O browser re-registra o SW quando a URL muda, limpando caches antigos.
-const _SW_VER   = new URL(self.location.href).searchParams.get('v') || 'v5.4';
+const _SW_VER   = new URL(self.location.href).searchParams.get('v') || 'v5.5';
 const CACHE_NAME = 'finanvo-' + _SW_VER;
 // M29 FIX: cache do CDN com nome fixo (sem versão) — bibliotecas raramente mudam
 // e não precisam ser re-baixadas a cada deploy do app.
@@ -62,7 +62,34 @@ self.addEventListener('fetch', e => {
 
   if (url.origin !== self.location.origin) return;
 
-  // Shell (finapp.html, sw.js, etc.): network-first com fallback para cache
+  // M34 FIX: Shell (finapp.html): network-first PURO — sem fallback para cache do shell.
+  // O app não funciona sem a rede para autenticar mesmo assim, e o cache do shell
+  // estava impedindo que versões novas chegassem ao usuário.
+  // Fallback para cache APENAS se a rede falhar (modo offline real).
+  const isShell = url.pathname.endsWith('finapp.html') || url.pathname === self.registration.scope;
+  if (isShell) {
+    e.respondWith((async () => {
+      try {
+        // Sempre busca da rede primeiro, sem cache de resposta intermediária
+        const networkResp = await fetch(e.request, { cache: 'no-store' });
+        if (networkResp && networkResp.status === 200) {
+          // Atualiza o cache com a versão mais recente
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(e.request, networkResp.clone());
+          return networkResp;
+        }
+        throw new Error('bad response');
+      } catch(err) {
+        // Só usa cache em modo offline
+        const cache = await caches.open(CACHE_NAME);
+        const cached = await cache.match(e.request);
+        return cached || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+      }
+    })());
+    return;
+  }
+
+  // Outros recursos do mesmo origem: network-first com fallback para cache
   // e notificação de update quando versão nova está disponível
   e.respondWith(
     caches.open(CACHE_NAME).then(async cache => {
