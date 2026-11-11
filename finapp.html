@@ -2816,14 +2816,15 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
   <!-- MAIN -->
   <div class="main">
     <!-- Loading overlay — visível enquanto o Firestore carrega os dados iniciais -->
-    <div id="loading-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:14px">
+    <!-- M34e FIX: loading-overlay com cores explícitas (não depende de CSS vars) e timeout curto -->
+    <div id="loading-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:#080b12;flex-direction:column;align-items:center;justify-content:center;gap:14px">
       <div style="position:relative;width:52px;height:52px">
-        <div style="position:absolute;inset:0;border:3px solid var(--border2);border-radius:50%"></div>
-        <div style="position:absolute;inset:0;border:3px solid transparent;border-top-color:var(--accent);border-radius:50%;animation:spin-load 0.75s linear infinite"></div>
+        <div style="position:absolute;inset:0;border:3px solid rgba(255,255,255,0.12);border-radius:50%"></div>
+        <div style="position:absolute;inset:0;border:3px solid transparent;border-top-color:#4f7fff;border-radius:50%;animation:spin-load 0.75s linear infinite"></div>
       </div>
-      <div style="font-size:14px;font-weight:700;color:var(--fg2);letter-spacing:-.2px">Carregando seus dados…</div>
-      <div style="font-size:12px;color:var(--fg3)">Conectando ao Firestore</div>
-      <button onclick="(async()=>{try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(r=>r.unregister()));}catch(e){}location.reload(true);})()" style="margin-top:16px;padding:10px 22px;background:rgba(79,127,255,.12);color:var(--accent);border:1px solid rgba(79,127,255,.3);border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:.2s" onmouseover="this.style.background='rgba(79,127,255,.2)'" onmouseout="this.style.background='rgba(79,127,255,.12)'">Limpar cache e recarregar</button>
+      <div style="font-size:14px;font-weight:700;color:#c8d0e8;letter-spacing:-.2px">Carregando seus dados…</div>
+      <div style="font-size:12px;color:#8899bb">Conectando ao Firestore</div>
+      <button onclick="(async()=>{try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(r=>r.unregister()));}catch(e){}location.reload(true);})()" style="margin-top:16px;padding:10px 22px;background:rgba(79,127,255,.15);color:#4f7fff;border:1px solid rgba(79,127,255,.4);border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:.2s" onmouseover="this.style.background='rgba(79,127,255,.25)'" onmouseout="this.style.background='rgba(79,127,255,.15)'">Limpar cache e recarregar</button>
     </div>
     <style>
       @keyframes spin-load { to { transform: rotate(360deg); } }
@@ -4361,10 +4362,11 @@ fbAuth.onAuthStateChanged(async function(user) {
         ov.style.display = 'none';
         ov.remove();
       } else {
-        // Primeira vez — mostra por no máximo 2.5s e some de qualquer forma
+        // Primeira vez — mostra por no máximo 1.5s e some de qualquer forma
+        // M34e FIX: timeout reduzido de 2.5s → 1.5s para não prender na tela preta
         ov.style.display = 'flex';
         const esconderOv = () => { try { ov.style.display = 'none'; ov.remove(); } catch(e) {} };
-        setTimeout(esconderOv, 2500);
+        setTimeout(esconderOv, 1500);
         // Também some assim que o app estiver pronto (renderDashboard chama isso)
         window._esconderLoadingOverlay = esconderOv;
       }
