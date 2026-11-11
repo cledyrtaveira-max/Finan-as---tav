@@ -653,9 +653,10 @@ const fbDb   = firebase.firestore();
 }
 </style>
 
-<canvas id="login-canvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
 <div id="login-screen">
-  <div class="login-box">
+  <!-- M34c FIX: canvas movido para dentro do login-screen para evitar sobreposição no PC -->
+  <canvas id="login-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
+  <div class="login-box" style="position:relative;z-index:2;">
     <!-- Logo Finanvô -->
     <div class="login-logo">
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
