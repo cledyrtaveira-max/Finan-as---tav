@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Firebase Auth Handler</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js"></script>
+<script>
+// Firebase Auth redirect handler for custom domain
+// This page handles OAuth redirects when authDomain is set to a custom domain.
+// See: https://firebase.google.com/docs/auth/web/redirect-best-practices
+
+(function() {
+  // Parse the URL to get the apiKey and other params
+  const params = new URLSearchParams(window.location.search);
+  const apiKey = params.get('apiKey');
+
+  if (apiKey) {
+    // Initialize Firebase with minimal config to handle the auth callback
+    try {
+      const app = firebase.initializeApp({
+        apiKey: apiKey,
+        authDomain: 'appfinanvo.com.br'
+      }, 'auth-handler');
+
+      // The auth SDK will handle the rest
+      firebase.auth(app);
+    } catch(e) {
+      // App may already be initialized
+    }
+  }
+
+  // Notify the opener/parent window that auth is complete
+  if (window.opener) {
+    window.opener.postMessage({ type: 'authCallback', url: window.location.href }, '*');
+    // Try to close this window
+    setTimeout(() => window.close(), 500);
+  } else if (window.parent !== window) {
+    window.parent.postMessage({ type: 'authCallback', url: window.location.href }, '*');
+  }
+})();
+</script>
+</head>
+<body>
+<p style="font-family:sans-serif;text-align:center;padding:40px;color:#666">
+  Autenticando... Por favor aguarde.
+</p>
+</body>
+</html>
