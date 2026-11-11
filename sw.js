@@ -62,6 +62,9 @@ self.addEventListener('fetch', e => {
 
   if (url.origin !== self.location.origin) return;
 
+  // M34 FIX: Nunca interceptar reset.html — deve sempre ir à rede para limpar SWs antigos
+  if (url.pathname.endsWith('reset.html')) return;
+
   // M34 FIX: Shell (finapp.html): network-first PURO — sem fallback para cache do shell.
   // O app não funciona sem a rede para autenticar mesmo assim, e o cache do shell
   // estava impedindo que versões novas chegassem ao usuário.

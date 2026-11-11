@@ -713,7 +713,11 @@ const fbDb   = firebase.firestore();
 
     <div class="login-footer" style="display:flex;align-items:center;justify-content:space-between;">
       <span>FINANVÔ · ACESSO PRIVADO</span>
-      <button onclick="alternarTema()" id="tema-btn-login" title="Alternar tema" style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px;opacity:.7;line-height:1;">☀️</button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <!-- M34 FIX: link de reset de cache — resolve tela preta por SW antigo -->
+        <a href="reset.html" title="Limpar cache e atualizar" style="background:none;border:none;cursor:pointer;font-size:10px;color:rgba(255,255,255,0.2);font-family:inherit;text-decoration:none;letter-spacing:.5px;" onmouseover="this.style.color='rgba(255,255,255,0.5)'" onmouseout="this.style.color='rgba(255,255,255,0.2)'">↻ reset</a>
+        <button onclick="alternarTema()" id="tema-btn-login" title="Alternar tema" style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px;opacity:.7;line-height:1;">☀️</button>
+      </div>
     </div>
 
     <!-- Banner instalação PWA -->

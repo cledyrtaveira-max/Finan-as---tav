@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finanvô — Atualizando...</title>
+<style>
+  body {
+    margin: 0;
+    background: #080b12;
+    color: #fff;
+    font-family: system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .logo { font-size: 2rem; }
+  .msg { font-size: 1rem; opacity: 0.7; text-align: center; padding: 0 24px; }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: #6c63ff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="logo">💰</div>
+<div class="spinner"></div>
+<div class="msg" id="msg">Limpando cache antigo...</div>
+<script>
+(async function() {
+  const msg = document.getElementById('msg');
+
+  try {
+    // 1. Desregistrar todos os Service Workers
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      msg.textContent = 'Removendo Service Workers antigos (' + registrations.length + ')...';
+      for (const reg of registrations) {
+        await reg.unregister();
+      }
+    }
+
+    // 2. Limpar todos os caches
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      msg.textContent = 'Limpando caches (' + keys.length + ')...';
+      for (const key of keys) {
+        await caches.delete(key);
+      }
+    }
+
+    // 3. Limpar localStorage (exceto dados do usuário — só itens do SW/app)
+    // Mantém dados financeiros, só remove flags de controle de versão
+    const keepPrefixes = ['finvo_user_', 'finvo_trans_', 'finvo_meta_', 'finvo_cat_', 'finvo_reset_pending'];
+    const toRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      const keep = keepPrefixes.some(p => k && k.startsWith(p));
+      if (!keep && k && (k.startsWith('sw_') || k.startsWith('finanvo_sw') || k === 'finanvo_version')) {
+        toRemove.push(k);
+      }
+    }
+    toRemove.forEach(k => localStorage.removeItem(k));
+
+    msg.textContent = 'Pronto! Redirecionando...';
+
+    // 4. Redirecionar para o app com cache-bust
+    setTimeout(function() {
+      window.location.replace('finapp.html?nocache=' + Date.now());
+    }, 800);
+
+  } catch(e) {
+    msg.textContent = 'Redirecionando...';
+    setTimeout(function() {
+      window.location.replace('finapp.html?nocache=' + Date.now());
+    }, 1000);
+  }
+})();
+</script>
+</body>
+</html>
