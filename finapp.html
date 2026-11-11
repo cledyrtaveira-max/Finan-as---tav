@@ -87,7 +87,7 @@
       const p = window.location.pathname;
       // M23 FIX: passar APP_VERSION como query param para o SW — força re-registro
       // quando a versão muda e mantém o CACHE_NAME sincronizado com o app.
-      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.0').replace(/[^a-z0-9.]/gi, '');
+      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.2').replace(/[^a-z0-9.]/gi, '');
       return p.replace(/[^/]*$/, '') + 'sw.js?v=' + ver;
     })();
 
@@ -4085,7 +4085,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.2';
+const APP_VERSION = 'v5.3';
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',
