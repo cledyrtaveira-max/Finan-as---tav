@@ -95,7 +95,7 @@
       const p = window.location.pathname;
       // M23 FIX: passar APP_VERSION como query param para o SW — força re-registro
       // quando a versão muda e mantém o CACHE_NAME sincronizado com o app.
-      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.7').replace(/[^a-z0-9.]/gi, '');
+      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.8').replace(/[^a-z0-9.]/gi, '');
       return p.replace(/[^/]*$/, '') + 'sw.js?v=' + ver;
     })();
 
@@ -3617,6 +3617,11 @@ Abraços!</div>
             </table>
           </div>
 
+          <!-- M37: CARTÕES BENEFÍCIO -->
+          <div class="section-title" style="margin-bottom:4px;margin-top:24px">Cartões benefício</div>
+          <div style="font-size:11px;color:var(--fg3);margin-bottom:8px">Informe quanto cada cartão recebe por mês. O valor entra como renda em todos os meses.</div>
+          <div class="table-wrap" style="padding:8px 16px 12px"><div id="cfg-beneficios"></div></div>
+
           <!-- DESPESAS FIXAS -->
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;margin-top:24px">
             <div class="section-title" style="margin-bottom:0">Despesas fixas mensais</div>
@@ -4213,7 +4218,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.7'; // M36: fix tela preta no PC (menu mobile sem estilo cobrindo o app)
+const APP_VERSION = 'v5.8'; // M36: fix tela preta no PC (menu mobile sem estilo cobrindo o app)
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',
@@ -5360,8 +5365,7 @@ function renderSemaforoEKpis() {
   const base = despesasEfetivas ? despesasEfetivas() : DESPESAS_BASE;
   const periodoKey = `${anoSelecionado}/${mesSelecionado}`;
   if (!appCfg.periodos) appCfg.periodos = {};
-  const rendaMesStr = appCfg.periodos[periodoKey]?.rendaMes;
-  const rendaMesVal = rendaMesStr ? parseFloat(rendaMesStr) : 0;
+  const rendaMesVal = rendaMesEfetiva(mesSelecionado, anoSelecionado); // M37: inclui benefícios
 
   const baseVis = base.filter((l,i)=>!(appCfg.ocultas&&appCfg.ocultas[String(l._baseIdx!==undefined?l._baseIdx:i)]));
   const lanMes = (appData.lancamentos||[]).filter(l=>l.mes===mesSelecionado && String(l.ano||anoSelecionado)===String(anoSelecionado));
@@ -5606,7 +5610,7 @@ function renderDashboard() {
   const despPrevTotal = despPrev + despReal;
   const divsPrevTotal = divsPrev + divsReal;
   // I25 FIX: rendaMes substitui renda base, não os lançamentos extras de entrada
-  const rendaPrevTotal = (rendaMesVal > 0 ? rendaMesVal : rendaPrev) + rendaReal;
+  const rendaPrevTotal = (rendaMesVal > 0 ? rendaMesEfetiva(mesSelecionado, anoSelecionado) : rendaPrev) + rendaReal;
   const saldoPrev = rendaPrevTotal - despPrevTotal - divsPrevTotal;
 
   // Totais que aparecem nos cards: só confirmados ✅
@@ -6108,8 +6112,7 @@ function getDadosPeriodo(mes, ano) {
                + manuaisM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
   // Se o usuário informou renda real do mês (campo rendaMes), ela substitui a renda base
   // I25 FIX: lançamentos manuais de entrada são sempre somados por cima
-  const rendaMesStr = cfgM.rendaMes;
-  const rendaMesVal = rendaMesStr ? parseFloat(rendaMesStr) : 0;
+  const rendaMesVal = rendaMesEfetiva(mes, ano); // M37: inclui benefícios
   const entSoBase = todosM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
   const entSoManuais = manuaisM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
   const ent = rendaMesVal > 0 ? (rendaMesVal + entSoManuais) : entBase;
@@ -6922,8 +6925,11 @@ function renderMensalChart() {
     const extrasM = (cfgM.extras||[]).concat(appCfg.extras||[]);
     const todosM = [...baseM, ...extrasM];
     const manuaisM = appData.lancamentos.filter(l => l.mes === mes && (!l.ano || l.ano === anoSelecionado));
-    const ent = todosM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0)
-              + manuaisM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
+    // M37 FIX: renda informada do mês substitui a renda base (igual à aba Gráficos)
+    const _rEf = rendaMesEfetiva(mes, anoSelecionado);
+    const _entMan = manuaisM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
+    const ent = _rEf > 0 ? _rEf + _entMan
+              : todosM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0) + _entMan;
     const sai = todosM.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0)
               + manuaisM.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0);
     const div = todosM.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0)
@@ -7127,8 +7133,11 @@ function renderMensal() {
 
     const manuaisM = appData.lancamentos.filter(l => l.mes === mes && (!l.ano || l.ano === anoSelecionado));
 
-    const ent = todosM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0)
-              + manuaisM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
+    // M37 FIX: renda informada do mês substitui a renda base (igual à aba Gráficos)
+    const _rEf = rendaMesEfetiva(mes, anoSelecionado);
+    const _entMan = manuaisM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
+    const ent = _rEf > 0 ? _rEf + _entMan
+              : todosM.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0) + _entMan;
     const sai = todosM.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0)
               + manuaisM.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0);
     const div = todosM.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0)
@@ -7248,6 +7257,89 @@ const BENEFICIO_CARDS = [
 // Busca cartão por id
 function getBeneficioCard(id) {
   return BENEFICIO_CARDS.find(c => c.id === id) || null;
+}
+
+// ── M37: valores dos cartões benefício ────────────────────────────
+// Valores mensais ficam em appCfg._beneficiosValores { id: valor } e são espelhados
+// em appCfg.extras como entradas fixas (cat "Benefícios", marcadas com _ben).
+function beneficiosMensal() {
+  return (appCfg.extras || []).filter(e => e && e._ben && e.tipo === 'entrada')
+    .reduce((s, e) => s + (Number(e.val) || 0), 0);
+}
+// Renda informada do mês + benefícios. Retorna 0 se o usuário não informou renda no mês
+// (nesse caso as telas usam a renda base fixa, que já inclui os benefícios).
+function rendaMesEfetiva(mes, ano) {
+  const r = parseFloat(((appCfg.periodos || {})[ano + '/' + mes] || {}).rendaMes || 0) || 0;
+  return r > 0 ? r + beneficiosMensal() : 0;
+}
+function syncBeneficiosExtras() {
+  const ativos = appCfg._beneficiosAtivos || [];
+  const vals = appCfg._beneficiosValores || {};
+  appCfg.extras = (appCfg.extras || []).filter(e => !(e && e._ben));
+  ativos.forEach(id => {
+    const v = Number(vals[id]) || 0;
+    const card = getBeneficioCard(id);
+    if (v > 0 && card) appCfg.extras.push({ desc: card.nome, val: v, tipo: 'entrada', cat: 'Benefícios', _ben: id });
+  });
+}
+function setBeneficioValor(id, valor) {
+  if (!appCfg._beneficiosValores) appCfg._beneficiosValores = {};
+  const v = parseFloat(String(valor).replace(',', '.'));
+  if (isNaN(v) || v <= 0) delete appCfg._beneficiosValores[id];
+  else appCfg._beneficiosValores[id] = Math.round(v * 100) / 100;
+}
+// Usados pela tela de Configurações
+function cfgSalvarBeneficio(id, valor) {
+  setBeneficioValor(id, valor);
+  syncBeneficiosExtras();
+  saveCfg(appCfg);
+  const tot = document.getElementById('cfg-beneficios-total');
+  if (tot) tot.textContent = brl(beneficiosMensal());
+}
+function cfgAdicionarBeneficio(id) {
+  if (!id) return;
+  if (!appCfg._beneficiosAtivos) appCfg._beneficiosAtivos = [];
+  if (!appCfg._beneficiosAtivos.includes(id)) appCfg._beneficiosAtivos.push(id);
+  saveCfg(appCfg);
+  renderCfgBeneficios();
+  setTimeout(() => { const el = document.getElementById('cfg-ben-val-' + id); if (el) el.focus(); }, 50);
+}
+function cfgRemoverBeneficio(id) {
+  appCfg._beneficiosAtivos = (appCfg._beneficiosAtivos || []).filter(x => x !== id);
+  if (appCfg._beneficiosValores) delete appCfg._beneficiosValores[id];
+  syncBeneficiosExtras();
+  saveCfg(appCfg);
+  renderCfgBeneficios();
+}
+function renderCfgBeneficios() {
+  const el = document.getElementById('cfg-beneficios');
+  if (!el) return;
+  const ativos = (appCfg._beneficiosAtivos || []).filter(id => getBeneficioCard(id));
+  const vals = appCfg._beneficiosValores || {};
+  const disponiveis = BENEFICIO_CARDS.filter(c => !ativos.includes(c.id));
+  const linhas = ativos.map(id => {
+    const card = getBeneficioCard(id);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      ${beneficioIcon(id, 30)}
+      <div style="flex:1;min-width:0;font-size:13px;font-weight:500;color:var(--fg1)">${esc(card.nome)}</div>
+      <span style="font-size:12px;color:var(--fg2)">R$</span>
+      <input id="cfg-ben-val-${id}" type="number" min="0" step="10" inputmode="decimal" placeholder="0,00"
+        value="${vals[id] > 0 ? vals[id] : ''}" aria-label="Valor mensal de ${esc(card.nome)}"
+        style="width:110px;padding:7px 9px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;background:var(--bg);color:var(--fg1);text-align:right"
+        oninput="cfgSalvarBeneficio('${id}', this.value)">
+      <button class="btn btn-ghost" style="padding:3px 8px;font-size:11px;color:var(--red)" onclick="cfgRemoverBeneficio('${id}')" title="Remover cartão">✕</button>
+    </div>`;
+  }).join('');
+  el.innerHTML = `
+    ${ativos.length ? linhas : '<div style="font-size:12px;color:var(--fg3);padding:6px 0 10px">Nenhum cartão benefício selecionado.</div>'}
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px">
+      <select onchange="cfgAdicionarBeneficio(this.value)" aria-label="Adicionar cartão benefício"
+        style="padding:7px 10px;border-radius:8px;border:1px dashed var(--border);background:var(--surface);color:var(--accent);font-size:12px;max-width:100%">
+        <option value="">＋ Adicionar cartão…</option>
+        ${disponiveis.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('')}
+      </select>
+      <div style="font-size:12px;color:var(--fg2)">Total por mês: <strong id="cfg-beneficios-total" style="color:var(--green)">${brl(beneficiosMensal())}</strong></div>
+    </div>`;
 }
 
 // Renderiza ícone SVG de cartão de benefício (36x36 por padrão)
@@ -7502,8 +7594,12 @@ function renderLancamentos() {
   };
   // M14 FIX: arredondar cada acumulação para 2 casas para evitar erros de ponto flutuante
   const r2 = v => Math.round(v * 100) / 100;
-  const totalEnt = r2(baseVis.filter(l=>tipoEf(l)==='entrada').reduce((s,l)=>s+l.val,0)
-    + extras.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0));
+  // M37 FIX: renda informada do mês entra no total (igual Dashboard e Gráficos)
+  const rendaInfRaw = parseFloat(cfg.rendaMes || 0) || 0;
+  const rendaInfEf  = rendaMesEfetiva(mesSelecionado, anoSelecionado);
+  const _entManuais = extras.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
+  const totalEnt = r2(rendaInfEf > 0 ? rendaInfEf + _entManuais
+    : baseVis.filter(l=>tipoEf(l)==='entrada').reduce((s,l)=>s+l.val,0) + _entManuais);
   const totalSai = r2(baseVis.filter(l=>tipoEf(l)==='saida').reduce((s,l)=>s+l.val,0)
     + extras.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0));
   const totalDiv = r2(baseVis.filter(l=>tipoEf(l)==='divida').reduce((s,l)=>s+l.val,0)
@@ -7559,6 +7655,14 @@ function renderLancamentos() {
   // ── Montar cards ─────────────────────────────────────────────────
   let html = '';
 
+  // M37: renda informada do mês aparece como linha própria
+  if (rendaInfRaw > 0) {
+    html += `<div class="lanc-group"><div class="lanc-group-label">Renda do mês <span style="color:var(--fg3);font-weight:400;font-size:10px">informada no Dashboard</span></div>`
+      + lancItemHtml({ desc: 'Renda de ' + mesSelecionado + ' ' + anoSelecionado, val: rendaInfRaw, tipo: 'entrada', cat: 'Salário' },
+          { actions: `<button class="lanc-btn" onclick="navTo('dashboard', document.querySelectorAll('.nav-item')[0]);setTimeout(()=>{const i=document.getElementById('inp-renda-mes');if(i){i.focus();i.select();}},150)" title="Editar no Dashboard">✏️</button>` })
+      + '</div>';
+  }
+
   // Fixas
   const baseFiltrada = base.filter((l, renderIdx) => {
     const idx = l._baseIdx !== undefined ? l._baseIdx : renderIdx;
@@ -7610,7 +7714,7 @@ function renderLancamentos() {
   }
 
   // Vazio
-  if (baseFiltrada.length === 0 && extras.length === 0) {
+  if (baseFiltrada.length === 0 && extras.length === 0 && !(rendaInfRaw > 0)) {
     html = `<div class="lanc-empty">
       <div class="lanc-empty-icon">
         <svg viewBox="0 0 24 24" stroke-width="1.6"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1.5"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
@@ -7751,6 +7855,11 @@ function remover(id) { removerManual(id); }
 // Remove despesa fixa adicionada pelo usuário (sem confirm — já confirmado via UI)
 function removerExtraFixa(eIdx) {
   if (!appCfg.extras || eIdx < 0 || eIdx >= appCfg.extras.length) return;
+  const _rem = appCfg.extras[eIdx];
+  if (_rem && _rem._ben) {
+    appCfg._beneficiosAtivos = (appCfg._beneficiosAtivos || []).filter(x => x !== _rem._ben);
+    if (appCfg._beneficiosValores) delete appCfg._beneficiosValores[_rem._ben];
+  }
   appCfg.extras.splice(eIdx, 1);
   saveCfg(appCfg);
   renderLancamentos();
@@ -8154,7 +8263,7 @@ function renderConfig() {
 
   // Extras: globais + do período
   function linhasExtras() {
-    const globais = (appCfg.extras||[]).map((item,eIdx)=>`<tr>
+    const globais = (appCfg.extras||[]).map((item,eIdx)=> item && item._ben ? '' : `<tr>
       <td>${esc(item.desc)} <span style="font-size:9px;color:var(--accent)">• fixa global</span></td>
       <td><span class="chip chip-blue" style="font-size:10px">${esc(item.cat)}</span></td>
       <td class="td-valor ${item.tipo==='entrada'?'entrada':item.tipo==='divida'?'divida':'saida'} text-right mono" style="font-size:13px;font-weight:700">${brl(item.val)}</td>
@@ -8170,6 +8279,7 @@ function renderConfig() {
   }
 
   document.getElementById('cfg-renda').innerHTML    = linhas(renda);
+  renderCfgBeneficios();
   document.getElementById('cfg-despesas').innerHTML = linhas(despesas) + linhasExtras();
   document.getElementById('cfg-dividas').innerHTML  = linhas(dividas);
   renderCfgEstrategia();
@@ -9772,7 +9882,8 @@ function calcSaldoMes(mes, ano) {
   const ent = todos.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0) + manuais.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
   const sai = todos.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0) + manuais.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0);
   const div = todos.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0) + manuais.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0);
-  const rendaM = cfgM.rendaMes ? parseFloat(cfgM.rendaMes) : ent;
+  const _rEf = rendaMesEfetiva(mes, ano);
+  const rendaM = _rEf > 0 ? _rEf + manuais.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0) : ent;
   return rendaM - sai - div;
 }
 
@@ -10022,7 +10133,8 @@ function calcProgressoMeta(meta) {
   const ent = todos.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0) + lanMes.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0);
   const sai = todos.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0) + lanMes.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.val,0);
   const div = todos.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0) + lanMes.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0);
-  const rendaM = cfgM.rendaMes ? parseFloat(cfgM.rendaMes) : ent;
+  const _rEf = rendaMesEfetiva(meta.mes, metaAno); // M37: inclui benefícios e entradas manuais
+  const rendaM = _rEf > 0 ? _rEf + lanMes.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.val,0) : ent;
   const saldo = rendaM - sai - div;
   let atual = 0, label = '';
   if (meta.tipo === 'economia') {
@@ -10555,7 +10667,7 @@ function renderSaudeFamiliar() {
   const cfgPer2 = cfgPeriodo();
   const stMap2 = cfgPer2.status || {};
 
-  const rendaMesVal2 = parseFloat((appCfg.periodos||{})[`${anoSelecionado}/${mesSelecionado}`]?.rendaMes || 0);
+  const rendaMesVal2 = rendaMesEfetiva(mesSelecionado, anoSelecionado); // M37: inclui benefícios
   const rendaBaseConf2 = baseVis.filter((l,i) => tipoEfetivo(l)==='entrada' && stMap2[String(i)]==='pago').reduce((s,l)=>s+l.val,0);
   const rendaManConf2  = lanMes.filter(l=>l.tipo==='entrada'&&stMap2[`lanc_${l.id}`]==='pago').reduce((s,l)=>s+l.val,0);
   // I25 FIX: rendaMes substitui a renda base confirmada, mas soma lançamentos manuais de entrada
@@ -10778,7 +10890,7 @@ function exportarPDF() {
   const baseVis = despesasEfetivas ? despesasEfetivas() : [];
   const lanMes = (appData.lancamentos||[]).filter(l => l.mes === mes && String(l.ano||ano) === String(ano));
 
-  const rendaMesVal = cfg.rendaMes ? parseFloat(cfg.rendaMes) : 0;
+  const rendaMesVal = rendaMesEfetiva(mes, ano); // M37: inclui benefícios
   const rendaBase = baseVis.filter(l => (appCfg.tipos?.[String(l._baseIdx)] || l.tipo) === 'entrada').reduce((s,l) => s+l.val, 0);
   const rendaLan  = lanMes.filter(l => l.tipo === 'entrada').reduce((s,l) => s+l.val, 0);
   // I25 FIX: rendaMes substitui a renda base, mas lançamentos manuais de entrada são sempre somados
@@ -11375,7 +11487,7 @@ function obRender() {
       <div class="ob-icon" style="background:linear-gradient(135deg,#4f7fff,#7c3aed)">🎴</div>
       <div class="ob-title">Você recebe cartões de benefício?</div>
       <div class="ob-sub">Selecione os cartões que sua empresa oferece. Os valores serão contados como renda.</div>
-      <div style="width:100%;max-height:320px;overflow-y:auto;padding-right:4px">
+      <div style="width:100%;max-height:230px;overflow-y:auto;padding-right:4px">
         ${tiposDisp.map(t => {
           const cards = cardsByTipo(t.tipo);
           if (!cards.length) return '';
@@ -11400,9 +11512,11 @@ function obRender() {
         .ob-ben-card.ob-ben-sel { border-color:var(--accent)!important; background:rgba(79,127,255,.13)!important; }
         .ob-ben-card.ob-ben-sel span { color:var(--accent)!important; font-weight:700; }
       </style>
+      <div id="ob-ben-valores" style="width:100%"></div>
       <button class="ob-btn" onclick="obNext()" style="margin-top:12px">Continuar →</button>
       <button class="ob-btn-ghost" onclick="obNext()">Pular por agora</button>
     `;
+    obRenderBenValores();
 
   } else if (obStep === 3) {
     // Passo 4: Wizard por grupos
@@ -11480,6 +11594,29 @@ window.obNext = function() {
   }
 };
 
+// M37: campos de valor mensal para cada cartão benefício marcado no onboarding
+window.obRenderBenValores = function() {
+  const box = document.getElementById('ob-ben-valores');
+  if (!box) return;
+  const ativos = (appCfg._beneficiosAtivos || []).filter(id => getBeneficioCard(id));
+  const vals = appCfg._beneficiosValores || {};
+  if (!ativos.length) { box.innerHTML = ''; return; }
+  box.innerHTML = `<div style="margin-top:10px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface2);text-align:left">
+    <div style="font-size:11px;font-weight:700;color:var(--fg2);margin-bottom:6px">Quanto você recebe por mês em cada cartão?</div>
+    <div style="max-height:132px;overflow-y:auto;padding-right:4px">
+    ${ativos.map(id => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0">
+        ${beneficioIcon(id, 24)}
+        <span style="flex:1;min-width:0;font-size:12px;color:var(--fg1)">${esc(getBeneficioCard(id).nome)}</span>
+        <span style="font-size:11px;color:var(--fg3)">R$</span>
+        <input type="number" min="0" step="10" inputmode="decimal" placeholder="0,00" value="${vals[id] > 0 ? vals[id] : ''}"
+          aria-label="Valor mensal de ${esc(getBeneficioCard(id).nome)}"
+          oninput="setBeneficioValor('${id}', this.value)"
+          style="width:96px;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;background:var(--bg);color:var(--fg1);text-align:right">
+      </div>`).join('')}
+    </div>
+  </div>`;
+};
+
 // Toggle cartão de benefício no onboarding
 window.obToggleBen = function(el, id) {
   if (!appCfg._beneficiosAtivos) appCfg._beneficiosAtivos = [];
@@ -11499,6 +11636,8 @@ window.obToggleBen = function(el, id) {
     el.querySelector('span').style.color = 'var(--accent)';
     el.querySelector('span').style.fontWeight = '700';
   }
+  if (idx >= 0 && appCfg._beneficiosValores) delete appCfg._beneficiosValores[id];
+  obRenderBenValores();
 };
 
 window.obFinalizar = function() {
@@ -11545,6 +11684,7 @@ window.obFinalizar = function() {
   // Salva benefícios selecionados
   // (já foram salvos em appCfg._beneficiosAtivos via obToggleBen)
   if (!appCfg._beneficiosAtivos) appCfg._beneficiosAtivos = [];
+  syncBeneficiosExtras(); // M37: valores dos cartões viram entradas fixas
 
   // Salva renda padrão no override de salário base para o gráfico
   if (obRenda > 0) {
