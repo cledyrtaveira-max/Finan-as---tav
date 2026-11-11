@@ -4567,17 +4567,28 @@ function _executarResetarConta() {
         .then(snap => snap.docs.forEach(d => d.ref.delete()))
         .catch(()=>{});
     });
-    // Reescreve apenas os campos de onboarding (sem tocar em plano/assinatura)
+    // M32 FIX: grava onboardingDone:false (campo correto lido por _checkOnboarding)
+    // e sinaliza que veio de um reset para o _checkOnboarding não considerar dados em memória
     col.set({
+      onboardingDone: false,
       onboardingConcluido: false,
       resetadoEm: new Date().toISOString()
     }, { merge: true }).catch(()=>{});
   }
-  // Limpa localStorage (todas as chaves do app, exceto link de afiliado salvo)
+  // M32 FIX: zera flag de onboarding em memória ANTES do reload para que
+  // o _checkOnboarding não encontre doneLocal=true após recarregar
+  if (typeof appCfg !== 'undefined') {
+    appCfg._onboardingDone = false;
+  }
+  // M32 FIX: grava flag especial para que _checkOnboarding saiba que veio de reset
+  // e não interprete dados em memória como "conta antiga com dados"
+  try { localStorage.setItem('finvo_reset_pending', '1'); } catch(e) {}
+  // Limpa localStorage (todas as chaves do app, exceto link de afiliado salvo e flag de reset)
   try {
     Object.keys(localStorage)
       .filter(k => k.startsWith('ftav_') || k.startsWith('finanvo') || k.startsWith('fin_taveira') || k.startsWith('finvo_'))
       .filter(k => k !== 'ftav_afiliado_hotmart_link') // preservar link de afiliado configurado
+      .filter(k => k !== 'finvo_reset_pending')       // preservar flag de reset
       .forEach(k => localStorage.removeItem(k));
   } catch(e){}
   mostrarToast('🔄 Conta reiniciada! Recarregando...');
@@ -11499,15 +11510,24 @@ window._checkOnboarding = function() {
   if (!usuarioAtivo) return;
   // Usa o primeiro disparo do onSnapshot (_perfil já carregado) ou aguarda até 2s
   function verificar() {
+    // M32 FIX: se veio de um reset, limpa a flag e mostra onboarding diretamente
+    // independente do estado local ou do Firestore (que pode ainda não ter sincronizado)
+    let veioDeReset = false;
+    try {
+      veioDeReset = localStorage.getItem('finvo_reset_pending') === '1';
+      if (veioDeReset) localStorage.removeItem('finvo_reset_pending');
+    } catch(e) {}
+
     // Verifica local E Firestore (window._perfil) para suportar múltiplos dispositivos
-    const doneLocal    = !!appCfg._onboardingDone;
-    const doneFirebase = !!(window._perfil && window._perfil.onboardingDone);
+    const doneLocal    = !veioDeReset && !!appCfg._onboardingDone;
+    const doneFirebase = !veioDeReset && !!(window._perfil && window._perfil.onboardingDone);
     // M4 FIX: contas antigas não têm onboardingDone — inferir pelo campo "criado".
     // Se o perfil tem "criado" anterior a esta versão do onboarding (antes de out/2026)
     // ou se já há lançamentos locais, considerar que o onboarding já foi feito.
+    // M32 FIX: NÃO aplicar esta inferência após um reset (veioDeReset=true)
     const criado = window._perfil && window._perfil.criado;
-    const contaAntiga = criado && new Date(criado) < new Date('2026-10-01T00:00:00Z');
-    const temDadosLocais = appData && appData.lancamentos && appData.lancamentos.length > 0;
+    const contaAntiga = !veioDeReset && criado && new Date(criado) < new Date('2026-10-01T00:00:00Z');
+    const temDadosLocais = !veioDeReset && appData && appData.lancamentos && appData.lancamentos.length > 0;
     if (!doneLocal && !doneFirebase) {
       if (contaAntiga || temDadosLocais) {
         // Conta antiga ou com dados — marcar como feito e não mostrar onboarding
