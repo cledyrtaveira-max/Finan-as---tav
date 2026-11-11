@@ -95,7 +95,7 @@
       const p = window.location.pathname;
       // M23 FIX: passar APP_VERSION como query param para o SW — força re-registro
       // quando a versão muda e mantém o CACHE_NAME sincronizado com o app.
-      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.10').replace(/[^a-z0-9.]/gi, '');
+      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.11').replace(/[^a-z0-9.]/gi, '');
       return p.replace(/[^/]*$/, '') + 'sw.js?v=' + ver;
     })();
 
@@ -2894,6 +2894,7 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
           </div>
           <div class="dhc-saldo-label" id="dhc-periodo-label">Saldo disponível este mês</div>
           <div class="dhc-saldo-val valor-ocultavel" id="dhc-saldo-val">R$ —</div>
+          <div class="valor-ocultavel" id="dhc-saldo-acum" style="display:none;margin-top:8px;font-size:11px;color:rgba(255,255,255,0.72)"></div>
         </div>
 
         <!-- Alerta vencidos -->
@@ -4222,7 +4223,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.10'; // M36: fix tela preta no PC (menu mobile sem estilo cobrindo o app)
+const APP_VERSION = 'v5.11'; // M36: fix tela preta no PC (menu mobile sem estilo cobrindo o app)
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',
@@ -5640,7 +5641,10 @@ function renderDashboard() {
   const divsConf  = divsBaseConf  + divsManConf;
   const algumPago = (rendaConf + despConf + divsConf) > 0 || Object.values(statusMap).some(v => v === 'pago');
   // Se nenhum item foi marcado como pago, usa valores previstos para não mostrar R$ 0,00
-  renda = algumPago ? rendaConf : (rendaPrev + rendaReal);
+  // M40 FIX: a renda informada do mês ("renda real recebida") conta nos cards do topo
+  renda = rendaMesVal > 0
+    ? rendaMesEfetiva(mesSelecionado, anoSelecionado) + (algumPago ? rendaManConf : rendaReal)
+    : (algumPago ? rendaConf : (rendaPrev + rendaReal));
   desp  = algumPago ? despConf  : (despPrev  + despReal);
   divs  = algumPago ? divsConf  : (divsPrev  + divsReal);
   saldo = renda - desp - divs;
@@ -5668,8 +5672,8 @@ function renderDashboard() {
   const dhcPeriodoLabel = document.getElementById('dhc-periodo-label');
   if (dhcPeriodoLabel) {
     dhcPeriodoLabel.innerHTML = usandoPrevisto
-      ? `Saldo previsto · <span style="color:rgba(255,255,255,0.5);font-size:9px">Marque itens como ✅ pago para ver o confirmado</span>`
-      : `Saldo confirmado · <span style="color:rgba(255,255,255,0.5);font-size:9px">Previsto: ${brl(saldoPrev)}</span>`;
+      ? `Saldo acumulado previsto · <span style="color:rgba(255,255,255,0.5);font-size:9px">Marque itens como ✅ pago para ver o confirmado</span>`
+      : `Saldo acumulado confirmado · <span style="color:rgba(255,255,255,0.5);font-size:9px">Previsto: ${brl(saldoPrev)}</span>`;
   }
 
   // ── Alerta inteligente (semáforo) ─────────────────────────────
@@ -5743,8 +5747,16 @@ function renderDashboard() {
   const dhcRecD   = document.getElementById('dhc-receita');
   const dhcDesp2D = document.getElementById('dhc-despesa');
   const dhcDivD   = document.getElementById('dhc-divida');
-  if (dhcSaldoD) dhcSaldoD.textContent = brl(saldo);
-  if (dhcSaldoD) dhcSaldoD.style.color = saldo < 0 ? '#ff8080' : '#fff';
+  // M40: saldo do topo é acumulado (meses anteriores + mês selecionado)
+  const saldoAnt = saldoAcumuladoAnterior(mesSelecionado, anoSelecionado);
+  const saldoAcum = saldo + saldoAnt;
+  if (dhcSaldoD) dhcSaldoD.textContent = brl(saldoAcum);
+  if (dhcSaldoD) dhcSaldoD.style.color = saldoAcum < 0 ? '#ff8080' : '#fff';
+  const dhcAcum = document.getElementById('dhc-saldo-acum');
+  if (dhcAcum) {
+    dhcAcum.style.display = saldoAnt !== 0 ? 'block' : 'none';
+    dhcAcum.textContent = saldoAnt !== 0 ? `Meses anteriores: ${brl(saldoAnt)} · Este mês: ${saldo >= 0 ? '+' : ''}${brl(saldo)}` : '';
+  }
   if (dhcRecD)   dhcRecD.textContent   = brl(renda);
   if (dhcDesp2D) dhcDesp2D.textContent = brl(desp);
   if (dhcDivD)   dhcDivD.textContent   = brl(divs);
@@ -6098,6 +6110,35 @@ function grafSalvarMeta(val) {
   const label = document.getElementById('graf-meta-label');
   if (label) label.textContent = v > 0 ? '✓ Salvo para ' + grafMesMetaAtual + ' ' + grafAnoA + ': ' + brl(v) : '';
   renderGrafico();
+}
+
+// ── M40: saldo acumulado ──────────────────────────────────────────
+// Soma o saldo previsto de todos os meses ANTERIORES a (mes, ano), a partir do primeiro
+// mês em que o usuário registrou algo (renda informada ou lançamento). Meses anteriores
+// a esse início não contam, para não acumular despesas fixas de antes do uso do app.
+function _idxPeriodo(mes, ano) { return Number(ano) * 12 + MESES.indexOf(mes); }
+function inicioAcumulado() {
+  let min = Infinity;
+  Object.keys(appCfg.periodos || {}).forEach(k => {
+    const p = appCfg.periodos[k];
+    if (!p || !(parseFloat(p.rendaMes) > 0)) return;
+    const [a, m] = k.split('/');
+    const mi = MESES.indexOf(m);
+    if (mi >= 0 && Number(a)) min = Math.min(min, Number(a) * 12 + mi);
+  });
+  (appData.lancamentos || []).forEach(l => {
+    const mi = MESES.indexOf(l.mes);
+    if (mi >= 0 && Number(l.ano)) min = Math.min(min, Number(l.ano) * 12 + mi);
+  });
+  return min;
+}
+function saldoAcumuladoAnterior(mes, ano) {
+  const fim = _idxPeriodo(mes, ano);
+  const ini = Math.max(inicioAcumulado(), ANO_BASE * 12);
+  if (!(ini < fim) || MESES.indexOf(mes) < 0) return 0;
+  let total = 0;
+  for (let i = ini; i < fim; i++) total += getDadosPeriodo(MESES[i % 12], Math.floor(i / 12)).saldo;
+  return Math.round(total * 100) / 100;
 }
 
 function getDadosPeriodo(mes, ano) {
@@ -7122,6 +7163,9 @@ function renderMensal() {
 
   // ── Grid de meses ────────────────────────────────────────────────
   const grid = document.getElementById('ano-grid');
+  // M40: acumulado corre mês a mês a partir do saldo anterior a janeiro
+  let _acumMensal = saldoAcumuladoAnterior(MESES[0], anoSelecionado);
+  const _iniAcum = inicioAcumulado();
   grid.innerHTML = MESES.map(mes => {
     // Monta cfg do período para este mês+ano
     const key = anoSelecionado + '/' + mes;
@@ -7147,6 +7191,11 @@ function renderMensal() {
     const div = todosM.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0)
               + manuaisM.filter(l=>l.tipo==='divida').reduce((s,l)=>s+l.val,0);
     const saldo = ent - sai - div;
+    const _contaAcum = _idxPeriodo(mes, anoSelecionado) >= _iniAcum;
+    if (_contaAcum) _acumMensal += saldo;
+    const _acumRow = _contaAcum
+      ? `<div class="mes-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:6px;font-weight:700"><span>Acumulado</span><span style="color:${_acumMensal>=0?'var(--green)':'var(--red)'}">${brl(_acumMensal)}</span></div>`
+      : '';
     const cls = saldo >= 0 ? 'mes-saldo-positivo' : 'mes-saldo-negativo';
     return `<div class="mes-card" onclick="irParaMesAno('${mes}',${anoSelecionado})">
       <div class="mes-card-header">
@@ -7157,6 +7206,7 @@ function renderMensal() {
         <div class="mes-row"><span>Entradas</span><span style="color:var(--green)">${brl(ent)}</span></div>
         <div class="mes-row"><span>Despesas fixas</span><span style="color:var(--red)">${brl(sai)}</span></div>
         <div class="mes-row"><span>Dívidas pagas</span><span style="color:var(--orange)">${brl(div)}</span></div>
+        ${_acumRow}
       </div>
     </div>`;
   }).join('');
@@ -7766,6 +7816,15 @@ function renderLancamentos() {
     <span style="font-size:12px;font-weight:600;color:var(--fg2)">Saldo de ${mesSelecionado} ${anoSelecionado}</span>
     <span class="mono" style="font-size:16px;font-weight:800;color:${saldoCor}">${saldo>=0?'+':''}${brl(saldo)}</span>
   </div>`;
+  // M40: saldo acumulado (meses anteriores + este mês)
+  const _saldoAnt = saldoAcumuladoAnterior(mesSelecionado, anoSelecionado);
+  if (_saldoAnt !== 0) {
+    const _acum = r2(_saldoAnt + saldo);
+    html += `<div class="lanc-saldo-bar" style="margin-top:8px">
+      <span style="font-size:12px;font-weight:600;color:var(--fg2)">Saldo acumulado <span style="font-weight:400;color:var(--fg3)">· meses anteriores ${brl(_saldoAnt)}</span></span>
+      <span class="mono" style="font-size:16px;font-weight:800;color:${_acum>=0?'var(--green)':'var(--red)'}">${_acum>=0?'+':''}${brl(_acum)}</span>
+    </div>`;
+  }
 
   document.getElementById('lanc-lista').innerHTML = html;
 }
