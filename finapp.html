@@ -851,8 +851,12 @@ const fbDb   = firebase.firestore();
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
-html, body { height: 100%; overflow: hidden }
+/* M35 FIX: height explícito para PC — evita layout com height:0 pós-login */
+html { height: 100%; }
 body {
+  height: 100%;
+  min-height: 100vh;
+  overflow: hidden;
   background: var(--bg);
   color: var(--fg);
   font-family: 'Inter', system-ui, sans-serif;
@@ -862,7 +866,8 @@ body {
 }
 
 /* ── Sidebar ── */
-.layout { display: flex; flex: 1; overflow: hidden }
+/* M35 FIX: min-height: 0 garante que flex:1 funciona dentro de body no PC */
+.layout { display: flex; flex: 1; min-height: 0; overflow: hidden }
 
 .sidebar {
   width: var(--sidebar-w);
@@ -4012,7 +4017,7 @@ Abraços!</div>
       ATUALIZAÇÃO DISPONÍVEL
     </div>
     <div class="update-title" id="update-titulo">Novidades do Finanvô 🎉</div>
-    <div class="update-version" id="update-versao">v5.0 · Outubro 2026</div>
+    <div class="update-version" id="update-versao">v5.6 · Novembro 2026</div>
     <ul class="update-notes" id="update-notas">
       <li>Dashboard redesenhado em 3 cards separados e limpos</li>
       <li>Header com saudação, família e saldo em destaque</li>
@@ -4204,7 +4209,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.5'; // M34: fix cache PC + no-cache headers + SW update imediato
+const APP_VERSION = 'v5.6'; // M35: fix layout PC (height) + try/catch renderDashboard + diagnóstico tela preta
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',
@@ -4375,7 +4380,20 @@ fbAuth.onAuthStateChanged(async function(user) {
       }
     })();
     iniciarSync();
-    renderDashboard();
+    // M35 FIX: try/catch para capturar erro silencioso pós-login que causa tela preta
+    try {
+      renderDashboard();
+    } catch(err) {
+      console.error('[M35] renderDashboard erro:', err);
+      // Esconder overlay preso
+      const ov = document.getElementById('loading-overlay');
+      if (ov) ov.style.display = 'none';
+      // Mostrar diagnóstico visual em vez de tela preta
+      const d = document.createElement('div');
+      d.style.cssText = 'position:fixed;inset:0;z-index:9500;background:#080b12;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;font-family:system-ui,sans-serif';
+      d.innerHTML = '<div style="font-size:32px">⚠️</div><div style="font-size:15px;font-weight:700;color:#fff">Erro ao carregar o app</div><div style="font-size:12px;color:#ef4444;max-width:480px;text-align:center;word-break:break-word;background:rgba(239,68,68,.1);padding:10px 14px;border-radius:8px;border:1px solid rgba(239,68,68,.3)">' + String(err) + '</div><button onclick="location.assign(\'reset.html\')" style="margin-top:4px;padding:11px 28px;background:#4f7fff;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer">Limpar cache e recarregar</button>';
+      document.body.appendChild(d);
+    }
     // Verificar se há plano pendente (compra no Hotmart antes de criar conta)
     verificarPlanoPendente(user.email);
     // I21 FIX: inicializar Crisp após o perfil estar disponível (plano conhecido)
