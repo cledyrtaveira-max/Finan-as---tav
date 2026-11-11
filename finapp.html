@@ -10,19 +10,25 @@
      connect-src restringe fetch/XHR a apenas domínios conhecidos do app. -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'unsafe-inline'
+  script-src 'self' 'unsafe-inline' 'unsafe-eval'
     https://cdnjs.cloudflare.com
     https://client.crisp.chat
-    https://www.gstatic.com;
+    https://www.gstatic.com
+    https://apis.google.com
+    https://accounts.google.com
+    https://*.firebaseapp.com;
   style-src 'self' 'unsafe-inline'
-    https://fonts.googleapis.com;
+    https://fonts.googleapis.com
+    https://accounts.google.com;
   font-src 'self'
     https://fonts.gstatic.com
     data:;
   img-src 'self' data: blob:
     https://image.crisp.chat
     https://storage.crisp.chat
-    https://www.gstatic.com;
+    https://www.gstatic.com
+    https://lh3.googleusercontent.com
+    https://*.googleusercontent.com;
   connect-src 'self'
     https://*.googleapis.com
     https://*.firebaseio.com
@@ -30,10 +36,14 @@
     wss://*.firebaseio.com
     https://identitytoolkit.googleapis.com
     https://securetoken.googleapis.com
+    https://accounts.google.com
     https://client.crisp.chat
     wss://client.crisp.chat
     https://go.crisp.chat;
-  frame-src 'none';
+  frame-src
+    https://accounts.google.com
+    https://*.firebaseapp.com
+    https://appfinanvo.com.br;
   object-src 'none';
   base-uri 'self';
   form-action 'self';
