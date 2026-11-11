@@ -97,6 +97,13 @@ self.addEventListener('fetch', e => {
   );
 });
 
+// ── M31 FIX: responde SKIP_WAITING para ativar imediatamente ────────
+self.addEventListener('message', function(evt) {
+  if (evt.data && evt.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // ── Push recebido do FCM ─────────────────────────────────────────
 self.addEventListener('push', e => {
   let data = {};

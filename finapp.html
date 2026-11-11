@@ -103,6 +103,12 @@
 
     navigator.serviceWorker.register(swPath)
       .then(function(reg) {
+        // M31 FIX: Se há um SW esperando (versão nova já baixada), força ativação imediata.
+        // Resolve o bug de tela preta quando o usuário instalou o PWA com um SW antigo.
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+
         // M1 FIX: escuta updatefound para detectar SW novo instalando
         reg.addEventListener('updatefound', function() {
           const installing = reg.installing;
@@ -110,6 +116,8 @@
           installing.addEventListener('statechange', function() {
             // SW novo instalado e pronto (waiting) — avisa o usuário
             if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+              // M31 FIX: força ativação imediata do novo SW (sem esperar próxima navegação)
+              reg.waiting && reg.waiting.postMessage({ type: 'SKIP_WAITING' });
               _mostrarToastUpdate();
             }
           });
@@ -119,6 +127,14 @@
         setInterval(function() { reg.update().catch(function(){}); }, 60 * 60 * 1000);
       })
       .catch(() => {}); // falha silenciosa em contextos sem suporte
+
+    // M31 FIX: quando o SW ativa (controllerchange), recarrega para pegar versão nova
+    var _refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+      if (_refreshing) return;
+      _refreshing = true;
+      window.location.reload();
+    });
 
     // ── Ouve mensagens do SW (ex: nova versão disponível) ────────────
     navigator.serviceWorker.addEventListener('message', function(evt) {
