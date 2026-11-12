@@ -682,15 +682,27 @@ const fbDb   = firebase.firestore();
     <!-- Formulário -->
     <div id="login-form-area">
       <div class="login-field">
-        <label>E-mail</label>
+        <label for="login-email">E-mail</label>
         <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email" oninput="loginClearError()" onkeydown="if(event.key==='Enter')fazerLogin()">
       </div>
       <div class="login-field">
-        <label id="label-nome" style="display:none">Nome completo</label>
+        <label id="label-nome" for="login-nome" style="display:none">Nome completo</label>
         <input type="text" id="login-nome" placeholder="Seu nome" style="display:none;margin-bottom:8px" autocomplete="name" oninput="loginClearError()">
-        <label>Senha</label>
+        <label for="login-password">Senha</label>
         <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" oninput="loginClearError()" onkeydown="if(event.key==='Enter')fazerLogin()">
-        <button class="login-eye" id="eye-btn" onclick="toggleSenha()" title="Mostrar/ocultar">👁</button>
+        <button type="button" class="login-eye" id="eye-btn" onclick="toggleSenha()" title="Mostrar/ocultar" aria-label="Mostrar ou ocultar a senha">👁</button>
+      </div>
+
+      <!-- Só no cadastro: confirmação de senha e aceite dos termos -->
+      <div class="login-field" id="login-confirma-area" style="display:none">
+        <label for="login-password2">Confirmar senha</label>
+        <input type="password" id="login-password2" placeholder="Repita a senha" autocomplete="new-password" oninput="loginClearError()" onkeydown="if(event.key==='Enter')fazerLogin()">
+      </div>
+      <div id="login-termos-area" style="display:none;margin:0 0 12px;font-size:12px;color:#8899bb;line-height:1.5">
+        <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer">
+          <input type="checkbox" id="login-termos" style="margin-top:2px;flex:none;width:auto" onchange="loginClearError()">
+          <span>Li e aceito os <a href="termos.html" target="_blank" rel="noopener" style="color:#4f7fff">Termos de Uso</a> e a <a href="politica.html" target="_blank" rel="noopener" style="color:#4f7fff">Política de Privacidade</a>.</span>
+        </label>
       </div>
 
       <div id="login-error" class="login-error"></div>
@@ -4103,6 +4115,11 @@ function mostrarAba(aba) {
   document.getElementById('tab-cadastrar').style.color = isCad ? '#fff' : '#8899bb';
   document.getElementById('login-nome').style.display = isCad ? 'block' : 'none';
   document.getElementById('label-nome').style.display = isCad ? 'block' : 'none';
+  const _ca = document.getElementById('login-confirma-area'), _ta = document.getElementById('login-termos-area');
+  if (_ca) _ca.style.display = isCad ? 'block' : 'none';
+  if (_ta) _ta.style.display = isCad ? 'block' : 'none';
+  const _pw = document.getElementById('login-password');
+  if (_pw) _pw.autocomplete = isCad ? 'new-password' : 'current-password';
   document.getElementById('btn-principal-login').textContent = isCad ? 'Criar conta →' : 'Entrar →';
   document.getElementById('link-recuperar').style.display = isCad ? 'none' : 'block';
   loginClearError();
@@ -4203,10 +4220,39 @@ async function jaConfirmeiEmail() {
   } catch(e) { mostrarToast('⚠️ Não foi possível verificar agora.'); }
 }
 
+// Contador de falhas de login (localStorage): 5 falhas seguidas → espera de 30 s.
+function _loginFalhas(delta) {
+  try {
+    const o = JSON.parse(localStorage.getItem('finLoginFalhas') || '{"n":0,"ate":0}');
+    if (delta === 0) { localStorage.removeItem('finLoginFalhas'); return; }
+    o.n = (o.n || 0) + delta;
+    if (o.n >= 5) { o.ate = Date.now() + 30000; o.n = 0; }
+    localStorage.setItem('finLoginFalhas', JSON.stringify(o));
+  } catch(e) {}
+}
+function _loginEsperaRestante() {
+  try {
+    const o = JSON.parse(localStorage.getItem('finLoginFalhas') || '{"n":0,"ate":0}');
+    return Math.max(0, Math.ceil(((o.ate || 0) - Date.now()) / 1000));
+  } catch(e) { return 0; }
+}
+
 async function fazerLogin() {
   const email = (document.getElementById('login-email').value || '').trim();
   const senha = document.getElementById('login-password').value;
   if (!email || !senha) { loginShakeError('Preencha e-mail e senha.'); return; }
+  // Trava local após várias falhas seguidas (além do limite do próprio Firebase)
+  const _espera = _loginEsperaRestante();
+  if (_abaAtual !== 'cadastrar' && _espera > 0) {
+    loginShakeError('Muitas tentativas. Aguarde ' + _espera + 's e tente de novo.'); return;
+  }
+  if (_abaAtual === 'cadastrar') {
+    if (senha.length < 6) { loginShakeError('A senha precisa ter pelo menos 6 caracteres.'); return; }
+    const senha2 = (document.getElementById('login-password2') || {}).value;
+    if (senha2 !== senha) { loginShakeError('As senhas não conferem.'); return; }
+    const aceite = document.getElementById('login-termos');
+    if (!aceite || !aceite.checked) { loginShakeError('Aceite os Termos de Uso e a Política de Privacidade para criar a conta.'); return; }
+  }
   const btn = document.getElementById('btn-principal-login');
   btn.textContent = 'Aguarde...'; btn.disabled = true;
   try {
@@ -4227,9 +4273,11 @@ async function fazerLogin() {
       }, { merge: true });
     } else {
       await fbAuth.signInWithEmailAndPassword(email, senha);
+      _loginFalhas(0);
     }
     // onAuthStateChanged cuida do resto
   } catch(e) {
+    if (_abaAtual !== 'cadastrar') _loginFalhas(1);
     loginShakeError(firebaseErroPtBr(e));
     // Reabilitar botão SEM chamar mostrarAba (que limparia o erro)
     btn.disabled = false;
