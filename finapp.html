@@ -2183,7 +2183,7 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
     <div class="field-row">
       <div class="field">
         <label>Valor (R$)</label>
-        <input id="mel-val" type="number" step="0.01" min="0" placeholder="0,00">
+        <input id="mel-val" type="text" inputmode="decimal" placeholder="0,00">
       </div>
       <div class="field">
         <label>Tipo</label>
@@ -2304,7 +2304,7 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
     <!-- Valor da parcela -->
     <div class="field" style="margin-top:12px">
       <label id="mpp-val-label">Valor pago (R$)</label>
-      <input id="mpp-valor" type="number" min="0" step="0.01" placeholder="0,00">
+      <input id="mpp-valor" type="text" inputmode="decimal" placeholder="0,00">
     </div>
     <!-- Nº de parcelas — aparece só no modo parcelado -->
     <div class="field" id="mpp-parcelas-row" style="display:none">
@@ -2357,8 +2357,8 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
     <input type="hidden" id="fd-id">
     <div class="field"><label>Nome da dívida</label><input id="fd-nome" placeholder="Ex: Cartão Nubank"></div>
     <div class="field-row">
-      <div class="field"><label>Valor total (R$)</label><input id="fd-valor" type="number" min="0" step="0.01" placeholder="0,00"></div>
-      <div class="field"><label>Juros % ao mês</label><input id="fd-juros" type="number" min="0" step="0.01" placeholder="0" title="0 = sem juros"></div>
+      <div class="field"><label>Valor total (R$)</label><input id="fd-valor" type="text" inputmode="decimal" placeholder="0,00"></div>
+      <div class="field"><label>Juros % ao mês</label><input id="fd-juros" type="text" inputmode="decimal" placeholder="0" title="0 = sem juros"></div>
     </div>
     <div class="field-row">
       <div class="field"><label>Parcelas restantes</label><input id="fd-parcelas" type="number" min="0" placeholder="0 = à vista"></div>
@@ -2389,12 +2389,12 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
     <input type="hidden" id="fi-id">
     <div class="field"><label>Nome do objetivo</label><input id="fi-nome" placeholder="Ex: Reserva de emergência"></div>
     <div class="field-row">
-      <div class="field"><label>Valor investido (R$)</label><input id="fi-aplicado" type="number" min="0" step="0.01" placeholder="0,00"></div>
-      <div class="field"><label>Valor atual (R$)</label><input id="fi-atual" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="field"><label>Valor investido (R$)</label><input id="fi-aplicado" type="text" inputmode="decimal" placeholder="0,00"></div>
+      <div class="field"><label>Valor atual (R$)</label><input id="fi-atual" type="text" inputmode="decimal" placeholder="0,00"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Meta (R$)</label><input id="fi-meta" type="number" min="0" step="0.01" placeholder="0,00"></div>
-      <div class="field"><label>Rentabilidade % a.m.</label><input id="fi-rent" type="number" min="0" step="0.01" placeholder="Ex: 0.8"></div>
+      <div class="field"><label>Meta (R$)</label><input id="fi-meta" type="text" inputmode="decimal" placeholder="0,00"></div>
+      <div class="field"><label>Rentabilidade % a.m.</label><input id="fi-rent" type="text" inputmode="decimal" placeholder="Ex: 0.8"></div>
     </div>
     <div class="field">
       <label>Tipo</label>
@@ -2425,7 +2425,7 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
       <div style="font-size:11px;font-weight:700;color:var(--fg3);margin-bottom:8px;text-transform:uppercase">+ Novo gasto</div>
       <div class="field-row">
         <div class="field"><label>Descrição</label><input id="gg-desc" placeholder="Ex: Supermercado"></div>
-        <div class="field"><label>Valor (R$)</label><input id="gg-valor" type="number" min="0" step="0.01" placeholder="0,00"></div>
+        <div class="field"><label>Valor (R$)</label><input id="gg-valor" type="text" inputmode="decimal" placeholder="0,00"></div>
       </div>
       <div class="field">
         <label>Categoria</label>
@@ -2463,8 +2463,8 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
       <div class="field"><label>Quantidade</label><input id="fc-qtd" type="number" min="0" step="any" placeholder="0.00"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Valor investido (R$)</label><input id="fc-investido" type="number" min="0" step="0.01" placeholder="0,00"></div>
-      <div class="field"><label>Valor atual (R$)</label><input id="fc-atual" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="field"><label>Valor investido (R$)</label><input id="fc-investido" type="text" inputmode="decimal" placeholder="0,00"></div>
+      <div class="field"><label>Valor atual (R$)</label><input id="fc-atual" type="text" inputmode="decimal" placeholder="0,00"></div>
     </div>
     <div class="field"><label>Onde está guardado</label><input id="fc-carteira" placeholder="Ex: Binance, Foxbit, Ledger, MetaMask"></div>
     <div class="modal-actions">
@@ -2494,12 +2494,12 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
       </select>
     </div>
     <div class="field-row">
-      <div class="field"><label>Meta (R$)</label><input id="fo-meta" type="number" min="0" step="0.01" placeholder="0,00"></div>
-      <div class="field"><label>Já guardei (R$)</label><input id="fo-atual" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="field"><label>Meta (R$)</label><input id="fo-meta" type="text" inputmode="decimal" placeholder="0,00"></div>
+      <div class="field"><label>Já guardei (R$)</label><input id="fo-atual" type="text" inputmode="decimal" placeholder="0,00"></div>
     </div>
     <div class="field-row">
       <div class="field"><label>Prazo (mês/ano)</label><input id="fo-prazo" placeholder="Ex: 12/2026"></div>
-      <div class="field"><label>Aporte mensal (R$)</label><input id="fo-aporte" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="field"><label>Aporte mensal (R$)</label><input id="fo-aporte" type="text" inputmode="decimal" placeholder="0,00"></div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="fecharModalObjetivo()">Cancelar</button>
@@ -2527,10 +2527,10 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
     </div>
     <div class="field-row">
       <div class="field"><label>Quantidade de cotas</label><input id="fa-qtd" type="number" min="0" step="1" placeholder="0"></div>
-      <div class="field"><label>Preço médio (R$)</label><input id="fa-preco-medio" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="field"><label>Preço médio (R$)</label><input id="fa-preco-medio" type="text" inputmode="decimal" placeholder="0,00"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Cotação atual (R$)</label><input id="fa-cotacao" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="field"><label>Cotação atual (R$)</label><input id="fa-cotacao" type="text" inputmode="decimal" placeholder="0,00"></div>
       <div class="field"><label>Corretora</label><input id="fa-corretora" placeholder="Ex: XP, Rico, Clear, B3"></div>
     </div>
     <div class="modal-actions">
@@ -3828,7 +3828,7 @@ Abraços!</div>
     <p style="font-size:13px;color:var(--fg2);margin:0 0 14px">Item: <strong id="ev-nome"></strong></p>
     <div class="field">
       <label>Novo valor (R$)</label>
-      <input id="ev-val" type="number" min="0" step="0.01" placeholder="0,00" style="font-size:20px;font-weight:700;text-align:right" onkeydown="if(event.key==='Enter')salvarValorGlobal()">
+      <input id="ev-val" type="text" inputmode="decimal" placeholder="0,00" style="font-size:20px;font-weight:700;text-align:right" onkeydown="if(event.key==='Enter')salvarValorGlobal()">
     </div>
     <p style="font-size:11px;color:var(--fg3);margin-top:-6px">Escolha onde aplicar a alteração:</p>
     <div style="display:flex;gap:8px;margin-top:4px">
@@ -3922,7 +3922,7 @@ Abraços!</div>
       </div>
       <div class="field">
         <label>Valor alvo (R$)</label>
-        <input id="meta-valor" type="number" step="10" min="0" placeholder="0,00">
+        <input id="meta-valor" type="text" inputmode="decimal" placeholder="0,00">
       </div>
     </div>
     <div class="field" id="meta-campo-cat" style="display:none">
@@ -4071,7 +4071,7 @@ Abraços!</div>
     <div class="modal-title" id="edit-modal-title">Editar valor</div>
     <div class="field">
       <label id="edit-modal-label">Valor (R$)</label>
-      <input id="edit-val" type="number" step="0.01" min="0" placeholder="0,00"
+      <input id="edit-val" type="text" inputmode="decimal" placeholder="0,00"
         style="font-size:18px;font-weight:700;text-align:center"
         onkeydown="if(event.key==='Enter') salvarEdicao()">
     </div>
@@ -5566,6 +5566,22 @@ function salvarLancamento() {
   document.getElementById('f-val').value = '';
 }
 
+// ── Campos de dinheiro digitados (type="text" inputmode="decimal") ──
+// lerBRL: lê o campo com parseBRL ("150,75", "1.500", "5.000,00"). Campo vazio = NaN,
+// para as validações de "valor obrigatório" continuarem funcionando.
+function lerBRL(id) {
+  const el = document.getElementById(id);
+  const t = el ? String(el.value).trim() : '';
+  return t === '' ? NaN : parseBRL(t);
+}
+// fmtCampoBRL: formata um número para preencher o campo na edição ("1.500,00").
+function fmtCampoBRL(v) {
+  if (v === '' || v === null || v === undefined) return '';
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  if (isNaN(n)) return '';
+  return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 // ── BRL format ────────────────────────────────────────────────────
 function brl(v) {
   return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2});
@@ -5609,7 +5625,7 @@ function salvarRendaMes(valor) {
   const periodoKey = `${anoSelecionado}/${mesSelecionado}`;
   if (!appCfg.periodos) appCfg.periodos = {};
   if (!appCfg.periodos[periodoKey]) appCfg.periodos[periodoKey] = {};
-  const v = parseFloat(valor);
+  const v = parseBRL(valor); // aceita "3.000", "1.500,50", "800,50"
   appCfg.periodos[periodoKey].rendaMes = isNaN(v) || v <= 0 ? '' : String(v);
   saveCfg(appCfg);
   // Atualiza só o semáforo e KPIs sem re-renderizar o campo (evita perder foco)
@@ -5853,8 +5869,8 @@ function renderDashboard() {
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:12px;color:var(--fg2)">R$</span>
-          <input id="inp-renda-mes" type="number" min="0" step="100"
-            value="${rendaMesVal > 0 ? rendaMesVal : ''}"
+          <input id="inp-renda-mes" type="text" inputmode="decimal"
+            value="${rendaMesVal > 0 ? fmtCampoBRL(rendaMesVal) : ''}"
             placeholder="0,00"
             style="width:130px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-weight:600;background:var(--bg);color:var(--fg1);text-align:right"
             oninput="salvarRendaMes(this.value)"
@@ -8134,7 +8150,7 @@ function abrirModalEditarLanc(id) {
   document.getElementById('mel-id').value = String(id);
   document.getElementById('mel-titulo').textContent = 'Editar lançamento';
   document.getElementById('mel-desc').value = it.desc || '';
-  document.getElementById('mel-val').value = it.val || '';
+  document.getElementById('mel-val').value = fmtCampoBRL(it.val || '');
   // Tipo
   const selTipo = document.getElementById('mel-tipo');
   for (let i = 0; i < selTipo.options.length; i++) {
@@ -8163,7 +8179,7 @@ function salvarModalEditarLanc() {
   const it = appData.lancamentos.find(l => String(l.id) === String(id));
   if (!it) return;
   const desc = document.getElementById('mel-desc').value.trim();
-  const val  = parseFloat(document.getElementById('mel-val').value);
+  const val  = lerBRL('mel-val');
   if (!desc || isNaN(val) || val < 0) return;
   it.desc  = desc;
   it.val   = val;
@@ -8196,7 +8212,7 @@ function abrirEditarBase(idx) {
   document.getElementById('edit-modal-label').textContent =
     item.tipo === 'entrada' ? 'Renda (R$)' :
     item.tipo === 'divida'  ? 'Parcela (R$)' : 'Valor (R$)';
-  document.getElementById('edit-val').value = valBase(idx);
+  document.getElementById('edit-val').value = fmtCampoBRL(valBase(idx));
   // Carregar dia de vencimento salvo (se houver)
   const diaVencField = document.getElementById('edit-dia-venc');
   const diaVencWrapper = document.getElementById('edit-dia-venc-field');
@@ -8292,7 +8308,7 @@ function editarValBase(idx) {
   const item = DESPESAS_BASE[idx];
   document.getElementById('edit-modal-title').textContent = 'Editar valor: ' + item.desc;
   document.getElementById('edit-modal-label').textContent = item.tipo==='entrada'?'Renda (R$)':item.tipo==='divida'?'Parcela (R$)':'Valor (R$)';
-  document.getElementById('edit-val').value = valBase(idx);
+  document.getElementById('edit-val').value = fmtCampoBRL(valBase(idx));
   document.getElementById('modal-edit').classList.remove('hidden');
   setTimeout(()=>document.getElementById('edit-val').select(),80);
 }
@@ -8385,7 +8401,7 @@ function abrirEdit(idx) {
   document.getElementById('edit-modal-label').textContent =
     item.tipo === 'entrada' ? 'Renda (R$)' :
     item.tipo === 'divida'  ? 'Parcela (R$)' : 'Valor (R$)';
-  document.getElementById('edit-val').value = valAtual;
+  document.getElementById('edit-val').value = fmtCampoBRL(valAtual);
   document.getElementById('modal-edit').classList.remove('hidden');
   setTimeout(() => document.getElementById('edit-val').select(), 80);
 }
@@ -8400,7 +8416,7 @@ document.getElementById('modal-edit').addEventListener('click', function(e) {
 });
 
 function salvarEdicao() {
-  const novoVal = parseFloat(document.getElementById('edit-val').value);
+  const novoVal = lerBRL('edit-val');
   if (isNaN(novoVal) || novoVal < 0) return;
   appCfg.overrides[String(editIdx)] = novoVal;
   // Salvar dia de vencimento (se preenchido)
@@ -8773,7 +8789,7 @@ function abrirModalEditarValor(idx) {
     ? cfgP.overrides[String(idx)]
     : (appCfg.overrides[String(idx)] !== undefined ? appCfg.overrides[String(idx)] : item.val);
   document.getElementById('ev-nome').textContent = item.desc;
-  document.getElementById('ev-val').value = valAtual;
+  document.getElementById('ev-val').value = fmtCampoBRL(valAtual);
   document.getElementById('modal-editar-valor').classList.remove('hidden');
   setTimeout(()=>{ const el=document.getElementById('ev-val'); el.focus(); el.select(); }, 80);
 }
@@ -8783,7 +8799,7 @@ function fecharModalEditarValor() {
 }
 function salvarValorGlobal() {
   const idx = _editarValorIdx;
-  const v = parseFloat(document.getElementById('ev-val').value.replace(',','.'));
+  const v = lerBRL('ev-val');
   if (isNaN(v) || v < 0) { mostrarToast('⚠️ Informe um valor válido.'); return; }
   if (!appCfg.overrides) appCfg.overrides = {};
   appCfg.overrides[String(idx)] = v;
@@ -8798,7 +8814,7 @@ function salvarValorGlobal() {
 }
 function salvarValorPeriodo() {
   const idx = _editarValorIdx;
-  const v = parseFloat(document.getElementById('ev-val').value.replace(',','.'));
+  const v = lerBRL('ev-val');
   if (isNaN(v) || v < 0) { mostrarToast('⚠️ Informe um valor válido.'); return; }
   const key = cfgAnoSel+'/'+cfgMesSel;
   if (!appCfg.periodos) appCfg.periodos = {};
@@ -9410,7 +9426,7 @@ function abrirPagarPendente(id) {
   document.getElementById('mpp-titulo').textContent = 'Registrar Pagamento';
   document.getElementById('mpp-nome-label').textContent = d.nome;
   document.getElementById('mpp-total-label').textContent = brl(mppTotalAtual);
-  document.getElementById('mpp-valor').value = mppTotalAtual || '';
+  document.getElementById('mpp-valor').value = fmtCampoBRL(mppTotalAtual || '');
   document.getElementById('mpp-tipo').value = 'avista';
   // pré-selecionar mês/ano atual
   const selM = document.getElementById('mpp-mes');
@@ -9442,7 +9458,7 @@ function mppSetTipo(tipo) {
     rowParc.style.display = 'none';
     valLabel.textContent = 'Valor total pago (R$)';
     // Restaura o valor total no campo
-    if (mppTotalAtual > 0) document.getElementById('mpp-valor').value = mppTotalAtual;
+    if (mppTotalAtual > 0) document.getElementById('mpp-valor').value = fmtCampoBRL(mppTotalAtual);
   } else {
     btnPa.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-bg);color:var(--accent);font-weight:700;cursor:pointer;font-size:12px';
     btnAv.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:transparent;color:var(--fg2);font-weight:600;cursor:pointer;font-size:12px';
@@ -9458,7 +9474,7 @@ function mppRecalcularParcela() {
   if (!mppTotalAtual) return;
   const parc = parseInt(document.getElementById('mpp-parcelas').value) || 1;
   const valorParcela = Math.round((mppTotalAtual / parc) * 100) / 100;
-  document.getElementById('mpp-valor').value = valorParcela;
+  document.getElementById('mpp-valor').value = fmtCampoBRL(valorParcela);
   mppAtualizarResumo();
 }
 
@@ -9487,7 +9503,7 @@ function mppDestaque(n) {
 
 function mppAtualizarResumo() {
   const tipo = document.getElementById('mpp-tipo').value;
-  const val = parseFloat(document.getElementById('mpp-valor').value) || 0;
+  const val = lerBRL('mpp-valor') || 0;
   const parc = parseInt(document.getElementById('mpp-parcelas').value) || 1;
   const mes = document.getElementById('mpp-mes').value;
   const ano = document.getElementById('mpp-ano').value;
@@ -9509,7 +9525,7 @@ function mppAtualizarResumo() {
 
 function confirmarPagamentoPendente() {
   const tipo = document.getElementById('mpp-tipo').value;
-  const val = parseFloat(document.getElementById('mpp-valor').value);
+  const val = lerBRL('mpp-valor');
   const mes = document.getElementById('mpp-mes').value;
   const ano = parseInt(document.getElementById('mpp-ano').value);
   if (!val || val <= 0) { mostrarToast('⚠️ Informe o valor.'); return; }
@@ -9712,8 +9728,8 @@ function abrirModalDivida(id) {
     if (!d) return;
     document.getElementById('fd-id').value = d.id;
     document.getElementById('fd-nome').value = d.nome;
-    document.getElementById('fd-valor').value = d.valor;
-    document.getElementById('fd-juros').value = d.juros;
+    document.getElementById('fd-valor').value = fmtCampoBRL(d.valor);
+    document.getElementById('fd-juros').value = fmtCampoBRL(d.juros);
     document.getElementById('fd-parcelas').value = d.parcelas;
     document.getElementById('fd-venc').value = d.venc||'';
     document.getElementById('fd-cat').value = d.cat||'outro';
@@ -9728,12 +9744,12 @@ function fecharModalDivida() { document.getElementById('modal-divida').classList
 function editarDivida(id) { abrirModalDivida(id); }
 function salvarDivida() {
   const nome = document.getElementById('fd-nome').value.trim();
-  const valor = parseFloat(document.getElementById('fd-valor').value)||0;
+  const valor = lerBRL('fd-valor')||0;
   if (!nome || valor <= 0) { mostrarToast('⚠️ Preencha nome e valor.'); return; }
   const id = document.getElementById('fd-id').value || Date.now().toString();
   const d = {
     id, nome, valor,
-    juros: parseFloat(document.getElementById('fd-juros').value)||0,
+    juros: lerBRL('fd-juros')||0,
     parcelas: parseInt(document.getElementById('fd-parcelas').value)||0,
     venc: document.getElementById('fd-venc').value,
     cat: document.getElementById('fd-cat').value,
@@ -9847,10 +9863,10 @@ function abrirModalInvestimento(id) {
     if (!inv) return;
     document.getElementById('fi-id').value = inv.id;
     document.getElementById('fi-nome').value = inv.nome;
-    document.getElementById('fi-aplicado').value = inv.aplicado;
-    document.getElementById('fi-atual').value = inv.atual;
-    document.getElementById('fi-meta').value = inv.meta||'';
-    document.getElementById('fi-rent').value = inv.rent||'';
+    document.getElementById('fi-aplicado').value = fmtCampoBRL(inv.aplicado);
+    document.getElementById('fi-atual').value = fmtCampoBRL(inv.atual);
+    document.getElementById('fi-meta').value = fmtCampoBRL(inv.meta||'');
+    document.getElementById('fi-rent').value = fmtCampoBRL(inv.rent||'');
     document.getElementById('fi-tipo').value = inv.tipo||'outro';
   } else {
     document.getElementById('fi-id').value = '';
@@ -9863,14 +9879,14 @@ function fecharModalInv() { document.getElementById('modal-inv').classList.add('
 function editarInvestimento(id) { abrirModalInvestimento(id); }
 function salvarInvestimento() {
   const nome = document.getElementById('fi-nome').value.trim();
-  const aplicado = parseFloat(document.getElementById('fi-aplicado').value)||0;
-  const atual = parseFloat(document.getElementById('fi-atual').value)||aplicado;
+  const aplicado = lerBRL('fi-aplicado')||0;
+  const atual = lerBRL('fi-atual')||aplicado;
   if (!nome || aplicado <= 0) { mostrarToast('⚠️ Preencha nome e valor investido.'); return; }
   const id = document.getElementById('fi-id').value || Date.now().toString();
   const inv = {
     id, nome, aplicado, atual,
-    meta: parseFloat(document.getElementById('fi-meta').value)||0,
-    rent: parseFloat(document.getElementById('fi-rent').value)||0,
+    meta: lerBRL('fi-meta')||0,
+    rent: lerBRL('fi-rent')||0,
     tipo: document.getElementById('fi-tipo').value,
   };
   const arr = loadInvestimentos().filter(x=>x.id!==id);
@@ -9926,7 +9942,7 @@ function fecharGastos() { document.getElementById('modal-gastos').classList.add(
 
 function adicionarGasto() {
   const desc = document.getElementById('gg-desc').value.trim();
-  const valor = parseFloat(document.getElementById('gg-valor').value)||0;
+  const valor = lerBRL('gg-valor')||0;
   if (!desc || valor <= 0) { mostrarToast('⚠️ Preencha descrição e valor.'); return; }
   const cat = document.getElementById('gg-cat').value;
   const arr = loadGastosCartao(_gastaoCartaoId);
@@ -10045,8 +10061,8 @@ function abrirModalCripto(id) {
     document.getElementById('fc-nome').value = c.nome;
     document.getElementById('fc-simbolo').value = c.simbolo||'';
     document.getElementById('fc-qtd').value = c.qtd||'';
-    document.getElementById('fc-investido').value = c.investido;
-    document.getElementById('fc-atual').value = c.atual;
+    document.getElementById('fc-investido').value = fmtCampoBRL(c.investido);
+    document.getElementById('fc-atual').value = fmtCampoBRL(c.atual);
     document.getElementById('fc-carteira').value = c.carteira||'';
   } else {
     document.getElementById('fc-id').value = '';
@@ -10058,7 +10074,7 @@ function fecharModalCripto() { document.getElementById('modal-cripto').classList
 function editarCripto(id) { abrirModalCripto(id); }
 function salvarCripto() {
   const nome = document.getElementById('fc-nome').value.trim();
-  const investido = parseFloat(document.getElementById('fc-investido').value)||0;
+  const investido = lerBRL('fc-investido')||0;
   if (!nome) { mostrarToast('⚠️ Informe o nome da moeda.'); return; }
   const id = document.getElementById('fc-id').value || Date.now().toString();
   const c = {
@@ -10066,7 +10082,7 @@ function salvarCripto() {
     simbolo: document.getElementById('fc-simbolo').value.trim().toUpperCase(),
     qtd: parseFloat(document.getElementById('fc-qtd').value)||0,
     investido,
-    atual: parseFloat(document.getElementById('fc-atual').value)||investido,
+    atual: lerBRL('fc-atual')||investido,
     carteira: document.getElementById('fc-carteira').value.trim(),
   };
   const arr = loadCriptos().filter(x=>x.id!==id);
@@ -10135,10 +10151,10 @@ function abrirModalObjetivo(id) {
     document.getElementById('fo-id').value = o.id;
     document.getElementById('fo-nome').value = o.nome;
     document.getElementById('fo-icone').value = o.icone||'🎯';
-    document.getElementById('fo-meta').value = o.meta;
-    document.getElementById('fo-atual').value = o.atual;
+    document.getElementById('fo-meta').value = fmtCampoBRL(o.meta);
+    document.getElementById('fo-atual').value = fmtCampoBRL(o.atual);
     document.getElementById('fo-prazo').value = o.prazo||'';
-    document.getElementById('fo-aporte').value = o.aporte||'';
+    document.getElementById('fo-aporte').value = fmtCampoBRL(o.aporte||'');
   } else {
     document.getElementById('fo-id').value = '';
     ['fo-nome','fo-meta','fo-atual','fo-prazo','fo-aporte'].forEach(i=>document.getElementById(i).value='');
@@ -10150,16 +10166,16 @@ function fecharModalObjetivo() { document.getElementById('modal-objetivo').class
 function editarObjetivo(id) { abrirModalObjetivo(id); }
 function salvarObjetivo() {
   const nome = document.getElementById('fo-nome').value.trim();
-  const meta = parseFloat(document.getElementById('fo-meta').value)||0;
+  const meta = lerBRL('fo-meta')||0;
   if (!nome || meta <= 0) { mostrarToast('⚠️ Preencha nome e meta.'); return; }
   const id = document.getElementById('fo-id').value || Date.now().toString();
   const o = {
     id, nome,
     icone: document.getElementById('fo-icone').value,
     meta,
-    atual: parseFloat(document.getElementById('fo-atual').value)||0,
+    atual: lerBRL('fo-atual')||0,
     prazo: document.getElementById('fo-prazo').value.trim(),
-    aporte: parseFloat(document.getElementById('fo-aporte').value)||0,
+    aporte: lerBRL('fo-aporte')||0,
   };
   const arr = loadObjetivos().filter(x=>x.id!==id);
   arr.push(o);
@@ -10232,8 +10248,8 @@ function abrirModalAcao(id) {
     document.getElementById('fa-ticker').value = a.ticker;
     document.getElementById('fa-tipo').value = a.tipo||'acao';
     document.getElementById('fa-qtd').value = a.qtd;
-    document.getElementById('fa-preco-medio').value = a.precoMedio;
-    document.getElementById('fa-cotacao').value = a.cotacao;
+    document.getElementById('fa-preco-medio').value = fmtCampoBRL(a.precoMedio);
+    document.getElementById('fa-cotacao').value = fmtCampoBRL(a.cotacao);
     document.getElementById('fa-corretora').value = a.corretora||'';
   } else {
     document.getElementById('fa-id').value = '';
@@ -10247,14 +10263,14 @@ function editarAcao(id) { abrirModalAcao(id); }
 function salvarAcao() {
   const ticker = document.getElementById('fa-ticker').value.trim().toUpperCase();
   const qtd = parseFloat(document.getElementById('fa-qtd').value)||0;
-  const precoMedio = parseFloat(document.getElementById('fa-preco-medio').value)||0;
+  const precoMedio = lerBRL('fa-preco-medio')||0;
   if (!ticker || qtd <= 0 || precoMedio <= 0) { mostrarToast('⚠️ Preencha ticker, quantidade e preço médio.'); return; }
   const id = document.getElementById('fa-id').value || Date.now().toString();
   const a = {
     id, ticker,
     tipo: document.getElementById('fa-tipo').value,
     qtd, precoMedio,
-    cotacao: parseFloat(document.getElementById('fa-cotacao').value)||precoMedio,
+    cotacao: lerBRL('fa-cotacao')||precoMedio,
     corretora: document.getElementById('fa-corretora').value.trim(),
   };
   const arr = loadAcoes().filter(x=>x.id!==id);
@@ -10483,7 +10499,7 @@ function abrirModalMeta(id) {
     if (!m) return;
     document.getElementById('meta-desc').value = m.desc;
     document.getElementById('meta-tipo').value = m.tipo;
-    document.getElementById('meta-valor').value = m.valor;
+    document.getElementById('meta-valor').value = fmtCampoBRL(m.valor);
     document.getElementById('meta-mes').value = m.mes;
     if (selA) selA.value = m.ano || anoSelecionado;
     if (m.cat) document.getElementById('meta-cat').value = m.cat;
@@ -10510,7 +10526,7 @@ document.getElementById('meta-tipo')?.addEventListener('change', function() {
 function salvarMeta() {
   const desc  = document.getElementById('meta-desc').value.trim();
   const tipo  = document.getElementById('meta-tipo').value;
-  const valor = parseFloat(document.getElementById('meta-valor').value) || 0;
+  const valor = lerBRL('meta-valor') || 0;
   const mes   = document.getElementById('meta-mes').value;
   const ano   = parseInt(document.getElementById('meta-ano')?.value) || anoSelecionado;
   const cat   = document.getElementById('meta-cat').value;
