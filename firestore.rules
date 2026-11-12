@@ -13,6 +13,8 @@ service cloud.firestore {
           .hasAny([
             'plano', 'planoBonus', 'planoBonusExpira', 'planoAtualizadoEm',
             'planoExpira', 'bloqueado', 'valorPlano',
+            // bônus de indicação: só o Worker (service account) ou admin grava
+            'bonusDias', 'bonusDiasAtualizadoEm',
             // C2: "criado" e "email" não podem ser alterados após a criação
             // I12: "codigoIndicacao" e "diasAcesso" também protegidos
             'criado', 'email', 'codigoIndicacao', 'diasAcesso'
@@ -57,7 +59,9 @@ service cloud.firestore {
       match /{subcol}/{docId} {
         allow read: if (request.auth != null && request.auth.uid == uid)
                     || isAdmin();
-        allow write: if (request.auth != null && request.auth.uid == uid && contaNaoBloqueada(uid))
+        // auditLog é registro de administração: o usuário não grava (evita log falso)
+        allow write: if (request.auth != null && request.auth.uid == uid && contaNaoBloqueada(uid)
+                         && subcol != 'auditLog')
                      || isAdmin();
       }
     }
@@ -95,8 +99,10 @@ service cloud.firestore {
     match /familias/{codFamilia} {
       // Leitura de documento único: apenas membros da família OU admin
       // (antes: qualquer autenticado podia listar e ver e-mails — C4)
-      allow get: if request.auth != null
-        && (resource.data.membros.hasAny([request.auth.uid]) || isAdmin());
+      // Entrar na família: quem tem o código precisa ler o doc (existência e limite de
+      // membros). O doc não guarda e-mails (apenas nome curto), então o risco é só saber
+      // que o código existe.
+      allow get: if request.auth != null;
 
       // Listagem da coleção: bloqueada para todos (evita scraping de e-mails)
       allow list: if false;
@@ -116,7 +122,13 @@ service cloud.firestore {
             || (resource.data.membros.hasAny([request.auth.uid])
                 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['membros'])
                 && request.resource.data.membros.toSet()
-                   == resource.data.membros.toSet().difference([request.auth.uid].toSet())));
+                   == resource.data.membros.toSet().difference([request.auth.uid].toSet()))
+            // Entrar: quem não é membro só pode se ADICIONAR (e nada mais), até 6 membros.
+            || (!resource.data.membros.hasAny([request.auth.uid])
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['membros'])
+                && request.resource.data.membros.toSet()
+                   == resource.data.membros.toSet().union([request.auth.uid].toSet())
+                && request.resource.data.membros.size() <= 6));
 
       // Subcoleções da família (lançamentos, config, metas, etc.)
       // C1 FIX: qualquer membro pode ler/escrever, não apenas o dono
@@ -155,7 +167,11 @@ service cloud.firestore {
     // Por ora, mantemos a regra e corrigimos a função no app para usar /indicacoes.
     match /indicacoes/{docId} {
       // Qualquer autenticado pode criar uma indicação (seu próprio cadastro via ref)
-      allow create: if request.auth != null;
+      // Só o próprio indicado cria, como ele mesmo, e nunca se auto-indicando.
+      allow create: if request.auth != null
+        && request.resource.data.indicadoUid == request.auth.uid
+        && request.resource.data.indicadorUid != request.auth.uid
+        && request.resource.data.ativo == false;
       // Leitura: indicador ou indicado pode ver as suas, admin vê todas
       allow read: if isAdmin()
         || (request.auth != null

@@ -12684,7 +12684,7 @@ window.criarFamilia = async function() {
       criador: usuarioAtivo,
       donoUid: usuarioAtivo,
       membros: [usuarioAtivo],
-      nomes: { [usuarioAtivo]: window.usuarioEmail || usuarioAtivo }
+      nomes: { [usuarioAtivo]: String(window.usuarioEmail || '').split('@')[0] || 'Membro' }
     });
 
     // Registra membro no documento do usuário (campo não protegido)
@@ -15554,11 +15554,8 @@ async function registrarIndicacaoSeExistir(uid, email, nome) {
         dataCadastro: firebase.firestore.FieldValue.serverTimestamp(),
         ativo: false
       });
-      // Registrar bônus local para cálculo de prazo (campo não-protegido)
-      await db.collection('users').doc(uid).set(
-        { bonusDias: firebase.firestore.FieldValue.increment(30) },
-        { merge: true }
-      );
+      // O bônus de dias (bonusDias) é gravado só pelo indicacoes-worker; o usuário não pode
+      // gravar esse campo (regras do Firestore).
     }
     localStorage.removeItem('finRefCode');
   } catch(e) {
