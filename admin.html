@@ -992,10 +992,16 @@ window.fnvRenderPerfilBase = function() {
   }
 
   // Perfil familiar (grupos do onboarding)
+  // SEGURANÇA: gruposSelecionados é gravado pelo próprio usuário. Só contamos chaves
+  // conhecidas (EMOJI_GRUPOS) e todo texto vindo de lá é escapado antes de ir ao HTML.
+  const EMOJI_GRUPOS = {moradia:'🏠',alimentacao:'🛒',saude:'💊',telefonia:'📱',automovel:'🚗',emprestimos:'🏦',investimentos:'📈',educacao:'📚',lazer:'🎉',filhos:'👶',pet:'🐾',vestuario:'👔',beleza:'💇',doacoes:'🙏',presentes:'🎁',pj:'💼'};
   const grupos = {};
   usuarios.forEach(u => {
     const g = u.gruposSelecionados || u.grupos || [];
-    (Array.isArray(g) ? g : Object.keys(g)).forEach(gr => { grupos[gr] = (grupos[gr]||0)+1; });
+    (Array.isArray(g) ? g : Object.keys(g || {})).forEach(gr => {
+      if (typeof gr !== 'string' || !Object.prototype.hasOwnProperty.call(EMOJI_GRUPOS, gr)) return;
+      grupos[gr] = (grupos[gr]||0)+1;
+    });
   });
   const topGrupos = Object.entries(grupos).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const totalU = usuarios.length || 1;
@@ -1053,10 +1059,10 @@ window.fnvRenderPerfilBase = function() {
     gruposEl.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">` +
     topGrupos.map(([k,v],i)=>{
       const pct = Math.round((v/totalU)*100);
-      const emo = {moradia:'🏠',alimentacao:'🛒',saude:'💊',telefonia:'📱',automovel:'🚗',emprestimos:'🏦',investimentos:'📈',educacao:'📚',lazer:'🎉',filhos:'👶',pet:'🐾',vestuario:'👔',beleza:'💇',doacoes:'🙏',presentes:'🎁',pj:'💼'}[k]||'📌';
+      const emo = EMOJI_GRUPOS[k];
       return `<div style="background:var(--surface);border-radius:8px;padding:10px 12px">
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-          <span style="color:var(--fg2)">${emo} ${k}</span>
+          <span style="color:var(--fg2)">${emo} ${esc(k)}</span>
           <span style="font-weight:700;color:${cores[i%cores.length]}">${pct}%</span>
         </div>
         <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
@@ -1087,7 +1093,7 @@ window.fnvRenderPerfilBase = function() {
       return `<div>
         <div style="font-size:12px;color:var(--fg3);margin-bottom:4px">${faixaLabels[f]} (${tot})</div>
         <div style="display:flex;height:16px;border-radius:8px;overflow:hidden">
-          ${Object.entries(data).map(([p,v])=>v>0?`<div style="width:${Math.round((v/tot)*100)}%;background:${planosCores[p]||'#555'}" title="${p}: ${v}"></div>`:'').join('')}
+          ${Object.entries(data).map(([p,v])=>v>0?`<div style="width:${Math.round((v/tot)*100)}%;background:${planosCores[p]||'#555'}" title="${esc(p)}: ${Number(v) || 0}"></div>`:'').join('')}
         </div>
       </div>`;
     }).join('') + `</div><div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">${Object.entries(planosCores).map(([p,c])=>`<span style="font-size:11px;color:var(--fg3)"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:4px"></span>${p}</span>`).join('')}</div>`;
