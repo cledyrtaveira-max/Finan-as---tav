@@ -104,12 +104,19 @@ service cloud.firestore {
       // Criação: o próprio usuário autenticado cria a família
       allow create: if request.auth != null;
 
-      // Atualização do doc principal: dono OU membros (para entrar na família)
+      // Atualização do doc principal:
+      // - dono/criador/admin: livre (inclui remover membros);
+      // - membro comum: só pode REMOVER A SI MESMO da lista "membros". Como a única
+      //   chave que ele pode tocar é "membros", não consegue alterar planoDono,
+      //   donoUid, criador nem remover outras pessoas.
       allow update: if request.auth != null
-        && (resource.data.donoUid == request.auth.uid
+        && (isAdmin()
+            || resource.data.donoUid == request.auth.uid
             || resource.data.criador == request.auth.uid
-            || resource.data.membros.hasAny([request.auth.uid])
-            || isAdmin());
+            || (resource.data.membros.hasAny([request.auth.uid])
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['membros'])
+                && request.resource.data.membros.toSet()
+                   == resource.data.membros.toSet().difference([request.auth.uid].toSet())));
 
       // Subcoleções da família (lançamentos, config, metas, etc.)
       // C1 FIX: qualquer membro pode ler/escrever, não apenas o dono

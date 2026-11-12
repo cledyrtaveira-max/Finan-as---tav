@@ -12760,6 +12760,24 @@ window.entrarFamilia = async function() {
 // ── Sair da família ──────────────────────────────────────────────
 window.sairFamilia = function() {
   confirmarAcao('Sair da família? Você voltará a ver apenas seus dados individuais.', async () => {
+    // Primeiro sai da lista de membros no servidor. Antes só o lado local era limpo e
+    // o uid continuava em "membros", com acesso aos dados da família.
+    const codSair = getFamiliaCodigo();
+    if (codSair) {
+      try {
+        await fbDb.collection('familias').doc(codSair).update({
+          membros: firebase.firestore.FieldValue.arrayRemove(usuarioAtivo)
+        });
+      } catch(e) {
+        console.error('[Finanvô] sairFamilia (membros):', e);
+        // Família apagada ou já fui removido: segue a limpeza local. Outro erro (ex.: sem
+        // internet): não limpa, para não ficar "fora" no app e ainda membro no servidor.
+        if (!(e && (e.code === 'not-found' || e.code === 'permission-denied'))) {
+          mostrarToast('❌ Não foi possível sair da família agora. Verifique a conexão e tente de novo.');
+          return;
+        }
+      }
+    }
     try {
       await fbDb.collection('users').doc(usuarioAtivo).set({ familiaAtiva: null }, { merge: true });
     } catch(e) { console.error('[Finanvô] sairFamilia:', e); } // I16 FIX
@@ -12768,6 +12786,24 @@ window.sairFamilia = function() {
     iniciarSync();
     renderCfgFamilia && renderCfgFamilia();
     mostrarToast('Você saiu da família. Dados individuais restaurados.');
+  });
+};
+
+// ── Remover membro (só o dono) ───────────────────────────────────
+window.removerMembroFamilia = function(uid) {
+  const cod = getFamiliaCodigo();
+  if (!cod || !uid || uid === usuarioAtivo) return;
+  confirmarAcao('Remover este membro da família? Ele deixará de ver o orçamento compartilhado.', async () => {
+    try {
+      await fbDb.collection('familias').doc(cod).update({
+        membros: firebase.firestore.FieldValue.arrayRemove(uid)
+      });
+      mostrarToast('✅ Membro removido da família.');
+    } catch(e) {
+      console.error('[Finanvô] removerMembroFamilia:', e);
+      mostrarToast('❌ Não foi possível remover o membro.');
+    }
+    if (typeof window.iniciarViewFamilia === 'function') window.iniciarViewFamilia();
   });
 };
 
@@ -15760,17 +15796,24 @@ window.iniciarViewFamilia = async function() {
       <!-- Membros -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px">
         <div style="font-size:13px;font-weight:700;color:var(--fg1);margin-bottom:12px">👥 Membros da família</div>
-        ${membros.length > 0 ? membros.map(m => `
+        ${membros.length > 0 ? membros.map((uidM, iM) => {
+          // "membros" é uma lista de uids; o nome vem de famData.nomes[uid] quando existe.
+          const nomeM = (famData.nomes && typeof famData.nomes[uidM] === 'string' && famData.nomes[uidM]) || ('Membro ' + (iM + 1));
+          const ehDono = uidM === famData.donoUid;
+          const souDono = usuarioAtivo === famData.donoUid;
+          const uidOk = /^[A-Za-z0-9_-]+$/.test(String(uidM));
+          return `
           <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
-            <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700">
-              ${(m.nome || 'U')[0].toUpperCase()}
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;flex-shrink:0">
+              ${esc(nomeM[0].toUpperCase())}
             </div>
-            <div>
-              <div style="font-size:13px;font-weight:600;color:var(--fg1)">${m.nome || 'Membro'}</div>
-              <div style="font-size:11px;color:var(--fg3)">${m.email || ''}</div>
+            <div style="min-width:0;flex:1">
+              <div style="font-size:13px;font-weight:600;color:var(--fg1);overflow:hidden;text-overflow:ellipsis">${esc(nomeM)}</div>
+              <div style="font-size:11px;color:var(--fg3)">${ehDono ? 'Dono da família' : 'Membro'}</div>
             </div>
-            ${m.uid === usuarioAtivo ? '<div style="margin-left:auto;font-size:11px;color:var(--accent);font-weight:600">Você</div>' : ''}
-          </div>`).join('') : `
+            ${uidM === usuarioAtivo ? '<div style="font-size:11px;color:var(--accent);font-weight:600">Você</div>' : ''}
+            ${souDono && !ehDono && uidOk ? `<button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;color:var(--red);border:1px solid rgba(239,68,68,0.3)" onclick="removerMembroFamilia('${uidM}')">Remover</button>` : ''}
+          </div>`; }).join('') : `
           <div style="text-align:center;padding:12px;font-size:12px;color:var(--fg3)">
             Compartilhe o código <strong>${fam}</strong> com seu parceiro(a) para ele(a) entrar!
           </div>`}
