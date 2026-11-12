@@ -62,17 +62,22 @@ export default {
 
     // ── Validação HMAC-SHA1 do Hotmart ───────────────────────────────
     // Hotmart envia X-Hotmart-Webhook-Token com HMAC-SHA1(hottok, rawBody)
-    if (env.HOTMART_HOTTOK) {
-      const signature = request.headers.get('X-Hotmart-Webhook-Token') || '';
-      if (signature) {
-        // Validar HMAC apenas se o header estiver presente
-        const isValid = await verifyHmac(env.HOTMART_HOTTOK, rawBody, signature);
-        if (!isValid) return new Response('Unauthorized', { status: 401 });
-      } else {
-        // Fallback: validar pelo hottok no header antigo ou query param
-        const hottok = request.headers.get('X-Hotmart-Hottok')
-          || new URL(request.url).searchParams.get('hottok');
-        if (hottok !== env.HOTMART_HOTTOK) return new Response('Unauthorized', { status: 401 });
+    // Falha fechado: sem o segredo configurado, nenhum webhook é aceito.
+    if (!env.HOTMART_HOTTOK) {
+      console.error('HOTMART_HOTTOK não configurado — webhook recusado');
+      return new Response('Server misconfigured', { status: 500 });
+    }
+    const signature = request.headers.get('X-Hotmart-Webhook-Token') || '';
+    if (signature) {
+      // Validar HMAC apenas se o header estiver presente
+      const isValid = await verifyHmac(env.HOTMART_HOTTOK, rawBody, signature);
+      if (!isValid) return new Response('Unauthorized', { status: 401 });
+    } else {
+      // hottok aceito somente pelo header X-HOTMART-HOTTOK (nunca pela URL),
+      // comparado em tempo constante.
+      const hottok = request.headers.get('X-HOTMART-HOTTOK') || '';
+      if (!hottok || !(await timingSafeEqualStr(hottok, env.HOTMART_HOTTOK))) {
+        return new Response('Unauthorized', { status: 401 });
       }
     }
 
@@ -354,6 +359,20 @@ function calcularExpiracao(plano, compra) {
 
 // ── Validação HMAC-SHA1 do Hotmart ──────────────────────────────────
 // Hotmart envia X-Hotmart-Webhook-Token = HMAC-SHA1(hottok, corpo)
+// Comparação de strings em tempo constante: compara os SHA-256 das duas,
+// que têm sempre o mesmo tamanho, sem sair do laço no primeiro byte diferente.
+async function timingSafeEqualStr(a, b) {
+  const enc = new TextEncoder();
+  const [ha, hb] = await Promise.all([
+    crypto.subtle.digest('SHA-256', enc.encode(String(a))),
+    crypto.subtle.digest('SHA-256', enc.encode(String(b)))
+  ]);
+  const va = new Uint8Array(ha), vb = new Uint8Array(hb);
+  let diff = 0;
+  for (let i = 0; i < va.length; i++) diff |= va[i] ^ vb[i];
+  return diff === 0;
+}
+
 async function verifyHmac(secret, body, signature) {
   try {
     const enc = new TextEncoder();
