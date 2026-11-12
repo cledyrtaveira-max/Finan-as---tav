@@ -15297,6 +15297,7 @@ window.confirmarImportacao = function() {
 
   let importados = 0, duplicados = 0;
   const agora = Date.now();
+  const paraNuvem = [];
 
   transacoes.forEach((t, i) => {
     // Checagem simples de duplicata: mesmo desc + val + mes + ano
@@ -15305,7 +15306,7 @@ window.confirmarImportacao = function() {
     );
     if (jaExiste) { duplicados++; return; }
 
-    appData.lancamentos.push({
+    const novo = {
       desc: t.desc,
       val: t.val,
       tipo: t.tipo,
@@ -15313,11 +15314,25 @@ window.confirmarImportacao = function() {
       ano: t.ano,
       cat: t.cat,
       conta: t.conta,
-      id: agora + i
-    });
+      id: String(agora + i)
+    };
+    // Logado: grava no Firestore (é de lá que a lista vem pelo onSnapshot). Antes só ia
+    // para o localStorage e os lançamentos sumiam na próxima sincronização.
+    if (dbRef) paraNuvem.push(novo); else appData.lancamentos.push(novo);
     importados++;
   });
 
+  if (paraNuvem.length) {
+    const col = userCol('lancamentos');
+    for (let k = 0; k < paraNuvem.length; k += 400) {
+      const lote = fbDb.batch();
+      paraNuvem.slice(k, k + 400).forEach(({ id, ...dados }) => lote.set(col.doc(id), dados));
+      lote.commit().catch(e => {
+        console.error('[Finanvô] importar CSV:', e);
+        mostrarToast('❌ Não foi possível salvar parte dos lançamentos importados. Tente de novo.');
+      });
+    }
+  }
   saveData(appData);
   fecharImportarExtrato();
   renderDashboard();
