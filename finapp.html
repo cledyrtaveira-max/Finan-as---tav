@@ -11858,113 +11858,24 @@ function obRender() {
     setTimeout(() => document.getElementById('ob-nome')?.focus(), 100);
 
   } else if (obStep === 1) {
-    // Passo 2: Renda — grid mês a mês com 3 zonas: passado (readonly), atual (editável/destaque), futuro (editável)
-    const _now = new Date();
-    const anoAtual = _now.getFullYear();
-    const mesAtualIdx = _now.getMonth(); // 0-11
-    // Usa nomes completos para compatibilidade com periodoKey do app
-    const MESES_CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    // Exibe anos que o app navega (ANO_BASE..ANO_MAX), não anoAtual ± 1
-    const anosDisp = [];
-    for (let a = ANO_BASE; a <= Math.min(ANO_BASE + 2, ANO_MAX); a++) anosDisp.push(a);
-
-    // Lê rendas já salvas usando chave com nome completo do mês
-    const rendaSalva = (ano, idx) => {
-      const mesKey = MESES[idx]; // nome completo
-      const pKey = `${ano}/${mesKey}`;
-      return appCfg.periodos?.[pKey]?.rendaMes ? parseFloat(appCfg.periodos[pKey].rendaMes) : null;
-    };
-
-    const gridMeses = anosDisp.map(ano => {
-      const isPastYear  = ano < anoAtual;
-      const isFutYear   = ano > anoAtual;
-      const cols = MESES_CURTOS.map((m, idx) => {
-        const isPast    = isPastYear || (ano === anoAtual && idx < mesAtualIdx);
-        const isCurrent = ano === anoAtual && idx === mesAtualIdx;
-        const isFuture  = isFutYear  || (ano === anoAtual && idx > mesAtualIdx);
-        const key = `ob_renda_${ano}_${idx}`;
-        const savedVal  = rendaSalva(ano, idx);
-
-        // Estilos por zona — todos editáveis, cliente preenche do zero
-        let borderColor, bgColor, textColor, opacidade, placeholderAttr;
-        if (isCurrent) {
-          borderColor = 'var(--accent)'; bgColor = 'rgba(79,127,255,.08)';
-          textColor = 'var(--fg1)'; opacidade = '1';
-          placeholderAttr = '0';
-        } else if (isPast) {
-          borderColor = 'var(--border)'; bgColor = 'var(--surface)';
-          textColor = 'var(--fg2)'; opacidade = '0.75';
-          placeholderAttr = '0';
-        } else {
-          borderColor = 'var(--border)'; bgColor = 'var(--surface)';
-          textColor = 'var(--fg2)'; opacidade = '1';
-          placeholderAttr = '0';
-        }
-
-        const valorAttr = savedVal !== null ? `value="${fmtCampoCompacto(savedVal)}"` : (isCurrent && obRenda > 0 ? `value="${fmtCampoCompacto(obRenda)}"` : '');
-        const labelColor = isCurrent ? 'var(--accent)' : (isPast ? 'var(--fg3)' : 'var(--fg2)');
-        const labelWeight = isCurrent ? '700' : '400';
-
-        return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-          <span style="font-size:10px;color:${labelColor};font-weight:${labelWeight}">${m}${isCurrent ? ' ★' : ''}</span>
-          <input type="text" inputmode="decimal" id="${key}" placeholder="${placeholderAttr}"
-            ${valorAttr}
-            style="width:48px;padding:4px 2px;text-align:center;font-size:11px;border-radius:6px;
-              border:1px solid ${borderColor};background:${bgColor};color:${textColor};opacity:${opacidade};
-              ${isCurrent ? 'font-weight:700;' : ''}"
-            oninput="obSincRendas()">
-        </div>`;
-      }).join('');
-
-      const anoColor = isPastYear ? 'var(--fg3)' : (isFutYear ? 'var(--fg2)' : 'var(--accent)');
-      const anoLabel = isPastYear ? `${ano}` : (isFutYear ? `${ano}` : `${ano} · atual`);
-      return `<div style="margin-bottom:14px">
-        <div style="font-size:11px;font-weight:700;color:${anoColor};margin-bottom:6px;display:flex;align-items:center;gap:6px">
-          ${anoLabel}
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px">${cols}</div>
-      </div>`;
-    }).join('');
-
+    // Passo 2: Renda só do mês atual. Os outros meses o usuário informa quando chegarem
+    // (campo "Quanto entrou esse mês?" no Dashboard) — evita encher a configuração inicial.
+    const _agora = new Date();
+    const _mesNome = MESES[_agora.getMonth()] + ' de ' + _agora.getFullYear();
     content.innerHTML = `
       <div class="ob-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a)">💰</div>
-      <div class="ob-title">Qual é a renda mensal do casal?</div>
-      <div class="ob-sub">Informe sua renda mês a mês. Você decide quando cada valor começa a valer.</div>
+      <div class="ob-title">Quanto entra de renda em ${_mesNome}?</div>
+      <div class="ob-sub">Informe só o mês atual. Os próximos meses você preenche quando chegarem, direto no Dashboard.</div>
       <div class="ob-field">
-        <label>Preencher todos com (R$)</label>
-        <input id="ob-renda" type="text" inputmode="decimal" placeholder="Ex: 8.000" value="${fmtCampoCompacto(obRenda)}"
-          oninput="obPreencherTodos(this.value)">
+        <label for="ob-renda">Renda do mês (R$)</label>
+        <input id="ob-renda" type="text" inputmode="decimal" placeholder="Ex: 8.000" value="${fmtCampoCompacto(obRenda)}">
       </div>
-      <details id="ob-renda-detalhes" style="width:100%;margin-top:4px">
-        <summary style="cursor:pointer;font-size:13px;color:var(--accent);font-weight:600;padding:6px 0;list-style:none;display:flex;align-items:center;gap:6px">
-          <span id="ob-det-seta">▸</span> Ver / ajustar mês a mês
-        </summary>
-        <div style="margin-top:10px;overflow-x:auto;padding-bottom:4px">${gridMeses}</div>
-      </details>
       <button class="ob-btn" onclick="obNext()" style="margin-top:12px">Continuar →</button>
       <button class="ob-btn-ghost" onclick="obNext()">Pular por agora</button>
-      <style>
-        #ob-renda-detalhes[open] #ob-det-seta { transform: rotate(90deg); display:inline-block; }
-        #ob-renda-detalhes summary::-webkit-details-marker { display:none }
-      </style>
     `;
-    // Preenche todos os meses (todos editáveis, cliente decide)
-    window.obPreencherTodos = function(val) {
-      const v = parseBRL(val) || 0;
-      const a2 = new Date().getFullYear();
-      [a2-1, a2, a2+1].forEach(ano => {
-        for (let i = 0; i < 12; i++) {
-          const el = document.getElementById(`ob_renda_${ano}_${i}`);
-          if (el) el.value = v > 0 ? fmtCampoCompacto(v) : '';
-        }
-      });
-    };
+    window.obPreencherTodos = function() {};
     window.obSincRendas = function() {};
-    setTimeout(() => {
-      document.getElementById('ob-renda')?.focus();
-      if (obRenda > 0) window.obPreencherTodos(obRenda);
-    }, 100);
-
+    setTimeout(() => { document.getElementById('ob-renda')?.focus(); }, 100);
   } else if (obStep === 2) {
     // Passo 3: Cartões de benefício
     const selIds = new Set(appCfg._beneficiosAtivos || []);
@@ -12180,12 +12091,8 @@ window.obFinalizar = function() {
   if (!appCfg._beneficiosAtivos) appCfg._beneficiosAtivos = [];
   syncBeneficiosExtras(); // M37: valores dos cartões viram entradas fixas
 
-  // Salva renda padrão no override de salário base para o gráfico
-  if (obRenda > 0) {
-    if (!appCfg.overrides) appCfg.overrides = {};
-    appCfg.overrides['0'] = obRenda;
-    appCfg.overrides['1'] = 0;
-  }
+  // A renda vale só para o mês informado (appCfg.periodos). Não grava salário base global,
+  // para não preencher os outros meses sem o usuário informar.
 
   // Marca onboarding como completo — salvar localmente E no Firestore
   // para que novos dispositivos não repitam o onboarding
