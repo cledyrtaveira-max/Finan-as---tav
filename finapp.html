@@ -95,7 +95,7 @@
       const p = window.location.pathname;
       // M23 FIX: passar APP_VERSION como query param para o SW — força re-registro
       // quando a versão muda e mantém o CACHE_NAME sincronizado com o app.
-      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.15').replace(/[^a-z0-9.]/gi, '');
+      const ver = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v5.16').replace(/[^a-z0-9.]/gi, '');
       return p.replace(/[^/]*$/, '') + 'sw.js?v=' + ver;
     })();
 
@@ -2267,7 +2267,7 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
     </div>
     <div class="field">
       <label>Valor total (R$)</label>
-      <input id="med-valor" type="number" min="0" step="100" placeholder="0,00" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg1);font-size:14px">
+      <input id="med-valor" type="text" inputmode="decimal" placeholder="0,00" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg1);font-size:14px">
     </div>
     <div class="field">
       <label>Observação</label>
@@ -3119,7 +3119,7 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
         <!-- Meta de saídas por período -->
         <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <span id="graf-meta-titulo" style="font-size:13px;color:var(--fg2);white-space:nowrap">🎯 Meta de saídas mensais:</span>
-          <input id="graf-meta-input" type="number" placeholder="Ex: 5000"
+          <input id="graf-meta-input" type="text" inputmode="decimal" placeholder="Ex: 5.000"
             style="flex:1;min-width:120px;max-width:180px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--fg1);font-size:13px"
             oninput="grafSalvarMeta(this.value)" />
           <span id="graf-meta-label" style="font-size:12px;color:var(--fg3)"></span>
@@ -4335,7 +4335,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.15'; // M36: fix tela preta no PC (menu mobile sem estilo cobrindo o app)
+const APP_VERSION = 'v5.16'; // lote 2: regras, importar CSV, cadastro, campos de dinheiro
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',
@@ -5622,6 +5622,14 @@ function lerBRL(id) {
   const t = el ? String(el.value).trim() : '';
   return t === '' ? NaN : parseBRL(t);
 }
+// fmtCampoCompacto: igual ao fmtCampoBRL, mas sem forçar casas decimais ("3.000", "150,75").
+// Usado em campos estreitos (grade de renda do onboarding, metas, benefícios).
+function fmtCampoCompacto(v) {
+  if (v === '' || v === null || v === undefined) return '';
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  if (isNaN(n) || n <= 0) return '';
+  return n.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+}
 // fmtCampoBRL: formata um número para preencher o campo na edição ("1.500,00").
 function fmtCampoBRL(v) {
   if (v === '' || v === null || v === undefined) return '';
@@ -6458,7 +6466,7 @@ function getMetaPeriodo(mes, ano) {
 // Salva meta no período atual exibido no gráfico (modo anual = grafMesAtualMeta/grafAnoA; mês-mes = grafMesA/grafAnoA)
 let grafMesMetaAtual = MESES[new Date().getMonth()]; // mês sendo editado na meta
 function grafSalvarMeta(val) {
-  const v = parseFloat(val) || 0;
+  const v = parseBRL(val) || 0;
   // Salva APENAS na chave do período selecionado (não propaga para o global)
   const key = grafAnoA + '/' + grafMesMetaAtual;
   if (!appCfg.periodos) appCfg.periodos = {};
@@ -6681,7 +6689,7 @@ function renderGrafico() {
   // No modo mês vs mês usa grafMesA; no anual usa o mês seletor de meta
   if (grafModoAtivo === 'mes-mes') grafMesMetaAtual = grafMesA;
   const metaAtual = getMetaPeriodo(grafMesMetaAtual, grafAnoA);
-  if (metaInput) metaInput.value = metaAtual > 0 ? metaAtual : '';
+  if (metaInput && document.activeElement !== metaInput) metaInput.value = metaAtual > 0 ? fmtCampoCompacto(metaAtual) : '';
   if (metaLabel) metaLabel.textContent = metaAtual > 0 ? '✓ ' + brl(metaAtual) : '';
   // Título com seletor de mês (modo anual) ou fixo (outros modos)
   if (metaTitulo) {
@@ -7729,7 +7737,7 @@ function syncBeneficiosExtras() {
 }
 function setBeneficioValor(id, valor) {
   if (!appCfg._beneficiosValores) appCfg._beneficiosValores = {};
-  const v = parseFloat(String(valor).replace(',', '.'));
+  const v = parseBRL(valor);
   if (isNaN(v) || v <= 0) delete appCfg._beneficiosValores[id];
   else appCfg._beneficiosValores[id] = Math.round(v * 100) / 100;
 }
@@ -7768,8 +7776,8 @@ function renderCfgBeneficios() {
       ${beneficioIcon(id, 38)}
       <div style="flex:1;min-width:0;font-size:13px;font-weight:500;color:var(--fg1)">${esc(card.nome)}</div>
       <span style="font-size:12px;color:var(--fg2)">R$</span>
-      <input id="cfg-ben-val-${id}" type="number" min="0" step="10" inputmode="decimal" placeholder="0,00"
-        value="${vals[id] > 0 ? vals[id] : ''}" aria-label="Valor mensal de ${esc(card.nome)}"
+      <input id="cfg-ben-val-${id}" type="text" inputmode="decimal" placeholder="0,00"
+        value="${fmtCampoCompacto(vals[id])}" aria-label="Valor mensal de ${esc(card.nome)}"
         style="width:110px;padding:7px 9px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;background:var(--bg);color:var(--fg1);text-align:right"
         oninput="cfgSalvarBeneficio('${id}', this.value)">
       <button class="btn btn-ghost" style="padding:3px 8px;font-size:11px;color:var(--red)" onclick="cfgRemoverBeneficio('${id}')" title="Remover cartão">✕</button>
@@ -9408,7 +9416,7 @@ function abrirModalEditarDiv(id, grupo) {
     document.getElementById('med-id').value = id;
     document.getElementById('med-grupo').value = '';
     document.getElementById('med-nome').value = d.nome;
-    document.getElementById('med-valor').value = d.total || '';
+    document.getElementById('med-valor').value = d.total ? fmtCampoBRL(d.total) : '';
     document.getElementById('med-obs').value = d.obs || '';
     document.getElementById('med-btn-excluir-wrap').classList.remove('hidden');
   } else {
@@ -9432,7 +9440,7 @@ function fecharModalEditarDiv() {
 function salvarModalEditarDiv() {
   const nome = document.getElementById('med-nome').value.trim();
   if (!nome) { document.getElementById('med-nome').focus(); return; }
-  const total = parseFloat(document.getElementById('med-valor').value) || 0;
+  const total = lerBRL('med-valor') || 0;
   const obs = document.getElementById('med-obs').value.trim();
   const id = document.getElementById('med-id').value;
   const grupo = document.getElementById('med-grupo').value;
@@ -11893,13 +11901,13 @@ function obRender() {
           placeholderAttr = '0';
         }
 
-        const valorAttr = savedVal !== null ? `value="${savedVal}"` : (isCurrent && obRenda > 0 ? `value="${obRenda}"` : '');
+        const valorAttr = savedVal !== null ? `value="${fmtCampoCompacto(savedVal)}"` : (isCurrent && obRenda > 0 ? `value="${fmtCampoCompacto(obRenda)}"` : '');
         const labelColor = isCurrent ? 'var(--accent)' : (isPast ? 'var(--fg3)' : 'var(--fg2)');
         const labelWeight = isCurrent ? '700' : '400';
 
         return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
           <span style="font-size:10px;color:${labelColor};font-weight:${labelWeight}">${m}${isCurrent ? ' ★' : ''}</span>
-          <input type="number" id="${key}" min="0" step="100" placeholder="${placeholderAttr}"
+          <input type="text" inputmode="decimal" id="${key}" placeholder="${placeholderAttr}"
             ${valorAttr}
             style="width:48px;padding:4px 2px;text-align:center;font-size:11px;border-radius:6px;
               border:1px solid ${borderColor};background:${bgColor};color:${textColor};opacity:${opacidade};
@@ -11924,7 +11932,7 @@ function obRender() {
       <div class="ob-sub">Informe sua renda mês a mês. Você decide quando cada valor começa a valer.</div>
       <div class="ob-field">
         <label>Preencher todos com (R$)</label>
-        <input id="ob-renda" type="number" placeholder="Ex: 8000" min="0" step="100" value="${obRenda||''}"
+        <input id="ob-renda" type="text" inputmode="decimal" placeholder="Ex: 8.000" value="${fmtCampoCompacto(obRenda)}"
           oninput="obPreencherTodos(this.value)">
       </div>
       <details id="ob-renda-detalhes" style="width:100%;margin-top:4px">
@@ -11942,12 +11950,12 @@ function obRender() {
     `;
     // Preenche todos os meses (todos editáveis, cliente decide)
     window.obPreencherTodos = function(val) {
-      const v = parseFloat(val) || 0;
+      const v = parseBRL(val) || 0;
       const a2 = new Date().getFullYear();
       [a2-1, a2, a2+1].forEach(ano => {
         for (let i = 0; i < 12; i++) {
           const el = document.getElementById(`ob_renda_${ano}_${i}`);
-          if (el) el.value = v > 0 ? v : '';
+          if (el) el.value = v > 0 ? fmtCampoCompacto(v) : '';
         }
       });
     };
@@ -12053,7 +12061,7 @@ window.obNext = function() {
     obStep = 1;
     obRender();
   } else if (obStep === 1) {
-    const v = parseFloat(document.getElementById('ob-renda')?.value || '0');
+    const v = parseBRL(document.getElementById('ob-renda')?.value || '0');
     obRenda = isNaN(v) ? 0 : v;
     // Coleta valores individuais por mês/ano do grid
     obRendasPorPeriodo = {};
@@ -12064,7 +12072,7 @@ window.obNext = function() {
       for (let i = 0; i < 12; i++) {
         const el = document.getElementById(`ob_renda_${ano}_${i}`);
         if (el) {
-          const val = parseFloat(el.value);
+          const val = parseBRL(el.value);
           if (!isNaN(val) && val > 0) {
             obRendasPorPeriodo[`${ano}/${MESES[i]}`] = val;
           }
@@ -12094,7 +12102,7 @@ window.obRenderBenValores = function() {
         ${beneficioIcon(id, 30)}
         <span style="flex:1;min-width:0;font-size:12px;color:var(--fg1)">${esc(getBeneficioCard(id).nome)}</span>
         <span style="font-size:11px;color:var(--fg3)">R$</span>
-        <input type="number" min="0" step="10" inputmode="decimal" placeholder="0,00" value="${vals[id] > 0 ? vals[id] : ''}"
+        <input type="text" inputmode="decimal" placeholder="0,00" value="${fmtCampoCompacto(vals[id])}"
           aria-label="Valor mensal de ${esc(getBeneficioCard(id).nome)}"
           oninput="setBeneficioValor('${id}', this.value)"
           style="width:96px;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;background:var(--bg);color:var(--fg1);text-align:right">
@@ -12574,7 +12582,7 @@ function renderSecaoMetas() {
       <td style="padding:10px 12px">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:11px;color:var(--fg3)">R$</span>
-          <input type="number" min="0" step="50" value="${meta > 0 ? meta : ''}" placeholder="Sem limite"
+          <input type="text" inputmode="decimal" value="${fmtCampoCompacto(meta)}" placeholder="Sem limite"
             data-cat="${cat.replace(/"/g,'&quot;')}"
             oninput="window._salvarMetaInput(this)"
             style="width:110px;padding:5px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-weight:600;background:var(--bg);color:var(--fg1);text-align:right"/>
@@ -12606,7 +12614,7 @@ function renderSecaoMetas() {
 
 window._salvarMetaInput = function(input) {
   const cat = input.dataset.cat;
-  const val = parseFloat(input.value) || 0;
+  const val = parseBRL(input.value) || 0;
   saveMeta(cat, val);
   renderPainelMetas();
   // debounce o render da seção
