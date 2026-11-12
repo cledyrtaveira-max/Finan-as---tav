@@ -2970,6 +2970,9 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
         <!-- Entrada de renda do mês -->
         <div id="dash-renda-mes" style="margin-bottom:14px"></div>
 
+        <!-- Lançamento rápido direto no Dashboard -->
+        <div id="dash-rapido" style="margin-bottom:16px"></div>
+
         <!-- Alerta inteligente (semáforo) -->
         <div id="aviso-email" style="display:none;margin-bottom:16px"></div>
         <div id="dash-alerta" style="margin-bottom:16px"></div>
@@ -5553,6 +5556,55 @@ function gameAtualizar() {
   else if (streakSubiu && !_gameCelebrados.has('dia-' + hoje)) { _gameCelebrados.add('dia-' + hoje); gameCelebrar([], `${st.streak} dias seguidos cuidando das suas finanças`); }
 }
 
+// ── Lançamento rápido no Dashboard ────────────────────────────────
+// Preenche os campos do modal "+ Lançamento" (mesma validação, limite de plano e gravação
+// na nuvem de salvarLancamentoSynced) para o mês que o Dashboard está mostrando.
+function renderDashRapido() {
+  const el = document.getElementById('dash-rapido');
+  if (!el) return;
+  if (typeof usuarioAtivo === 'undefined' || !usuarioAtivo) { el.innerHTML = ''; return; }
+  const rot = document.getElementById('dr-periodo');
+  if (rot && el.firstChild) { rot.textContent = mesSelecionado + ' ' + anoSelecionado; return; }
+  const cats = Array.from(document.querySelectorAll('#f-cat option')).map(o => o.value).filter(Boolean);
+  const opts = cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  const css = 'padding:9px 10px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--fg1);font-size:14px;font-family:inherit;min-width:0';
+  el.innerHTML = `
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+      <strong style="font-size:13px;color:var(--fg1)">Lançar agora</strong>
+      <span style="font-size:11px;color:var(--fg3)">em <span id="dr-periodo">${esc(mesSelecionado)} ${anoSelecionado}</span></span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select id="dr-tipo" aria-label="Tipo" style="${css};flex:0 0 auto">
+        <option value="saida">Saída</option><option value="entrada">Entrada</option><option value="divida">Dívida</option>
+      </select>
+      <input id="dr-desc" type="text" placeholder="Descrição (ex: Mercado)" aria-label="Descrição" style="${css};flex:2 1 150px" onkeydown="if(event.key==='Enter')dashLancRapido()">
+      <input id="dr-val" type="text" inputmode="decimal" placeholder="Valor" aria-label="Valor" style="${css};flex:1 1 90px" onkeydown="if(event.key==='Enter')dashLancRapido()">
+      <select id="dr-cat" aria-label="Categoria" style="${css};flex:1 1 130px">${opts}</select>
+      <button class="btn btn-primary" onclick="dashLancRapido()" style="flex:0 0 auto">Lançar</button>
+    </div>
+  </div>`;
+}
+window.dashLancRapido = function() {
+  const desc = (document.getElementById('dr-desc').value || '').trim();
+  const val = lerBRL('dr-val');
+  if (!desc) { mostrarToast('⚠️ Informe a descrição.'); document.getElementById('dr-desc').focus(); return; }
+  if (isNaN(val) || val <= 0) { mostrarToast('⚠️ Informe um valor válido maior que zero.'); document.getElementById('dr-val').focus(); return; }
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
+  set('f-tipo', document.getElementById('dr-tipo').value);
+  set('f-mes', mesSelecionado);
+  set('f-ano', String(anoSelecionado));
+  set('f-desc', desc);
+  set('f-val', document.getElementById('dr-val').value);
+  set('f-cat', document.getElementById('dr-cat').value);
+  set('f-conta', '');
+  const rec = document.getElementById('f-recorrente'); if (rec) rec.checked = false;
+  window.salvarLancamentoSynced();
+  // salvarLancamentoSynced limpa os campos do modal quando salva; limpa o cartão junto.
+  const fVal = document.getElementById('f-val');
+  if (fVal && fVal.value === '') { set('dr-desc', ''); set('dr-val', ''); }
+};
+
 function gameRender() {
   const el = document.getElementById('dash-jogo');
   if (!el) return;
@@ -6119,6 +6171,7 @@ function renderDashboard() {
     }
   }
   try { gameAtualizar(); } catch(e) { console.error('[Finanvô] jornada:', e); } // M44
+  try { renderDashRapido(); } catch(e) { console.error('[Finanvô] lançamento rápido:', e); }
   const dhcAcum = document.getElementById('dhc-saldo-acum');
   if (dhcAcum) {
     dhcAcum.style.display = saldoAnt !== 0 ? 'block' : 'none';
