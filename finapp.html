@@ -8314,15 +8314,30 @@ function loadCfg() {
   return { overrides: {} }; // { "0": 8500, "1": 3400, ... } por índice
 }
 
-function saveCfg(cfg) {
-  cfg._ts = Date.now();
-  if (window._cfgSaveTs) window._cfgSaveTs();
+// Grava a config só no localStorage: não toca no Firestore nem no carimbo _ts.
+function salvarCfgLocal(cfg) {
   const json = JSON.stringify(cfg);
   try { localStorage.setItem(CFG_KEY, json); } catch(e) {}
   // Salva também na chave por UID para que iniciarSync leia o valor correto
   if (usuarioAtivo) {
     try { localStorage.setItem('finvo_cfg_' + usuarioAtivo, json); } catch(e) {}
   }
+  return json;
+}
+
+function saveCfg(cfg) {
+  // PERDA DE DADOS AO SAIR E ENTRAR: logo após o login a config local pode estar vazia.
+  // Se ela fosse gravada no Firestore antes de a config remota chegar, apagava a renda,
+  // os benefícios etc. salvos na nuvem (e o _ts novo fazia o app ignorar o remoto).
+  // Enquanto o primeiro onSnapshot de userCfgDoc() não chegar, grava só no localStorage.
+  if (dbRef && window._cfgRemotoCarregado !== true) {
+    salvarCfgLocal(cfg);
+    window._cfgSavePendente = true;
+    return;
+  }
+  cfg._ts = Date.now();
+  if (window._cfgSaveTs) window._cfgSaveTs();
+  const json = salvarCfgLocal(cfg);
   // sync via db se disponível — salva cfg completo como JSON string para preservar zeros e períodos
   if (dbRef) {
     try {
@@ -8943,6 +8958,9 @@ function iniciarSync() {
   } catch(e) {}
 
   dbRef = fbDb; // sinaliza que db está ativo
+  // Config remota ainda não chegou: saveCfg não grava no Firestore até o 1º onSnapshot.
+  window._cfgRemotoCarregado = false;
+  window._cfgSavePendente = false;
 
   // Cancela listeners anteriores
   if (_unsubLanc)  _unsubLanc();
@@ -8982,7 +9000,9 @@ function iniciarSync() {
 
   // Listener config
   _unsubCfg = userCfgDoc().onSnapshot(docSnap => {
-    if (Date.now() - _lastLocalSave < 4000) return;
+    const primeiraCarga = window._cfgRemotoCarregado !== true;
+    let aplicouRemoto = false;
+    if (primeiraCarga || Date.now() - _lastLocalSave >= 4000) {
     if (docSnap && docSnap.exists) {
       const data = docSnap.data();
       if (data && data.json) {
@@ -8992,6 +9012,7 @@ function iniciarSync() {
             const remoteTs = data.ts || 0;
             if (remoteTs > (appCfg._ts || 0)) {
               Object.assign(appCfg, remote);
+              aplicouRemoto = true;
               // Restaurar diaVenc nas DESPESAS_BASE após sync
               if (appCfg.diaVenc) {
                 Object.keys(appCfg.diaVenc).forEach(idx => {
@@ -9006,6 +9027,15 @@ function iniciarSync() {
           }
         } catch(e) {}
       }
+    }
+    }
+    // Primeiro snapshot (exista o doc ou não): libera a gravação no Firestore.
+    if (primeiraCarga) {
+      window._cfgRemotoCarregado = true;
+      const pendente = window._cfgSavePendente;
+      window._cfgSavePendente = false;
+      // Mudanças feitas antes de o remoto chegar só sobem se o remoto não era mais novo.
+      if (pendente && !aplicouRemoto) saveCfg(appCfg);
     }
   }, () => {});
 
@@ -12190,7 +12220,9 @@ window._checkOnboarding = function() {
       if (contaAntiga || temDadosLocais) {
         // Conta antiga ou com dados — marcar como feito e não mostrar onboarding
         appCfg._onboardingDone = true;
-        saveCfg(appCfg);
+        // Só localStorage: esta checagem roda logo após o login e não pode sobrescrever
+        // a config da nuvem com a config local (possivelmente vazia).
+        salvarCfgLocal(appCfg);
         // Persistir também no Firestore para outros dispositivos
         try {
           if (usuarioAtivo && window.fbDb) {
@@ -12207,7 +12239,7 @@ window._checkOnboarding = function() {
     } else if (!doneLocal && doneFirebase) {
       // Já concluiu em outro dispositivo — marcar localmente e não mostrar de novo
       appCfg._onboardingDone = true;
-      saveCfg(appCfg);
+      salvarCfgLocal(appCfg); // só localStorage (mesmo motivo acima)
     }
   }
   // Se _perfil já foi recebido (onSnapshot disparou), executa imediatamente
