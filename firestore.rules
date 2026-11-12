@@ -163,11 +163,16 @@ service cloud.firestore {
     // plano pendente (identificado pelo e-mail como chave do documento).
     // Formato da chave: email.replace(/[.@]/g, '_')
     match /planos_pendentes/{emailKey} {
-      // Usuário pode ler seu próprio plano pendente
-      // A chave é o e-mail com . e @ substituídos por _
-      // Não há como comparar diretamente, então permitimos leitura
-      // do próprio doc se autenticado (write ainda restrito a admin)
-      allow read: if request.auth != null || isAdmin();
+      // Listar a coleção: só admin (antes qualquer autenticado via todas as compras pendentes).
+      allow list: if isAdmin();
+      // Ler um doc: admin, ou o próprio dono com e-mail VERIFICADO e a chave do doc
+      // igual ao e-mail dele normalizado (minúsculas, "." e "@" trocados por "_").
+      allow get: if isAdmin()
+        || (request.auth != null
+            && request.auth.token.email_verified == true
+            && request.auth.token.email is string
+            && emailKey == request.auth.token.email.lower().replace('[.@]', '_'));
+      // Escrita: só admin (o Worker usa service account e ignora as regras).
       allow write: if isAdmin();
     }
 

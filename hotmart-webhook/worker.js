@@ -156,8 +156,16 @@ async function handleAtivarPendente(request, env) {
     const email = d1.users?.[0]?.email;
     if (!email) return new Response('User not found', { status: 404, headers: CORS_HEADERS });
 
-    // Buscar plano pendente
-    const key = email.replace(/[.@]/g, '_');
+    // Só ativa compra pendente para quem provou ser dono do e-mail. Sem isso, qualquer
+    // pessoa criava conta com o e-mail de um comprador e ficava com o plano dele.
+    if (d1.users[0].emailVerified !== true) {
+      return new Response(JSON.stringify({ ok: false, msg: 'email_nao_verificado' }), {
+        status: 403, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Buscar plano pendente (chave normalizada em minúsculas, igual às regras do Firestore)
+    const key = email.toLowerCase().replace(/[.@]/g, '_');
     const r2 = await fetch(
       `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/planos_pendentes/${key}`,
       { headers: { 'Authorization': 'Bearer ' + token } }
@@ -185,13 +193,15 @@ async function handleAtivarPendente(request, env) {
       planoExpira:       planoExpira ? { stringValue: planoExpira } : { nullValue: null }
     };
 
-    await fetch(
+    const rPerfil = await fetch(
       `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${uid}?${maskQuery}`,
       { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields }) }
     );
+    // Se o perfil não foi atualizado, a pendência fica para nova tentativa (não se perde a compra).
+    if (!rPerfil.ok) throw new Error('Falha ao gravar o plano no perfil (HTTP ' + rPerfil.status + ')');
 
-    // Remover plano pendente
+    // Remover plano pendente — só depois que o perfil foi gravado com sucesso
     await fetch(
       `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/planos_pendentes/${key}`,
       { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } }
@@ -261,7 +271,7 @@ async function setPlano(env, email, plano, compra) {
     await atualizarPlanoDono(env, token, uid, plano);
   } else {
     // Usuário ainda não criou conta — salva como pendente
-    const key = email.replace(/[.@]/g, '_');
+    const key = email.toLowerCase().replace(/[.@]/g, '_');
     await fetch(`https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/planos_pendentes/${key}`, {
       method: 'PATCH',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },

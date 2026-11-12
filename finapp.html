@@ -2959,6 +2959,7 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
         <div id="dash-renda-mes" style="margin-bottom:14px"></div>
 
         <!-- Alerta inteligente (semáforo) -->
+        <div id="aviso-email" style="display:none;margin-bottom:16px"></div>
         <div id="dash-alerta" style="margin-bottom:16px"></div>
         <!-- M43: aviso de dinheiro sobrando -->
         <div id="dash-sobra" style="display:none;margin-bottom:16px"></div>
@@ -4151,6 +4152,57 @@ function firebaseErroPtBr(e) {
   return MAP[code] || MAP[shortCode] || ('Erro: ' + (e.message || code || 'desconhecido'));
 }
 
+// ── Aviso "Confirme seu e-mail" (contas criadas com e-mail e senha) ──
+function renderAvisoConfirmarEmail() {
+  const el = document.getElementById('aviso-email');
+  if (!el) return;
+  const u = fbAuth.currentUser;
+  const porSenha = !!(u && Array.isArray(u.providerData) && u.providerData.some(p => p && p.providerId === 'password'));
+  if (!u || !porSenha || u.emailVerified || window._avisoEmailFechado) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = 'block';
+  el.innerHTML = `<div role="status" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.35);border-radius:12px">
+    <div style="flex:1;min-width:220px">
+      <div style="font-size:14px;font-weight:700;color:var(--fg1)">Confirme seu e-mail</div>
+      <div style="font-size:12px;color:var(--fg2);margin-top:2px">Enviamos um link de confirmação para <strong id="aviso-email-end"></strong>. Compras feitas antes de criar a conta só são ativadas depois da confirmação.</div>
+    </div>
+    <button class="btn btn-primary" id="aviso-email-reenviar" onclick="reenviarEmailConfirmacao()">Reenviar e-mail</button>
+    <button class="btn btn-ghost" onclick="jaConfirmeiEmail()">Já confirmei</button>
+    <button class="btn btn-ghost" onclick="window._avisoEmailFechado=true;renderAvisoConfirmarEmail()" aria-label="Fechar aviso" style="padding:6px 10px">✕</button>
+  </div>`;
+  const end = document.getElementById('aviso-email-end');
+  if (end) end.textContent = u.email || '';
+}
+async function reenviarEmailConfirmacao() {
+  const u = fbAuth.currentUser; if (!u) return;
+  if (window._emailConfirmacaoEnviadoEm && Date.now() - window._emailConfirmacaoEnviadoEm < 60000) {
+    mostrarToast('⚠️ Aguarde 1 minuto para reenviar o e-mail.'); return;
+  }
+  const btn = document.getElementById('aviso-email-reenviar');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
+  try {
+    await u.sendEmailVerification();
+    window._emailConfirmacaoEnviadoEm = Date.now();
+    mostrarToast('✅ E-mail de confirmação reenviado. Confira também o spam.');
+  } catch(e) {
+    mostrarToast('⚠️ Não foi possível reenviar agora. Tente de novo em alguns minutos.');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Reenviar e-mail'; }
+}
+async function jaConfirmeiEmail() {
+  const u = fbAuth.currentUser; if (!u) return;
+  try {
+    await u.reload();
+    if (fbAuth.currentUser && fbAuth.currentUser.emailVerified) {
+      await fbAuth.currentUser.getIdToken(true); // token novo com email_verified = true
+      renderAvisoConfirmarEmail();
+      mostrarToast('✅ E-mail confirmado!');
+      if (typeof verificarPlanoPendente === 'function') verificarPlanoPendente(fbAuth.currentUser.email);
+    } else {
+      mostrarToast('⚠️ Ainda não confirmado. Abra o link que enviamos para o seu e-mail.');
+    }
+  } catch(e) { mostrarToast('⚠️ Não foi possível verificar agora.'); }
+}
+
 async function fazerLogin() {
   const email = (document.getElementById('login-email').value || '').trim();
   const senha = document.getElementById('login-password').value;
@@ -4163,6 +4215,9 @@ async function fazerLogin() {
       if (!nome) { loginShakeError('Preencha seu nome.'); btn.disabled=false; mostrarAba('cadastrar'); return; }
       const cred = await fbAuth.createUserWithEmailAndPassword(email, senha);
       await cred.user.updateProfile({ displayName: nome });
+      // Envia o e-mail de confirmação: compra pendente só é ativada com e-mail verificado.
+      try { await cred.user.sendEmailVerification(); window._emailConfirmacaoEnviadoEm = Date.now(); } catch(e) { console.warn('[Finanvô] sendEmailVerification:', e && e.message); }
+      renderAvisoConfirmarEmail();
       // Perfil no Firestore (codigoIndicacao indexado para busca eficiente)
       const uid = cred.user.uid;
       await fbDb.collection('users').doc(uid).set({
@@ -4418,6 +4473,7 @@ fbAuth.onAuthStateChanged(async function(user) {
       document.body.appendChild(d);
     }
     // Verificar se há plano pendente (compra no Hotmart antes de criar conta)
+    renderAvisoConfirmarEmail();
     verificarPlanoPendente(user.email);
     // I21 FIX: inicializar Crisp após o perfil estar disponível (plano conhecido)
     // Se o perfil já foi carregado (segunda visita), inicia agora; caso contrário, aguarda.
@@ -12214,7 +12270,7 @@ window.iniciarSync = function() {
 async function verificarPlanoPendente(email) {
   if (!email || !usuarioAtivo) return;
   try {
-    const key = email.replace(/[.@]/g, '_');
+    const key = String(email).toLowerCase().replace(/[.@]/g, '_'); // mesma normalização das regras
     const snap = await fbDb.collection('planos_pendentes').doc(key).get();
     if (!snap.exists) return;
     const data = snap.data();
