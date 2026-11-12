@@ -118,6 +118,11 @@ export default {
     try {
       if (ATIVAR.includes(evento))   await setPlano(env, email, plano, compra);
       if (CANCELAR.includes(evento)) await setPlano(env, email, 'gratuito', compra);
+      // Indique e Ganhe: o indicador só ganha depois que o pagamento do indicado foi
+      // CONFIRMADO e o prazo de garantia passou (PURCHASE_COMPLETE). Estorno/chargeback
+      // depois disso desfaz o bônus.
+      if (evento === 'PURCHASE_COMPLETE') await recompensarIndicacao(env, email);
+      if (evento === 'PURCHASE_REFUNDED' || evento === 'PURCHASE_CHARGEBACK') await revogarIndicacao(env, email);
     } catch(e) {
       console.error(e.message);
       return new Response('Erro: ' + e.message, { status: 500 });
@@ -424,4 +429,111 @@ async function getToken(env) {
   })).json();
   if (!tr.access_token) throw new Error('Token falhou: ' + JSON.stringify(tr));
   return tr.access_token;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// Indique e Ganhe — recompensa só após pagamento confirmado
+// ══════════════════════════════════════════════════════════════════
+const BONUS_INDICACAO_DIAS = 30;
+const FS = env => `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents`;
+
+async function uidPorEmail(env, token, email) {
+  const r = await fetch(`https://identitytoolkit.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/accounts:lookup`, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: [email] })
+  });
+  const d = await r.json();
+  return d.users?.[0]?.localId || null;
+}
+
+// Indicação do comprador (indicadoUid == uid). Sem índice composto: filtra só por indicadoUid.
+async function indicacaoDoIndicado(env, token, uid) {
+  const r = await fetch(`${FS(env)}:runQuery`, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ structuredQuery: {
+      from: [{ collectionId: 'indicacoes' }],
+      where: { fieldFilter: { field: { fieldPath: 'indicadoUid' }, op: 'EQUAL', value: { stringValue: uid } } },
+      limit: 1
+    }})
+  });
+  const rows = await r.json();
+  return Array.isArray(rows) ? (rows.find(x => x.document)?.document || null) : null;
+}
+
+// Soma (ou subtrai) dias em planoBonusExpira do indicador. Nunca abaixo de "agora".
+async function ajustarBonusIndicador(env, token, indicadorUid, dias) {
+  const g = await fetch(`${FS(env)}/users/${indicadorUid}`, { headers: { 'Authorization': 'Bearer ' + token } });
+  if (!g.ok) throw new Error('indicador não encontrado');
+  const u = await g.json();
+  const agora = Date.now();
+  const atual = Date.parse(u.fields?.planoBonusExpira?.stringValue || '') || 0;
+  const base = Math.max(atual, agora);
+  const novo = dias >= 0 ? base + dias * 864e5 : Math.max(agora, atual + dias * 864e5);
+  const mask = ['planoBonus', 'planoBonusExpira'].map(f => `updateMask.fieldPaths=${f}`).join('&');
+  const p = await fetch(`${FS(env)}/users/${indicadorUid}?${mask}`, {
+    method: 'PATCH',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: {
+      planoBonus: { stringValue: 'premium' },
+      planoBonusExpira: { stringValue: new Date(novo).toISOString() }
+    }})
+  });
+  if (!p.ok) throw new Error('falha ao gravar bônus do indicador: ' + p.status);
+}
+
+async function patchIndicacao(env, token, docName, campos) {
+  const mask = Object.keys(campos).map(f => `updateMask.fieldPaths=${f}`).join('&');
+  const r = await fetch(`https://firestore.googleapis.com/v1/${docName}?${mask}`, {
+    method: 'PATCH',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: campos })
+  });
+  if (!r.ok) throw new Error('falha ao atualizar indicação: ' + r.status);
+}
+
+async function recompensarIndicacao(env, emailComprador) {
+  const token = await getToken(env);
+  const uid = await uidPorEmail(env, token, emailComprador);
+  if (!uid) return;
+  const doc = await indicacaoDoIndicado(env, token, uid);
+  if (!doc) return;
+  const f = doc.fields || {};
+  const indicadorUid = f.indicadorUid?.stringValue;
+  // Já recompensada (ou revogada): não paga duas vezes (o Hotmart pode reenviar o evento).
+  if (f.ativo?.booleanValue === true || f.revogada?.booleanValue === true || !indicadorUid) return;
+  // Marca como ativa ANTES de creditar (evita crédito duplicado se a Hotmart reenviar o
+  // evento); se o crédito falhar, desfaz a marca e devolve erro para a Hotmart reenviar.
+  await patchIndicacao(env, token, doc.name, {
+    ativo: { booleanValue: true },
+    dataAtivacao: { stringValue: new Date().toISOString() },
+    motivo: { stringValue: 'compra_confirmada' }
+  });
+  try {
+    await ajustarBonusIndicador(env, token, indicadorUid, BONUS_INDICACAO_DIAS);
+  } catch (e) {
+    await patchIndicacao(env, token, doc.name, { ativo: { booleanValue: false } }).catch(() => {});
+    throw e;
+  }
+}
+
+async function revogarIndicacao(env, emailComprador) {
+  const token = await getToken(env);
+  const uid = await uidPorEmail(env, token, emailComprador);
+  if (!uid) return;
+  const doc = await indicacaoDoIndicado(env, token, uid);
+  if (!doc) return;
+  const f = doc.fields || {};
+  const indicadorUid = f.indicadorUid?.stringValue;
+  if (f.revogada?.booleanValue === true) return;
+  // Só desfaz o que já foi pago; se ainda não tinha sido recompensada, só impede que seja.
+  if (f.ativo?.booleanValue === true && indicadorUid) {
+    await ajustarBonusIndicador(env, token, indicadorUid, -BONUS_INDICACAO_DIAS);
+  }
+  await patchIndicacao(env, token, doc.name, {
+    revogada: { booleanValue: true },
+    ativo: { booleanValue: false },
+    dataRevogacao: { stringValue: new Date().toISOString() }
+  });
 }

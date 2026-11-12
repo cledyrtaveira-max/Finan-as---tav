@@ -51,6 +51,11 @@ export default {
 
 // ── Processamento principal ──────────────────────────────────────────
 async function processarIndicacoesPendentes(env) {
+  // DESATIVADO: a recompensa não depende mais de "7 dias de uso". Ela só é dada pelo
+  // hotmart-webhook quando o pagamento do indicado é CONFIRMADO (PURCHASE_COMPLETE, após a
+  // garantia) e é desfeita em estorno/chargeback. Assim não sai nada do bolso por cadastros
+  // que nunca pagaram. Para reativar a regra antiga, remova este return.
+  if (!env.INDICACOES_REGRA_ANTIGA) return { ativadas: 0, erros: 0, detalhes: [], desativado: true };
   const token = await getToken(env);
   const projectId = env.FIREBASE_PROJECT_ID;
   const BONUS_DIAS = 30; // dias de bônus por indicação ativada

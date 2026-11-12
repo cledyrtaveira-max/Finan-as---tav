@@ -3236,7 +3236,7 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
             <div style="font-size:28px">🎁</div>
             <div>
               <div style="font-size:18px;font-weight:700;color:var(--fg1)">Indique e Ganhe</div>
-              <div style="font-size:12px;color:var(--fg3)">Você e seu amigo ganham 30 dias Premium grátis</div>
+              <div style="font-size:12px;color:var(--fg3)">Você ganha 30 dias Premium quando seu amigo assinar e o pagamento for confirmado</div>
             </div>
           </div>
 
@@ -3250,12 +3250,12 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center">
               <div style="font-size:22px;margin-bottom:6px">✅</div>
               <div style="font-size:12px;font-weight:700;color:var(--fg1);margin-bottom:4px">2. Amigo se cadastra</div>
-              <div style="font-size:11px;color:var(--fg3)">Ele cria a conta pelo seu link e ganha 30 dias grátis</div>
+              <div style="font-size:11px;color:var(--fg3)">Ele cria a conta pelo seu link e testa o Finanvô</div>
             </div>
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center">
               <div style="font-size:22px;margin-bottom:6px">🎉</div>
-              <div style="font-size:12px;font-weight:700;color:var(--fg1);margin-bottom:4px">3. Você também ganha</div>
-              <div style="font-size:11px;color:var(--fg3)">+30 dias Premium adicionados à sua conta</div>
+              <div style="font-size:12px;font-weight:700;color:var(--fg1);margin-bottom:4px">3. Você ganha</div>
+              <div style="font-size:11px;color:var(--fg3)">Quando ele assinar e o pagamento for confirmado (após o prazo de garantia), +30 dias Premium na sua conta</div>
             </div>
           </div>
 
@@ -3298,7 +3298,7 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
               </div>
               <div>
                 <div style="font-size:28px;font-weight:800;color:#22c55e" id="ind-ativos">0</div>
-                <div style="font-size:11px;color:var(--fg3);margin-top:2px">Cadastros confirmados</div>
+                <div style="font-size:11px;color:var(--fg3);margin-top:2px">Assinaturas confirmadas</div>
               </div>
               <div>
                 <div style="font-size:28px;font-weight:800;color:#f59e0b" id="ind-dias">0</div>
@@ -13205,12 +13205,14 @@ window.getPlanoAtual = function() {
     // Lê plano do _perfil (atualizado via onSnapshot do Firestore — definido pelo webhook)
     const p = window._perfil || {};
     // Verifica planoExpira — se expirou, trata como gratuito
-    if (p.plano && PLANOS[p.plano]) {
+    if (p.plano && PLANOS[p.plano] && p.plano !== 'gratuito') {
+      let expirado = false;
       if (p.planoExpira) {
         const expira = new Date(p.planoExpira);
-        if (!isNaN(expira) && expira < new Date()) return 'gratuito'; // expirado
+        if (!isNaN(expira) && expira < new Date()) expirado = true; // expirado
       }
-      return p.plano;
+      if (!expirado) return p.plano;
+      // expirado: cai para o bônus (se houver) ou gratuito
     }
     // Bonus temporário (ex: cortesia)
     if (p.planoBonus && PLANOS[p.planoBonus] && p.planoBonusExpira && new Date(p.planoBonusExpira) > new Date()) return p.planoBonus;
@@ -15526,7 +15528,7 @@ window.compartilharNativo = function() {
   if (navigator.share) {
     navigator.share({
       title: 'Finanvô — Controle Financeiro',
-      text: 'Use meu link e ganhe 30 dias Premium grátis!',
+      text: 'Conheça o Finanvô, o app que organiza as finanças da família!',
       url: link
     });
   } else {
