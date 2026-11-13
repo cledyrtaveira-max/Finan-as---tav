@@ -2749,6 +2749,15 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
         <div class="nav-item" onclick="navTo('checklist', this)">
           <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l2 2 4-4"/><rect x="3" y="4" width="14" height="13" rx="2"/></svg></span> Checklist Mensal
         </div>
+        <div class="nav-item" onclick="navTo('metas', this)">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><circle cx="10" cy="10" r="4"/><circle cx="10" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg></span> Metas
+        </div>
+        <div class="nav-item" onclick="navTo('projecoes', this)">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,15 7,9 11,12 18,4"/><polyline points="15,4 18,4 18,7"/></svg></span> Projeções
+        </div>
+        <div class="nav-item" onclick="navTo('exportar', this)">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v10M6 8l4 4 4-4"/><rect x="3" y="14" width="14" height="4" rx="1.5"/></svg></span> Exportar
+        </div>
       </div>
     </div>
 
@@ -2844,6 +2853,15 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
         </div>
         <div class="nav-item" onclick="navTo('checklist',this);fecharGaveta()">
           <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l2 2 4-4"/><rect x="3" y="4" width="14" height="13" rx="2"/></svg></span> Checklist Mensal
+        </div>
+        <div class="nav-item" onclick="navTo('metas',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><circle cx="10" cy="10" r="4"/><circle cx="10" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg></span> Metas
+        </div>
+        <div class="nav-item" onclick="navTo('projecoes',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,15 7,9 11,12 18,4"/><polyline points="15,4 18,4 18,7"/></svg></span> Projeções
+        </div>
+        <div class="nav-item" onclick="navTo('exportar',this);fecharGaveta()">
+          <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v10M6 8l4 4 4-4"/><rect x="3" y="14" width="14" height="4" rx="1.5"/></svg></span> Exportar
         </div>
       </div>
 
@@ -2956,6 +2974,9 @@ body.vals-ocultos .valor-ocultavel { filter: blur(6px); user-select: none; point
 
         <!-- Alerta vencidos -->
         <div id="dhc-alerta-venc" style="display:none"></div>
+
+        <!-- Banner alertas de vencimento (próximos dias) -->
+        <div id="dash-notif-venc"></div>
 
         <!-- Card 2: KPIs — Receita / Despesas / Dívidas -->
         <div class="dhc-kpi-card">
@@ -3567,6 +3588,101 @@ Abraços!</div>
         </div>
       </div>
 
+      <!-- ══ VIEW: METAS ══ -->
+      <div class="view" id="view-metas">
+        <div style="max-width:680px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+            <div>
+              <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;color:var(--accent);text-transform:uppercase;margin-bottom:2px">Finanvô · Planejamento</div>
+              <div style="font-size:22px;font-weight:900;color:var(--fg1)">🎯 Minhas Metas</div>
+            </div>
+            <button onclick="abrirModalMeta()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer">+ Nova meta</button>
+          </div>
+          <!-- Resumo de progresso geral -->
+          <div id="metas-resumo" style="margin-bottom:16px"></div>
+          <!-- Filtro de período -->
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+            <button id="metas-filtro-mes" onclick="setMetasFiltro('mes')" class="lanc-filtro-btn active" style="font-size:12px">Este mês</button>
+            <button id="metas-filtro-ano" onclick="setMetasFiltro('ano')" class="lanc-filtro-btn" style="font-size:12px">Este ano</button>
+            <button id="metas-filtro-todas" onclick="setMetasFiltro('todas')" class="lanc-filtro-btn" style="font-size:12px">Todas</button>
+          </div>
+          <!-- Lista de metas -->
+          <div id="metas-view-lista"></div>
+        </div>
+      </div>
+
+      <!-- ══ VIEW: PROJEÇÕES ══ -->
+      <div class="view" id="view-projecoes">
+        <div style="max-width:680px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+            <div>
+              <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;color:var(--accent);text-transform:uppercase;margin-bottom:2px">Finanvô · Planejamento</div>
+              <div style="font-size:22px;font-weight:900;color:var(--fg1)">📈 Projeções</div>
+              <div style="font-size:12px;color:var(--fg3);margin-top:2px">Se continuar assim, em quanto tempo você chega lá?</div>
+            </div>
+          </div>
+          <div id="proj-lista"></div>
+        </div>
+      </div>
+
+      <!-- ══ VIEW: EXPORTAR ══ -->
+      <div class="view" id="view-exportar">
+        <div style="max-width:680px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+            <div>
+              <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;color:var(--accent);text-transform:uppercase;margin-bottom:2px">Finanvô · Relatórios</div>
+              <div style="font-size:22px;font-weight:900;color:var(--fg1)">📤 Exportar</div>
+              <div style="font-size:12px;color:var(--fg3);margin-top:2px">Baixe seus dados em CSV ou relatório em texto</div>
+            </div>
+          </div>
+          <!-- Período -->
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px">
+            <div style="font-size:11px;font-weight:700;color:var(--fg3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">PERÍODO</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button id="exp-filtro-mes" onclick="setExportFiltro('mes')" class="lanc-filtro-btn active" style="font-size:12px">Este mês</button>
+              <button id="exp-filtro-trim" onclick="setExportFiltro('trim')" class="lanc-filtro-btn" style="font-size:12px">Último trimestre</button>
+              <button id="exp-filtro-ano" onclick="setExportFiltro('ano')" class="lanc-filtro-btn" style="font-size:12px">Este ano</button>
+              <button id="exp-filtro-tudo" onclick="setExportFiltro('tudo')" class="lanc-filtro-btn" style="font-size:12px">Tudo</button>
+            </div>
+          </div>
+          <!-- Opções de export -->
+          <div style="display:grid;gap:10px;margin-bottom:20px">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                <div>
+                  <div style="font-size:14px;font-weight:700;color:var(--fg1);margin-bottom:4px">📊 CSV — Lançamentos</div>
+                  <div style="font-size:12px;color:var(--fg3)">Todos os lançamentos do período em planilha CSV</div>
+                </div>
+                <button onclick="exportarCSV()" style="background:var(--accent);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">⬇ Baixar CSV</button>
+              </div>
+            </div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                <div>
+                  <div style="font-size:14px;font-weight:700;color:var(--fg1);margin-bottom:4px">📄 Relatório Texto</div>
+                  <div style="font-size:12px;color:var(--fg3)">Resumo completo para imprimir ou compartilhar</div>
+                </div>
+                <button onclick="exportarRelatorio()" style="background:var(--accent);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">⬇ Baixar TXT</button>
+              </div>
+            </div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                <div>
+                  <div style="font-size:14px;font-weight:700;color:var(--fg1);margin-bottom:4px">📧 Resumo por E-mail</div>
+                  <div style="font-size:12px;color:var(--fg3)">Enviar resumo do período para o seu e-mail</div>
+                </div>
+                <button onclick="enviarResumoEmail()" style="background:var(--surface);color:var(--fg1);border:1.5px solid var(--border);border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">📧 Enviar</button>
+              </div>
+            </div>
+          </div>
+          <!-- Preview -->
+          <div id="exp-preview" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
+            <div style="font-size:11px;font-weight:700;color:var(--fg3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">PREVIEW</div>
+            <pre id="exp-preview-texto" style="font-size:11px;color:var(--fg2);overflow-x:auto;white-space:pre-wrap;line-height:1.6;margin:0"></pre>
+          </div>
+        </div>
+      </div>
+
       <!-- ══ VIEW: ANÁLISE IA ══ -->
       <div class="view" id="view-ia">
         <div style="max-width:680px">
@@ -3674,6 +3790,20 @@ Abraços!</div>
             </div>
             <button onclick="salvarDadosPessoais()" style="margin-top:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer">Salvar dados</button>
             <div id="cfg-dados-pessoais-ok" style="display:none;font-size:11px;color:var(--green);margin-top:6px">✅ Dados salvos!</div>
+          </div>
+
+          <!-- ALERTAS DE VENCIMENTO / NOTIFICAÇÕES PUSH -->
+          <div style="margin-bottom:20px;padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:12px">
+            <div class="section-title" style="margin-bottom:10px">🔔 Alertas de vencimento</div>
+            <div id="cfg-notif-status" style="font-size:13px;color:var(--fg2);margin-bottom:10px">Verificando...</div>
+            <button id="btn-ativar-notif" onclick="solicitarPermissaoNotificacao().then(()=>renderConfigNotificacoes())"
+              style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px">
+              🔔 Ativar notificações
+            </button>
+            <div style="font-size:11px;color:var(--fg3);margin-bottom:10px">
+              O app avisa no seu celular quando uma conta está prestes a vencer — mesmo com a tela bloqueada (instale como app para funcionar offline).
+            </div>
+            <div id="cfg-itens-vencimento"></div>
           </div>
 
           <!-- SELETOR MÊS/ANO -->
@@ -4387,7 +4517,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.21'; // resumo mensal por e-mail + importar extrato OFX/CSV
+const APP_VERSION = 'v5.23'; // metas view + projeções + exportar CSV/TXT + navegação
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',
@@ -5276,6 +5406,9 @@ function navTo(view, el) {
     dividas: ['Planejamento','Dívidas'],
     estrategia: ['Planejamento','Estratégia'],
     ia: ['Planejamento','Análise IA'],
+    metas: ['Planejamento','Metas'],
+    projecoes: ['Planejamento','Projeções'],
+    exportar: ['Relatórios','Exportar'],
     indicacao: ['Comunidade','Indique e Ganhe'],
     afiliados: ['Comunidade','Afiliados'],
     familia: ['Comunidade','Modo Família'],
@@ -5295,6 +5428,8 @@ function navTo(view, el) {
   if (view === 'indicacao') iniciarViewIndicacao();
   if (view === 'afiliados') iniciarViewAfiliados();
   if (view === 'familia') iniciarViewFamilia();
+  if (view === 'metas') renderMetasView();
+  if (view === 'projecoes') renderProjecoesView();
 }
 
 // ── Bottom nav (mobile) ────────────────────────────────────────────
@@ -5329,6 +5464,8 @@ function bnNav(view) {
   if (view === 'grafico') renderGrafico();
   if (view === 'dividas') renderDividas();
   if (view === 'estrategia') renderEstrategia();
+  if (view === 'metas') renderMetasView();
+  if (view === 'projecoes') renderProjecoesView();
 
   // Atualiza estado visual da bottom nav
   BN_MAIN.forEach(v => {
@@ -6114,6 +6251,9 @@ function renderDashboard() {
       alertVencEl.style.display = 'none';
     }
   }
+
+  // ── Banner de vencimentos próximos ───────────────────────────
+  if (typeof renderBannerVencimentos === 'function') renderBannerVencimentos();
 
   // ── Label do header: saldo real + previsto ────────────────────
   const dhcPeriodoLabel = document.getElementById('dhc-periodo-label');
@@ -8756,6 +8896,9 @@ async function salvarDadosPessoais() {
 
 function renderConfig() {
   initCfgSeletores();
+
+  // Renderiza seção de alertas/notificações
+  if (typeof renderConfigNotificacoes === 'function') renderConfigNotificacoes();
 
   // Preenche campo nome família
   const inpNomeFam = document.getElementById('cfg-nome-familia');
@@ -13385,6 +13528,404 @@ window.mostrarModalUpgrade = function(feature, planoNecessario) {
       </button>
     </div>`;
   document.body.appendChild(modal);
+};
+
+// ══════════════════════════════════════════════════════════════
+// MÓDULO: VIEW DEDICADA DE METAS
+// ══════════════════════════════════════════════════════════════
+
+let _metasFiltro = 'mes';
+
+window.setMetasFiltro = function(f) {
+  _metasFiltro = f;
+  ['mes','ano','todas'].forEach(x => {
+    const el = document.getElementById('metas-filtro-' + x);
+    if (el) el.classList.toggle('active', x === f);
+  });
+  renderMetasView();
+};
+
+function renderMetasView() {
+  const wrap = document.getElementById('metas-view-lista');
+  const resumoEl = document.getElementById('metas-resumo');
+  if (!wrap) return;
+
+  const todasMetas = loadMetas();
+  const anoAtual = new Date().getFullYear();
+
+  let metas;
+  if (_metasFiltro === 'mes') {
+    metas = todasMetas.filter(m => m.mes === mesSelecionado && (m.ano === anoSelecionado || (!m.ano && anoSelecionado === anoAtual)));
+  } else if (_metasFiltro === 'ano') {
+    metas = todasMetas.filter(m => (m.ano || anoAtual) === anoSelecionado);
+  } else {
+    metas = todasMetas;
+  }
+
+  // Resumo de progresso
+  if (resumoEl && metas.length > 0) {
+    const atingidas = metas.filter(m => calcProgressoMeta(m).ok).length;
+    const pctGeral = Math.round((atingidas / metas.length) * 100);
+    resumoEl.innerHTML = `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px">
+          <div style="font-size:11px;color:var(--fg3);font-weight:600;margin-bottom:4px">PROGRESSO GERAL</div>
+          <div style="height:8px;border-radius:4px;background:var(--surface);overflow:hidden">
+            <div style="height:8px;width:${pctGeral}%;border-radius:4px;background:linear-gradient(90deg,#4f7fff,#22c55e);transition:width .6s"></div>
+          </div>
+          <div style="font-size:11px;color:var(--fg3);margin-top:4px">${atingidas} de ${metas.length} meta${metas.length>1?'s':''} atingida${atingidas!==1?'s':''}</div>
+        </div>
+        <div style="font-size:36px;font-weight:900;color:${pctGeral===100?'#22c55e':'var(--accent)'}">${pctGeral}%</div>
+      </div>`;
+  } else if (resumoEl) {
+    resumoEl.innerHTML = '';
+  }
+
+  if (!metas.length) {
+    wrap.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--fg3)">
+      <div style="font-size:48px;margin-bottom:12px">🎯</div>
+      <div style="font-size:15px;font-weight:700;color:var(--fg2);margin-bottom:6px">Nenhuma meta encontrada</div>
+      <div style="font-size:13px">Clique em <strong>+ Nova meta</strong> para começar a definir seus objetivos financeiros.</div>
+    </div>`;
+    return;
+  }
+
+  // Agrupar por mês/ano
+  const grupos = {};
+  metas.forEach(m => {
+    const key = `${m.ano||anoAtual}/${m.mes}`;
+    if (!grupos[key]) grupos[key] = { label: `${m.mes}/${m.ano||anoAtual}`, itens: [] };
+    grupos[key].itens.push(m);
+  });
+
+  const TIPO_ICON = { economia: '💰', limite: '🚫', categoria: '📂' };
+  const brl = v => 'R$ ' + Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+
+  wrap.innerHTML = Object.entries(grupos).sort((a,b) => b[0].localeCompare(a[0])).map(([key, g]) => `
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:800;color:var(--fg3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">${g.label}</div>
+      ${g.itens.map(m => {
+        const { pct, label, ok } = calcProgressoMeta(m);
+        const isLimite = m.tipo === 'limite' || m.tipo === 'categoria';
+        const pctBar = Math.min(100, pct);
+        const cor = isLimite
+          ? (pct > 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : '#22c55e')
+          : (ok ? '#22c55e' : pct >= 80 ? '#f59e0b' : '#4f7fff');
+        const barCor = isLimite
+          ? (pct > 100 ? 'linear-gradient(90deg,#ef4444,#f87171)' : pct >= 80 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,#22c55e,#4ade80)')
+          : (ok ? 'linear-gradient(90deg,#22c55e,#4ade80)' : pct >= 80 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,#4f7fff,#7c3aed)');
+        const emoji = ok ? (isLimite ? '✅' : '🏆') : (pct > 100 ? '🔴' : pct >= 80 ? '⚡' : TIPO_ICON[m.tipo]||'🎯');
+        return `<div class="meta-card" style="margin-bottom:8px;${!ok&&pct>=100?'border-color:rgba(239,68,68,0.4);':!ok&&pct>=80?'border-color:rgba(245,158,11,0.35);':''}">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+              <span style="font-size:18px">${emoji}</span>
+              <div style="min-width:0">
+                <div style="font-size:13px;font-weight:700;color:var(--fg1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.desc)}</div>
+                <div style="font-size:11px;color:var(--fg3)">${label}</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+              <span style="font-size:14px;font-weight:900;color:${cor}">${pct}%</span>
+              <button onclick="abrirModalMeta('${m.id}')" style="background:none;border:none;cursor:pointer;color:var(--fg3);font-size:13px;padding:2px" title="Editar">✏️</button>
+              <button onclick="excluirMeta('${m.id}')" style="background:none;border:none;cursor:pointer;color:var(--fg3);font-size:13px;padding:2px" title="Excluir">✕</button>
+            </div>
+          </div>
+          <div style="height:7px;border-radius:4px;background:var(--surface2);overflow:hidden">
+            <div style="height:7px;width:${pctBar}%;border-radius:4px;background:${barCor};transition:width .8s cubic-bezier(.4,0,.2,1)"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--fg3);margin-top:4px">
+            <span>Meta: ${brl(m.valor)}</span>
+            <span>${m.mes}/${m.ano||anoAtual}</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+// Confetti leve quando meta é atingida
+function dispararConfetti() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;inset:0;z-index:99999;pointer-events:none';
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const particulas = Array.from({length:80}, () => ({
+    x: Math.random()*canvas.width, y: -10,
+    vx: (Math.random()-0.5)*4, vy: Math.random()*3+2,
+    r: Math.random()*6+3, rot: Math.random()*360,
+    rotV: (Math.random()-0.5)*8,
+    cor: ['#4f7fff','#22c55e','#f59e0b','#ec4899','#a855f7'][Math.floor(Math.random()*5)]
+  }));
+  let frame = 0;
+  function animar() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particulas.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.rot += p.rotV; p.vy += 0.05;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle = p.cor; ctx.globalAlpha = Math.max(0, 1-frame/120);
+      ctx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);
+      ctx.restore();
+    });
+    frame++;
+    if (frame < 130) requestAnimationFrame(animar);
+    else canvas.remove();
+  }
+  animar();
+}
+
+// Hook: dispara confetti quando meta é atingida pela primeira vez
+const _origSalvarMeta = window.salvarMeta;
+// Intercepta renderMetasDash para detectar meta recém-atingida e disparar confetti
+const _origRenderMetasDash = window.renderMetasDash;
+
+// ══════════════════════════════════════════════════════════════
+// MÓDULO: PROJEÇÕES INTELIGENTES
+// ══════════════════════════════════════════════════════════════
+
+function renderProjecoesView() {
+  const wrap = document.getElementById('proj-lista');
+  if (!wrap) return;
+
+  const brl = v => 'R$ ' + Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  const hoje = new Date();
+  const mesAtual = hoje.getMonth() + 1;
+  const anoAtual = hoje.getFullYear();
+
+  // Coleta últimos 3 meses para média
+  const historico = [];
+  for (let i = 0; i < 3; i++) {
+    let m = mesAtual - i; let a = anoAtual;
+    if (m <= 0) { m += 12; a--; }
+    const d = getDadosPeriodo(m, a);
+    historico.push({ mes: m, ano: a, ...d });
+  }
+
+  const mediaEntradas = historico.reduce((s,h) => s + (h.entradas||0), 0) / historico.length;
+  const mediaSaidas   = historico.reduce((s,h) => s + (h.saidas||0), 0) / historico.length;
+  const mediaSaldo    = mediaEntradas - mediaSaidas;
+  const saldoAtual    = (appData.lancamentos||[]).reduce((s,l) => {
+    if (l.tipo==='entrada') return s + (l.val||0);
+    return s - (l.val||0);
+  }, 0);
+
+  const projecoes = [];
+
+  // 1. Projeção de patrimônio em 6 e 12 meses
+  if (mediaSaldo > 0) {
+    const em6  = saldoAtual + mediaSaldo * 6;
+    const em12 = saldoAtual + mediaSaldo * 12;
+    projecoes.push({
+      icon: '📈', titulo: 'Crescimento do patrimônio',
+      descricao: `Mantendo a média de ${brl(mediaSaldo)}/mês de saldo positivo:`,
+      itens: [
+        { label: 'Em 6 meses', valor: brl(em6), cor: '#22c55e' },
+        { label: 'Em 12 meses', valor: brl(em12), cor: '#4f7fff' },
+      ],
+      nota: 'Baseado na média dos últimos 3 meses.',
+      positivo: true
+    });
+  } else if (mediaSaldo < 0) {
+    projecoes.push({
+      icon: '⚠️', titulo: 'Atenção: gastos maiores que receitas',
+      descricao: `Você está gastando ${brl(Math.abs(mediaSaldo))}/mês a mais do que recebe.`,
+      itens: [
+        { label: 'Déficit em 6 meses', valor: brl(Math.abs(mediaSaldo)*6), cor: '#ef4444' },
+      ],
+      nota: 'Reduza despesas ou aumente receitas para equilibrar.',
+      positivo: false
+    });
+  }
+
+  // 2. Projeção de quitação de dívidas
+  const dividas = (appData.dividas||[]).filter(d => !d.quitada);
+  dividas.forEach(div => {
+    const saldo = (div.valorTotal||0) - (div.valorPago||0);
+    if (saldo <= 0) return;
+    const parcela = div.parcela || (div.valorTotal / (div.parcelas||12));
+    if (!parcela || parcela <= 0) return;
+    const mesesRestantes = Math.ceil(saldo / parcela);
+    const dataQuitacao = new Date(hoje);
+    dataQuitacao.setMonth(dataQuitacao.getMonth() + mesesRestantes);
+    const mesQuit = MESES[dataQuitacao.getMonth()];
+    const anoQuit = dataQuitacao.getFullYear();
+    projecoes.push({
+      icon: '💳', titulo: `Quitação: ${esc(div.nome||'Dívida')}`,
+      descricao: `Saldo devedor: ${brl(saldo)} · Parcela: ${brl(parcela)}/mês`,
+      itens: [
+        { label: 'Previsão de quitação', valor: `${mesQuit}/${anoQuit}`, cor: '#4f7fff' },
+        { label: 'Meses restantes', valor: `${mesesRestantes} ${mesesRestantes===1?'mês':'meses'}`, cor: '#f59e0b' },
+      ],
+      nota: `Total a pagar: ${brl(saldo)}`,
+      positivo: mesesRestantes <= 12
+    });
+  });
+
+  // 3. Projeção de metas
+  const metas = loadMetas().filter(m => {
+    const p = calcProgressoMeta(m);
+    return !p.ok && m.tipo === 'economia';
+  });
+  metas.slice(0,3).forEach(meta => {
+    const { pct } = calcProgressoMeta(meta);
+    const falta = meta.valor - ((meta.valor * pct) / 100);
+    if (falta <= 0 || mediaSaldo <= 0) return;
+    const mesesP = Math.ceil(falta / mediaSaldo);
+    const dtMeta = new Date(hoje);
+    dtMeta.setMonth(dtMeta.getMonth() + mesesP);
+    projecoes.push({
+      icon: '🎯', titulo: `Meta: ${esc(meta.desc)}`,
+      descricao: `Falta ${brl(falta)} para atingir a meta`,
+      itens: [
+        { label: 'Previsão', valor: `${MESES[dtMeta.getMonth()]}/${dtMeta.getFullYear()}`, cor: '#22c55e' },
+        { label: 'Meses', valor: `${mesesP}`, cor: '#4f7fff' },
+      ],
+      nota: `Poupando ${brl(mediaSaldo)}/mês`,
+      positivo: mesesP <= 12
+    });
+  });
+
+  if (!projecoes.length) {
+    wrap.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--fg3)">
+      <div style="font-size:48px;margin-bottom:12px">📊</div>
+      <div style="font-size:15px;font-weight:700;color:var(--fg2);margin-bottom:6px">Sem dados suficientes</div>
+      <div style="font-size:13px">Adicione mais lançamentos para ver projeções inteligentes.</div>
+    </div>`;
+    return;
+  }
+
+  wrap.innerHTML = projecoes.map(p => `
+    <div style="background:var(--surface2);border:1px solid ${p.positivo?'var(--border)':'rgba(239,68,68,0.3)'};border-radius:14px;padding:16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-size:22px">${p.icon}</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--fg1)">${p.titulo}</div>
+          <div style="font-size:12px;color:var(--fg3)">${p.descricao}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+        ${p.itens.map(it => `
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex:1;min-width:120px">
+            <div style="font-size:10px;color:var(--fg3);font-weight:600;margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em">${it.label}</div>
+            <div style="font-size:16px;font-weight:900;color:${it.cor}">${it.valor}</div>
+          </div>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--fg3);font-style:italic">${p.nota}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// MÓDULO: EXPORTAR CSV / RELATÓRIO
+// ══════════════════════════════════════════════════════════════
+
+let _expFiltro = 'mes';
+
+window.setExportFiltro = function(f) {
+  _expFiltro = f;
+  ['mes','trim','ano','tudo'].forEach(x => {
+    const el = document.getElementById('exp-filtro-' + x);
+    if (el) el.classList.toggle('active', x === f);
+  });
+};
+
+function getLancamentosExport() {
+  const hoje = new Date();
+  const mes  = hoje.getMonth() + 1;
+  const ano  = hoje.getFullYear();
+  const todos = appData.lancamentos || [];
+
+  if (_expFiltro === 'mes')  return todos.filter(l => l.mes === mes && l.ano === ano);
+  if (_expFiltro === 'trim') {
+    const limite = new Date(hoje); limite.setMonth(hoje.getMonth() - 2);
+    return todos.filter(l => {
+      const d = new Date(l.ano||ano, (l.mes||1)-1, 1);
+      return d >= new Date(limite.getFullYear(), limite.getMonth(), 1);
+    });
+  }
+  if (_expFiltro === 'ano')  return todos.filter(l => (l.ano||ano) === ano);
+  return todos;
+}
+
+window.exportarCSV = function() {
+  const lancs = getLancamentosExport();
+  if (!lancs.length) { alert('Nenhum lançamento no período selecionado.'); return; }
+
+  const header = 'Data,Descrição,Tipo,Valor,Categoria,Conta';
+  const linhas = lancs.map(l => {
+    const data = `${String(l.mes||1).padStart(2,'0')}/${l.ano||new Date().getFullYear()}`;
+    const desc = `"${(l.desc||'').replace(/"/g,'""')}"`;
+    const tipo = l.tipo === 'entrada' ? 'Entrada' : 'Saída';
+    const val  = Number(l.val||0).toFixed(2).replace('.',',');
+    const cat  = `"${(l.cat||'').replace(/"/g,'""')}"`;
+    const conta = `"${(l.conta||'').replace(/"/g,'""')}"`;
+    return [data, desc, tipo, val, cat, conta].join(',');
+  });
+  const csv = [header, ...linhas].join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `finanvo-lancamentos-${_expFiltro}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+};
+
+window.exportarRelatorio = function() {
+  const lancs = getLancamentosExport();
+  const hoje  = new Date();
+  const ano   = hoje.getFullYear();
+  const mes   = hoje.getMonth() + 1;
+
+  const entradas = lancs.filter(l => l.tipo==='entrada').reduce((s,l)=>s+(l.val||0),0);
+  const saidas   = lancs.filter(l => l.tipo!=='entrada').reduce((s,l)=>s+(l.val||0),0);
+  const saldo    = entradas - saidas;
+  const brl = v => 'R$ ' + Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+
+  const catMap = {};
+  lancs.filter(l=>l.tipo!=='entrada').forEach(l => {
+    const c = l.cat||'Outros'; catMap[c]=(catMap[c]||0)+(l.val||0);
+  });
+  const catLinhas = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,8)
+    .map(([c,v]) => `  ${c.padEnd(20)} ${brl(v)}`).join('\n');
+
+  const labels = { mes:`Mês ${mes}/${ano}`, trim:'Último Trimestre', ano:`Ano ${ano}`, tudo:'Todo o período' };
+  const titulo = labels[_expFiltro]||'Período';
+
+  const txt = [
+    '╔══════════════════════════════════════╗',
+    `║      FINANVÔ — RELATÓRIO ${titulo.toUpperCase().slice(0,14).padEnd(14)} ║`,
+    '╚══════════════════════════════════════╝',
+    '',
+    `Gerado em: ${hoje.toLocaleDateString('pt-BR')} às ${hoje.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`,
+    '',
+    '── RESUMO ─────────────────────────────',
+    `  Entradas:   ${brl(entradas)}`,
+    `  Saídas:     ${brl(saidas)}`,
+    `  Saldo:      ${brl(saldo)}`,
+    '',
+    `  Total de lançamentos: ${lancs.length}`,
+    '',
+    '── GASTOS POR CATEGORIA ────────────────',
+    catLinhas || '  (sem dados)',
+    '',
+    '── LANÇAMENTOS ────────────────────────',
+    ...lancs.map(l => {
+      const tipo = l.tipo==='entrada'?'+':'-';
+      const data = `${String(l.mes||1).padStart(2,'0')}/${l.ano||ano}`;
+      return `  ${data} [${tipo}] ${(l.desc||'').padEnd(22)} ${brl(l.val||0)}`;
+    }),
+    '',
+    '───────────────────────────────────────',
+    'Finanvô — appfinanvo.com.br',
+  ].join('\n');
+
+  // Mostrar preview
+  const prev = document.getElementById('exp-preview');
+  const prevTxt = document.getElementById('exp-preview-texto');
+  if (prev && prevTxt) { prev.style.display='block'; prevTxt.textContent = txt; }
+
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `finanvo-relatorio-${_expFiltro}.txt`;
+  a.click(); URL.revokeObjectURL(url);
 };
 
 // ══════════════════════════════════════════════════════════════
