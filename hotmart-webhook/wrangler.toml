@@ -14,6 +14,7 @@ compatibility_date = "2024-06-01"
 #   FIREBASE_CLIENT_EMAIL — service account email
 #   FIREBASE_PRIVATE_KEY  — service account private key (com \n)
 #   HOTMART_HOTTOK        — hottok do webhook Hotmart
+#   ADMIN_SECRET          — senha para o endpoint /set-admin (qualquer string segura)
 # Tue Nov 10 20:48:42 -03 2026
 # retrigger Tue Nov 10 21:01:47 -03 2026
 # retrigger Tue Nov 10 23:45:22 -03 2026
