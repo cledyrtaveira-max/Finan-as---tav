@@ -1,0 +1,14 @@
+name: Set Admin (one-shot)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  set-admin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chamar /set-admin no Worker
+        run: |
+          curl -X POST https://finanvo-webhook.cledyrtaveira.workers.dev/set-admin \
+            -H "Content-Type: application/json" \
+            -d "{\"secret\":\"${{ secrets.ADMIN_SECRET }}\",\"email\":\"cledyrtaveira@gmail.com\"}"
