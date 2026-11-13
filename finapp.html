@@ -4056,7 +4056,7 @@ Abraços!</div>
       ATUALIZAÇÃO DISPONÍVEL
     </div>
     <div class="update-title" id="update-titulo">Novidades do Finanvô 🎉</div>
-    <div class="update-version" id="update-versao">v5.17 · Novembro 2026</div>
+    <div class="update-version" id="update-versao">v5.18 · Novembro 2026</div>
     <ul class="update-notes" id="update-notas">
       <li>Dashboard redesenhado em 3 cards separados e limpos</li>
       <li>Header com saudação, família e saldo em destaque</li>
@@ -4338,7 +4338,7 @@ async function enviarRecuperacao() {
 // SISTEMA DE VERSÃO — controle de atualizações
 // Para lançar nova versão: atualize APP_VERSION e APP_NOTAS abaixo
 // ══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v5.17'; // lote 2+: regras cortesia, versão corrigida
+const APP_VERSION = 'v5.18'; // passo 11: preços anuais alinhados no modal upgrade
 const APP_NOTAS = [
   'Dashboard completamente redesenhado em 3 cards separados',
   'Header com saudação, nome da família e saldo em destaque',
@@ -13053,8 +13053,8 @@ const PLANOS = {
     cor: '#3b82f6',
     emoji: '⚡',
     preco: 'R$ 12,99/mês',
-    precoAnual: 'R$ 12,99/mês',
-    precoAnualMes: 'R$ 12,99/mês',
+    precoAnual: 'R$ 149,00/ano',       // TODO: ajustar se houver promo fim de ano
+    precoAnualMes: 'R$ 12,40/mês',     // 149/12 ≈ 12,40
     hotmartUrl: 'https://pay.hotmart.com/U108262502C',
     hotmartOfferKeyAnual: '6r8tfqrt', // M7 FIX: offer_hash anual Básico (Hotmart Precificação)
     limites: {
@@ -13080,8 +13080,8 @@ const PLANOS = {
     cor: '#8b5cf6',
     emoji: '👨‍👩‍👧',
     preco: 'R$ 22,99/mês',
-    precoAnual: 'R$ 22,99/mês',
-    precoAnualMes: 'R$ 22,99/mês',
+    precoAnual: 'R$ 249,00/ano',       // TODO: ajustar se houver promo fim de ano
+    precoAnualMes: 'R$ 20,75/mês',     // 249/12 ≈ 20,75
     hotmartUrl: 'https://pay.hotmart.com/U108265754P',
     hotmartOfferKeyAnual: '3ywhnhdz', // M7 FIX: offer_hash anual Família (Hotmart Precificação)
     limites: {
@@ -13107,8 +13107,8 @@ const PLANOS = {
     cor: '#f59e0b',
     emoji: '👑',
     preco: 'R$ 32,99/mês',
-    precoAnual: 'R$ 32,99/mês',
-    precoAnualMes: 'R$ 32,99/mês',
+    precoAnual: 'R$ 349,00/ano',       // TODO: ajustar se houver promo fim de ano
+    precoAnualMes: 'R$ 29,00/mês',     // 349/12 ≈ 29,08
     hotmartUrl: 'https://pay.hotmart.com/A108265910E',
     hotmartOfferKeyAnual: 'p1tt51nh', // M7 FIX: offer_hash anual Premium (Hotmart Precificação)
     limites: {
