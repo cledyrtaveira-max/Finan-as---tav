@@ -445,6 +445,31 @@ async function getToken(env) {
 const BONUS_INDICACAO_DIAS = 30;
 const FS = env => `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents`;
 
+// Busca UID pelo codigoIndicacao (campo no perfil do indicador).
+// Usa runQuery do Firestore (service account tem acesso).
+async function uidPorCodigoIndicacao(env, token, codigo) {
+  try {
+    const r = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
+      {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          structuredQuery: {
+            from: [{ collectionId: 'users' }],
+            where: { fieldFilter: { field: { fieldPath: 'codigoIndicacao' }, op: 'EQUAL', value: { stringValue: codigo } } },
+            limit: 1
+          }
+        })
+      }
+    );
+    const rows = await r.json();
+    const doc = Array.isArray(rows) ? rows[0]?.document : null;
+    if (!doc) return null;
+    return doc.name.split('/').pop();
+  } catch(_) { return null; }
+}
+
 async function uidPorEmail(env, token, email) {
   const r = await fetch(`https://identitytoolkit.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/accounts:lookup`, {
     method: 'POST',
@@ -508,7 +533,16 @@ async function recompensarIndicacao(env, emailComprador) {
   const doc = await indicacaoDoIndicado(env, token, uid);
   if (!doc) return;
   const f = doc.fields || {};
-  const indicadorUid = f.indicadorUid?.stringValue;
+  let indicadorUid = f.indicadorUid?.stringValue;
+  // Se indicadorUid ficou vazio no cadastro (regras Firestore bloquearam a query no app),
+  // tenta resolver agora via service account usando o codigoIndicador.
+  if (!indicadorUid) {
+    const codigoIndicador = f.codigoIndicador?.stringValue;
+    if (codigoIndicador) indicadorUid = await uidPorCodigoIndicacao(env, token, codigoIndicador);
+    if (indicadorUid) {
+      await patchIndicacao(env, token, doc.name, { indicadorUid: { stringValue: indicadorUid } });
+    }
+  }
   // Já recompensada (ou revogada): não paga duas vezes (o Hotmart pode reenviar o evento).
   if (f.ativo?.booleanValue === true || f.revogada?.booleanValue === true || !indicadorUid) return;
   // Marca como ativa ANTES de creditar (evita crédito duplicado se a Hotmart reenviar o
