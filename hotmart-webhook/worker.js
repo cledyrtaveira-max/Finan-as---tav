@@ -21,11 +21,20 @@ async function checkRateLimit(env, ip) {
   }
 }
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': 'https://appfinanvo.com.br',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+const CORS_ALLOWED = [
+  'https://appfinanvo.com.br',
+  'https://claude.ai',
+];
+
+function corsHeaders(request) {
+  const origin = request.headers.get('Origin') || '';
+  const allowed = CORS_ALLOWED.includes(origin) ? origin : CORS_ALLOWED[0];
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+}
 
 export default {
   async fetch(request, env) {
@@ -33,7 +42,15 @@ export default {
 
     // OPTIONS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: CORS_HEADERS });
+      // /set-admin aceita qualquer origin (protegido por ADMIN_SECRET)
+      if (url.pathname === '/set-admin') {
+        return new Response(null, { status: 204, headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        }});
+      }
+      return new Response(null, { status: 204, headers: corsHeaders(request) });
     }
 
     // ── C3 FIX: Endpoint /ativar-pendente ────────────────────────────
@@ -583,26 +600,28 @@ async function revogarIndicacao(env, emailComprador) {
 // ── handleSetAdmin: seta custom claim admin:true via Firebase Auth REST API ─
 // Uso único de setup. Protegido por env.ADMIN_SECRET.
 // POST { secret: "...", email: "..." }
+const CORS_OPEN = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
+
 async function handleSetAdmin(request, env) {
   if (!env.ADMIN_SECRET) {
     return new Response(JSON.stringify({ error: 'ADMIN_SECRET não configurado' }), {
-      status: 500, headers: { 'Content-Type': 'application/json' }
+      status: 500, headers: CORS_OPEN
     });
   }
   let body;
   try { body = await request.json(); } catch(_) {
     return new Response(JSON.stringify({ error: 'Body inválido' }), {
-      status: 400, headers: { 'Content-Type': 'application/json' }
+      status: 400, headers: CORS_OPEN
     });
   }
   if (body.secret !== env.ADMIN_SECRET) {
     return new Response(JSON.stringify({ error: 'Não autorizado' }), {
-      status: 401, headers: { 'Content-Type': 'application/json' }
+      status: 401, headers: CORS_OPEN
     });
   }
   if (!body.email) {
     return new Response(JSON.stringify({ error: 'email obrigatório' }), {
-      status: 400, headers: { 'Content-Type': 'application/json' }
+      status: 400, headers: CORS_OPEN
     });
   }
   try {
@@ -635,15 +654,15 @@ async function handleSetAdmin(request, env) {
     const d2 = await r2.json();
     if (d2.error) {
       return new Response(JSON.stringify({ error: d2.error.message }), {
-        status: 500, headers: { 'Content-Type': 'application/json' }
+        status: 500, headers: CORS_OPEN
       });
     }
     return new Response(JSON.stringify({ ok: true, uid, email: body.email, claims: { admin: true } }), {
-      status: 200, headers: { 'Content-Type': 'application/json' }
+      status: 200, headers: CORS_OPEN
     });
   } catch(e) {
     return new Response(JSON.stringify({ error: e.message }), {
-      status: 500, headers: { 'Content-Type': 'application/json' }
+      status: 500, headers: CORS_OPEN
     });
   }
 }
