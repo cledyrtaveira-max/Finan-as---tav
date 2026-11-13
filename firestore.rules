@@ -200,8 +200,12 @@ service cloud.firestore {
     }
 
     // ── Config do admin (vitalicios, etc.) — admin + service account ─
+    // O documento 'vitalicios' é lido pelo app no login para saber se o usuário
+    // tem acesso cortesia. Os demais docs continuam restritos a admin.
     match /admin_config/{docId} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin()
+        || (request.auth != null && docId == 'vitalicios');
+      allow write: if isAdmin();
     }
 
     // ── Bloquear qualquer outro acesso não mapeado ───────────────────
