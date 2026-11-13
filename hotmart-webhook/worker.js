@@ -43,6 +43,14 @@ export default {
       return handleAtivarPendente(request, env);
     }
 
+    // ── Endpoint /set-admin ─────────────────────────────────────────
+    // Define custom claim admin:true em um usuário Firebase.
+    // Protegido por ADMIN_SECRET (env var). Uso único de setup.
+    // POST { secret: "...", email: "..." }
+    if (url.pathname === '/set-admin' && request.method === 'POST') {
+      return handleSetAdmin(request, env);
+    }
+
     if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
     // I6 FIX: rate limit por IP — evita flood/abuso do webhook
@@ -536,4 +544,72 @@ async function revogarIndicacao(env, emailComprador) {
     ativo: { booleanValue: false },
     dataRevogacao: { stringValue: new Date().toISOString() }
   });
+}
+
+// ── handleSetAdmin: seta custom claim admin:true via Firebase Auth REST API ─
+// Uso único de setup. Protegido por env.ADMIN_SECRET.
+// POST { secret: "...", email: "..." }
+async function handleSetAdmin(request, env) {
+  if (!env.ADMIN_SECRET) {
+    return new Response(JSON.stringify({ error: 'ADMIN_SECRET não configurado' }), {
+      status: 500, headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  let body;
+  try { body = await request.json(); } catch(_) {
+    return new Response(JSON.stringify({ error: 'Body inválido' }), {
+      status: 400, headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  if (body.secret !== env.ADMIN_SECRET) {
+    return new Response(JSON.stringify({ error: 'Não autorizado' }), {
+      status: 401, headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  if (!body.email) {
+    return new Response(JSON.stringify({ error: 'email obrigatório' }), {
+      status: 400, headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  try {
+    const token = await getToken(env);
+    // Buscar UID pelo email
+    const r1 = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/accounts:lookup`,
+      {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: [body.email] })
+      }
+    );
+    const d1 = await r1.json();
+    const uid = d1.users?.[0]?.localId;
+    if (!uid) {
+      return new Response(JSON.stringify({ error: 'Usuário não encontrado' }), {
+        status: 404, headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    // Setar custom claim via accounts:update
+    const r2 = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/accounts:update`,
+      {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ localId: uid, customAttributes: JSON.stringify({ admin: true }) })
+      }
+    );
+    const d2 = await r2.json();
+    if (d2.error) {
+      return new Response(JSON.stringify({ error: d2.error.message }), {
+        status: 500, headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    return new Response(JSON.stringify({ ok: true, uid, email: body.email, claims: { admin: true } }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    });
+  } catch(e) {
+    return new Response(JSON.stringify({ error: e.message }), {
+      status: 500, headers: { 'Content-Type': 'application/json' }
+    });
+  }
 }
